@@ -1,0 +1,27 @@
+# Build output
+dist/
+launcher/bin/
+launcher/obj/
+
+# Third-party downloads (fetched with tools/get-ue4ss.ps1)
+third_party/
+
+# Game-derived data (extracted assets, reflection dumps, string/pak listings)
+extracted/
+research/
+tools/paklist.txt
+tools/exe_strings.txt
+
+# Runtime files written next to the mod
+mod/ue4ss/UE4SS.log
+mod/ue4ss/Mods/MOHABPlus/config.ini
+mod/ue4ss/Mods/MOHABPlus/cmd.txt
+mod/ue4ss/Mods/MOHABDump/dump.txt
+launcher.ini
+launcher.log
+
+# Python / editor noise
+__pycache__/
+*.pyc
+.vs/
+*.user
