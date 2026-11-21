@@ -11,10 +11,22 @@
     <SelfContained>false</SelfContained>
     <AssemblyName>MOHABPlusLauncher</AssemblyName>
     <RootNamespace>MOHABPlus</RootNamespace>
-    <Version>0.1.0</Version>
+    <!-- Single source of truth for the mod version: the VERSION file at the repository root (x.y.z). -->
+    <Version>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\VERSION').Trim())</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Product>MOHAB Plus</Product>
+    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
     <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
     <ApplicationVisualStyles>true</ApplicationVisualStyles>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\banner.jpg" LogicalName="MOHABPlus.banner.jpg" />
+    <EmbeddedResource Include="Resources\logo.png" LogicalName="MOHABPlus.logo.png" />
+    <EmbeddedResource Include="Resources\app.ico" LogicalName="MOHABPlus.app.ico" />
+    <!-- Player-facing feature list shown in the FEATURES tab (single source: FEATURES.md at the repo root). -->
+    <EmbeddedResource Include="..\FEATURES.md" LogicalName="MOHABPlus.FEATURES.md" Link="Resources\FEATURES.md" />
+  </ItemGroup>
 
 </Project>

@@ -1,42 +1,69 @@
-# MOHAB Plus
+<p align="center">
+  <img src="launcher/Resources/banner.jpg" alt="Medal of Honor: Above and Beyond" width="100%">
+</p>
 
-Mod de mejoras para **Medal of Honor: Above and Beyond** (versión Oculus/Meta, Unreal Engine 4.25.3).
+# MOHAB Plus — by Harlock
 
-Es un **lanzador** que inyecta [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS) (v4.0.0) en el juego y carga un mod en Lua.
-**No modifica ningún archivo del juego**: si arrancas el juego sin el lanzador, funciona como siempre.
+Gameplay enhancement mod for **Medal of Honor: Above and Beyond** (Oculus/Meta version, Unreal Engine 4.25.3).
 
-## Mejoras
+It is a **launcher** that injects [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS) (v4.0.0) into the game and loads a Lua mod.
+**It does not modify any game file**: if you start the game without the launcher, it works exactly as before.
 
-| Mejora | Qué hace | Por defecto |
+## Disclaimer
+
+MOHAB Plus is a personal, non-commercial fan project made by Harlock.
+
+I have used artificial intelligence (AI) tools to make this mod: much of the research and code was done together with an
+AI assistant.
+
+My purpose is purely practical: to play Medal of Honor: Above and Beyond in a way that I personally find smoother and
+more fun, and to share it with anyone who feels the same.
+
+This mod has nothing to do with **Respawn Entertainment**, the studio that created the game, nor with Electronic Arts or
+Meta. It is not affiliated with, endorsed or supported by them, so please do not contact them about problems with the
+mod. Medal of Honor and the game's artwork and trademarks belong to their respective owners. The mod does not modify any
+game file. Use it at your own risk.
+
+## Features
+
+Short, player-facing list: [FEATURES.md](FEATURES.md) (also shown in the launcher's **Features** tab). Details and defaults:
+
+| Feature | What it does | Default |
 |---|---|---|
-| Jeringuillas con gatillo | La jeringuilla solo se inyecta si, además de acercarla al pecho, aprietas el **gatillo de la mano que la sostiene** (umbral configurable). | Activada |
-| Jeringuillas pequeñas en la manga | Todas las jeringuillas guardadas en la manga se dibujan a escala 0.5 (configurable). Al cogerlas recuperan su tamaño real antes de llegar a la mano. | Activada |
-| Distancia para coger de la manga | Reduce la distancia a la que la otra mano puede coger una jeringuilla (u otro objeto) de la manga, para no cogerlas sin querer. Factor sobre la distancia original del juego (30 cm). | x0.5 (15 cm) |
-| Vibración al recibir daño | Los dos mandos vibran al perder vida. La intensidad y la duración crecen con el daño. Opcionalmente, vibra más fuerte el mando del lado del impacto. | Activada |
-| Agacharse con el stick de giro | Stick de giro **abajo** = agacharse; **arriba** = levantarse. Te mueves agachado (con la velocidad de agachado del juego). Al hacer sprint te levantas. | Activada |
-| Sprint con los brazos | Modo `Arm swing`: corres al mover el stick **y** balancear los brazos como al correr, sin pulsar el stick. Es **progresivo**: cuanto más rápido mueves los brazos, más rápido corres (de la velocidad de andar al sprint máximo). Al dejar de balancearlos vuelves a andar en el acto. Modo `Click + arms`: funcionan las dos formas. | `Stick click` (como el original) |
-| Velocidad de sprint | Multiplicador del sprint máximo del juego, de x1.0 a x1.5. También vale para el sprint con clic. | x1.5 |
-| Deslizamiento | Si te agachas (stick de giro abajo) mientras esprintas, haces un deslizamiento en la dirección en que corrías. Empieza algo más rápido que tu velocidad y frena hasta la velocidad de agachado, así que es más largo cuanto más rápido corrías. Terminas agachado. Suena un arrastre (`Body`, `Wood scrape`, `Metal scrape` u `Off`). Necesita *Crouch with turn stick* activado. | Activado, longitud x1.0, sonido `Body` |
-| Saltar cinemáticas | **Mantén los dos gatillos y los dos grips 1 s.** Si la escena la marca el juego como saltable, usa el salto del propio juego. Si no, y estás bloqueado en una escena, salta las secuencias que se estén reproduciendo hasta su final. Vibra al saltar. | Activado |
+| Trigger-activated syringes | A syringe is only injected if, besides bringing it to your chest, you pull the **trigger of the hand holding it** (configurable threshold). | On |
+| Smaller syringes on the sleeve | Every syringe stored on the sleeve is drawn at 0.5 scale (configurable). They get their real size back when grabbed, before reaching your hand. | On |
+| Sleeve grab distance | Reduces how far the other hand can grab a syringe (or other item) from the sleeve, so you don't grab them by accident. Factor over the game's original distance (30 cm). | x0.25 |
+| Two-handed weapon grip reach | The free hand only grabs the second grip of a two-handed weapon when it is really close to it (the game stretches the grab area up to 2 m forward). | 15 cm |
+| No holster grabs over the head | While a hand is over your head (e.g. grabbing a helmet or hat), it does not grab the weapons holstered on your back. Hands at shoulder level still grab them. | 30 cm |
+| Haptics on damage | Both controllers vibrate when you lose health. Intensity and duration grow with the damage. Optionally, the controller on the side of the hit vibrates harder. | On |
+| Haptics on weapon handling | Vibration when inserting magazines, clips, shells or bullets, and when opening/closing break-action shotguns. | On |
+| Crouch with the turn stick | Turn stick **down** = crouch; **up** = stand up. You move crouched (at the game's crouch speed). Sprinting stands you up. | On |
+| Arm-swing sprint | `arms` mode: you run by moving the stick **and** swinging your arms like when running, without clicking the stick. It is **progressive**: the faster you swing, the faster you run (from walking speed up to maximum sprint). Stop swinging and you walk again immediately. `both` mode: both ways work. `stick` mode: like the original game. | `both` |
+| Sprint speed | Multiplier of the game's maximum sprint speed, from x1.0 to x1.5. Also applies to stick-click sprint. | x1.5 |
+| Slide | Crouching while sprinting (with the turn stick or physically) makes you slide in the direction you were running. It starts a bit faster than your speed and slows down to crouch speed, so it is longer the faster you were running. You end up crouched. A scraping sound plays (`body`, `wood`, `metal` or `off`). | On, length x1.5, sound `body` |
+| Skip cutscenes | **Hold both triggers and both grips for 1 s.** If the game marks the scene as skippable, the game's own skip is used. Otherwise, if you are locked in a scene, the sequences playing are skipped to their end. In dialogue scenes (NPC skits) the action is fast-forwarded (x12 by default) until the dialogue ends. Vibrates when skipping. | On |
 
-## Requisitos
+## Requirements
 
-* Windows 10/11 x64 y el juego instalado desde la tienda de Oculus/Meta.
-* [.NET 8 Desktop Runtime x64](https://dotnet.microsoft.com/download/dotnet/8.0) (para el lanzador).
-* Funciona con Virtual Desktop y con Oculus Link/Air Link.
+* Windows 10/11 x64 and the game installed from the Oculus/Meta store.
+* [.NET 8 Desktop Runtime x64](https://dotnet.microsoft.com/download/dotnet/8.0) (for the launcher).
+* Works with Virtual Desktop and with Meta Quest Link / Air Link.
 
-## Uso
+## Installation and usage
 
-1. Copia la carpeta `MOHABPlus` donde quieras. No hace falta que esté dentro del juego.
-2. Abre `MOHABPlusLauncher.exe`. Detecta la carpeta del juego solo; si no, usa **Browse...**.
-3. Tienes dos formas de jugar:
-   * **Desde Virtual Desktop / Oculus (recomendado con VD)**: deja el lanzador abierto (o minimizado: se va a la bandeja) con la casilla
-     *"Load the mod automatically..."* marcada. Lanza el juego como siempre desde VD. Unos 5 s después de que aparezca la
-     ventana del juego, el mod se carga solo.
-   * **Botón "Launch game with MOHAB Plus"**: arranca el juego directamente (igual que hace VD) y carga el mod.
-4. La pestaña **Mod settings** del lanzador tiene las mismas opciones que el menú del juego.
+1. Download `MOHABPlus-vX.Y.Z.zip` from the [Releases page](https://github.com/HarlockBcn/MOHAB-VR-Mod/releases) and extract
+   the `MOHABPlus` folder anywhere. It does not need to be inside the game folder.
+2. Open `MOHABPlusLauncher.exe`. It finds the game folder by itself; if not, use **Browse...**.
+3. There are two ways to play:
+   * **From Virtual Desktop or Meta Quest Link / Air Link (recommended)**: keep the launcher open (or minimised: it goes to the system
+     tray) with *"Load the mod automatically..."* ticked. Start the game as usual from Virtual Desktop or the Meta app. About 5 s after the game window
+     appears, the mod loads by itself.
+   * **"Launch game with MOHAB Plus" button**: starts the game directly (the same way VD does) and loads the mod.
+4. The **Mod settings** tab of the launcher has the same options as the in-game menu.
 
-Líneas de comandos (sin ventana; escriben en `launcher.log`):
+The installed version is always shown in the launcher (top-right corner, title bar and footer).
+
+Command lines (no window; they write to `launcher.log`):
 
 ```powershell
 .\MOHABPlusLauncher.exe --launch
@@ -45,79 +72,106 @@ Líneas de comandos (sin ventana; escriben en `launcher.log`):
 .\MOHABPlusLauncher.exe --watch
 ```
 
-## Menú dentro del juego
+## Updates
 
-* **Mantén pulsado el botón Y (mando izquierdo) 0.8 s** para abrirlo o cerrarlo. En el juego original ese botón no hace nada.
-* Aparece un panel de texto flotando delante de ti. Mientras está abierto no te mueves ni disparas.
-* **Stick arriba/abajo**: elegir opción. **Stick izquierda/derecha**: cambiar valor.
-* **A** o **gatillo**: activar/desactivar. **B**: cerrar.
-* Los cambios se guardan en `ue4ss\Mods\MOHABPlus\config.ini` al cerrar el menú.
+When the launcher starts (and whenever you click the update status next to the tabs) it checks this GitHub repository
+for a newer release. If there is one, a bar shows the new version number with:
 
-## Cómo funciona (resumen técnico)
+* **What's new**: the release notes.
+* **Update to vX.Y.Z**: downloads the release zip, replaces the mod files and restarts the launcher. Your settings
+  (`launcher.ini` and `ue4ss\Mods\MOHABPlus\config.ini`) are kept. Close the game first.
 
-* **Jeringuillas**: `BP_HealthSyringe` se inyecta cuando su componente `Box` empieza a solapar el pecho del jugador
-  (`Mesh_Chest`). El Blueprint activa los eventos de solape del `Box` 0.05 s después de cogerla (`SyringeOverlapOn`).
-  El mod los vuelve a apagar al instante y solo los enciende mientras aprietas el gatillo de esa mano.
-  Al pulsar el gatillo se fuerza una comprobación del solape (si no, el juego esperaba a que la caja se moviera), y la caja
-  sigue activa 0.4 s después de soltarlo. Además, como el Blueprint solo inyecta si el *último* evento de solape fue con
-  `Mesh_Chest` (y al encender la caja tocando varias partes del cuerpo el orden es aleatorio), mientras aprietas el gatillo
-  el mod comprueba él mismo `Box.IsOverlappingComponent(Mesh_Chest)` y llama a la inyección del juego (`SyringeUsed`).
-  La distancia para coger de la manga es `SlotToDistanceSquaredLeewayMap[6/7]` del jugador (distancia², 900 = 30 cm),
-  que el mod multiplica por el factor².
-  El juego oculta jeringuillas de reserva con escala 0, así que el mod solo deshace la escala que ha puesto él.
-  Una jeringuilla está "en la manga" si está enganchada (directa o indirectamente) a los puños, las manos o el jugador.
-  Se escalan con `SetActorScale3D`. Al cogerla, el juego (`BP_MotionController:AttachObjectToHand`) lee su escala y
-  luego engancha la mano a ella: por eso la escala vuelve a 1 en un pre-hook de `Actor:GetActorRelativeScale3D`, antes de
-  ese enganche. Una jeringuilla agarrada nunca se reescala (si no, la mano cambiaría de tamaño).
-* **Vibración**: el mod vigila la vida del `VRPlayerCharacterHealthAndDamageComponent` y usa
-  `PlayerController:SetHapticsByValue`. La dirección del impacto sale de `HandleDamageLocationIndicator`.
-* **Agacharse**: en modo de pie (`IsStandingMode`, lo normal) el juego no tiene agacharse por botón: deduce que estás
-  agachado por la altura real de la cabeza (≤ 120 cm). El mod baja el `VROrigin` unos 60 cm con una transición suave
-  (más si eres alto, para quedar por debajo de 120 cm; nunca a menos de 70 cm del suelo). Así el propio juego te trata
-  como agachado: cápsula, visibilidad para la IA y velocidad. En modo sentado usa el agacharse del juego (`UserToggleVRCrouch`).
-* **Sprint**: `BP_R6PlayerController.TickInput` fija `CharacterMovement.MaxWalkSpeed` en cada frame. El mod se ejecuta justo
-  después (post-hook). Con el gesto pone `IsSprinting` y la velocidad entre andar (`MoveSpeedData.MaxWalkSpeed`) y
-  `MaxSprintSpeed × multiplicador`, según la rapidez del balanceo. Al parar el gesto, al morir o al cambiar de pawn
-  borra el estado de sprint. Nota: en modo `Stick click` el sprint se comporta como en el juego original (dura hasta que
-  sueltas el stick, también al desplazarte de lado).
-  El gesto se detecta con la velocidad de cada mano respecto a la cabeza (componentes adelante/arriba): manos moviéndose en
-  sentidos opuestos, con media suavizada e histéresis.
-* **Deslizamiento**: al agacharse con `IsSprinting` activo y velocidad real > 1.15 × andar, fija la velocidad inicial
-  (velocidad actual × 1.25) y en cada frame, tras `TickInput`, baja `MaxWalkSpeed` a 650 cm/s² (÷ longitud) y añade
-  movimiento en esa dirección. Termina al llegar a la velocidad de agachado, al chocar o al caer. El sonido es un evento
-  Wwise: el mod carga su banco (`RequiredBank`) con `AkGameplayStatics.LoadBanks` y lo lanza con `PostEventAttached`; los
-  sonidos en bucle se paran con su evento `Stop_`. Después, el balanceo de brazos tiene que pararse una vez antes de
-  poder levantarte de nuevo.
-* **Saltar cinemáticas**: el juego ya tiene un salto para algunas escenas (`BP_R6GameModeBase.bInSkippableScene`,
-  `TimerExpired_SceneSkip` → `CutsceneSkipped` en el nivel). Fuera de esas, solo con el jugador bloqueado
-  (`bFootlocked`/`bGamelocked`), llama a `GoToEndAndStop` en los `LevelSequencePlayer` que se estén reproduciendo y no
-  estén en bucle.
+Without an internet connection the launcher works as usual. You can also update offline with a downloaded zip:
 
-## Solución de problemas
-
-* **Opciones**: la pestaña *Mod settings* del lanzador se recarga sola cuando cambias algo en el menú del juego.
-* **Log**: `ue4ss\UE4SS.log` (botón *Open UE4SS log*). Las líneas del mod empiezan por `[MOHABPlus]`. Al cargar un nivel deberías
-  ver `player found` y cinco `hooked ...`.
-* **Más detalle**: activa *Verbose logging* (o `debug_log=true` en `config.ini`). Con esa opción activa al arrancar el juego,
-  también se habilita un canal de pruebas: escribe un comando en `ue4ss\Mods\MOHABPlus\cmd.txt`
-  (`status`, `menu`, `crouch`, `stand`, `haptic`, `damage`, `set <clave> <valor>`...; lista completa en `Scripts\devtools.lua`).
-* **El juego se cierra al cargar el mod**: el lanzador espera a que exista la ventana del juego antes de inyectar. Inyectar
-  en el arranque del proceso hace que el juego se cierre.
-
-## Estructura del proyecto (desarrollo)
-
-```
-launcher/                 Lanzador/inyector (.NET 8 WinForms)
-mod/ue4ss/                Contenido que acompaña a UE4SS.dll (settings, mods.txt, mods Lua)
-  Mods/MOHABPlus/Scripts  main, config, util, syringe, haptics, crouch, sprint, menu, devtools
-  Mods/MOHABDump          Volcado de clases (solo con build -Dev)
-third_party/UE4SS         Release oficial UE4SS v4.0.0 (sin modificar)
-tools/                    pak_list.py, pak_extract.py, uasset_info.py, kismet_dis.py (desensamblador de Blueprints)
-research/                 Volcado de clases/headers del juego generado con UE4SS
-build.ps1                 Genera dist\MOHABPlus
+```powershell
+.\MOHABPlusLauncher.exe --install-zip C:\Downloads\MOHABPlus-v1.2.0.zip
 ```
 
-Compilar (la primera vez, descarga UE4SS en `third_party\UE4SS`; no está en el repositorio):
+## In-game menu
+
+* **Hold the Y button (left controller) for 1 s** to open or close it. In the original game that button does nothing.
+* A text panel floats in front of you. While it is open you do not move or shoot.
+* **Stick up/down**: select an option. **Stick left/right**: change its value.
+* **A** or **trigger**: toggle. **B**: close.
+* Changes are saved to `ue4ss\Mods\MOHABPlus\config.ini` when the menu closes.
+
+## How it works (technical summary)
+
+* **Syringes**: `BP_HealthSyringe` is injected when its `Box` component starts overlapping the player's chest
+  (`Mesh_Chest`). The Blueprint enables the `Box` overlap events 0.05 s after grabbing it (`SyringeOverlapOn`).
+  The mod turns them off again right away and only enables them while you pull the trigger of that hand.
+  Pulling the trigger forces an overlap check (otherwise the game waited for the box to move), and the box stays active
+  0.4 s after releasing it. Also, since the Blueprint only injects if the *last* overlap event was with `Mesh_Chest` (and
+  when the box is enabled while touching several body parts the order is random), while you pull the trigger the mod
+  checks `Box.IsOverlappingComponent(Mesh_Chest)` itself and calls the game's injection (`SyringeUsed`).
+  The sleeve grab distance is the player's `SlotToDistanceSquaredLeewayMap[6/7]` (squared distance, 900 = 30 cm), which
+  the mod multiplies by the factor².
+  The game hides spare syringes with scale 0, so the mod only undoes the scale it applied itself.
+  A syringe is "on the sleeve" if it is attached (directly or indirectly) to the cuffs, the hands or the player.
+  They are scaled with `SetActorScale3D`. When grabbed, the game (`BP_MotionController:AttachObjectToHand`) reads its scale
+  and then attaches the hand to it: that is why the scale goes back to 1 in a pre-hook of `Actor:GetActorRelativeScale3D`,
+  before that attachment. A held syringe is never rescaled (otherwise the hand would change size).
+* **Weapon grip reach**: `BP_MotionController:UpdateGrabCapsule` stretches the hand's grab capsule forward every frame.
+  While the other hand holds a weapon, the mod pre-hooks the capsule's `K2_SetRelativeLocation`/`SetCapsuleHalfHeight` near
+  that weapon and disables the overlap events of the grip colliders while the free hand is farther than the configured
+  reach. If a second grip comes loose from its weapon, the mod reattaches it.
+* **Holsters over the head**: `GetNearestHolsterSlot` uses `SlotToDistanceSquaredLeewayMap` (indices 0-5 = holsters,
+  6-7 = sleeves). While a hand is over the head and near its axis, the mod zeroes the holster leeways.
+* **Haptics**: the mod watches the health of `VRPlayerCharacterHealthAndDamageComponent` and uses
+  `PlayerController:SetHapticsByValue`. The hit direction comes from `HandleDamageLocationIndicator`. Weapon haptics hook
+  the weapons' load functions (`LoadMag`, `LoadAnotherShell`, `LoadAmmo`) and the sawed-off's barrel open/close animations.
+* **Crouch**: in standing mode (`IsStandingMode`, the normal one) the game has no button crouch: it infers that you are
+  crouched from your real head height (≤ 120 cm). The mod lowers the `VROrigin` by about 60 cm with a smooth transition
+  (more if you are tall, to get below 120 cm; never closer than 70 cm to the floor). So the game itself treats you as
+  crouched: capsule, AI visibility and speed. In seated mode it uses the game's crouch (`UserToggleVRCrouch`).
+* **Sprint**: `BP_R6PlayerController.TickInput` sets `CharacterMovement.MaxWalkSpeed` every frame. The mod runs right
+  after it (post-hook). With the gesture it sets `IsSprinting` and a speed between walking (`MoveSpeedData.MaxWalkSpeed`)
+  and `MaxSprintSpeed × multiplier`, depending on how fast you swing. When the gesture stops, on death or on pawn change
+  it clears the sprint state.
+  The gesture is detected from the velocity of each hand relative to the head (forward/up components): hands moving in
+  opposite directions, with a smoothed average and hysteresis.
+* **Slide**: when crouching with `IsSprinting` active and real speed > 1.15 × walking, it sets the initial speed
+  (current speed × 1.25) and every frame, after `TickInput`, lowers `MaxWalkSpeed` at 650 cm/s² (÷ length) and adds
+  movement in that direction. It ends on reaching crouch speed, on a collision or when falling. The sound is a Wwise
+  event: the mod loads its bank (`RequiredBank`) with `AkGameplayStatics.LoadBanks` and plays it with `PostEventAttached`;
+  looping sounds are stopped with their `Stop_` event. Afterwards, the arm swing has to stop once before you can stand up
+  again.
+* **Skip cutscenes**: the game already has a skip for some scenes (`BP_R6GameModeBase.bInSkippableScene`,
+  `TimerExpired_SceneSkip` → `CutsceneSkipped` in the level). Outside those, and only while the player is locked
+  (`bFootlocked`/`bGamelocked`), it calls `GoToEndAndStop` on the `LevelSequencePlayer`s that are playing and not looping.
+  Dialogue skits advance on timers, so they are fast-forwarded with `SetGlobalTimeDilation` while they play.
+
+## Troubleshooting
+
+* **Settings**: the launcher's *Mod settings* tab reloads by itself when you change something in the in-game menu.
+* **Log**: `ue4ss\UE4SS.log` (*Open UE4SS log* button). The mod's lines start with `[MOHABPlus]`. When a level loads you
+  should see `player found` and several `hooked ...` lines.
+* **More detail**: enable *Verbose logging* (or `debug_log=true` in `config.ini`). With that option on when the game
+  starts, a test channel is also enabled: write a command in `ue4ss\Mods\MOHABPlus\cmd.txt`
+  (`status`, `menu`, `crouch`, `stand`, `haptic`, `damage`, `set <key> <value>`...; full list in `Scripts\devtools.lua`).
+* **The game closes when the mod loads**: the launcher waits for the game window to exist before injecting. Injecting
+  at process start makes the game close.
+* **The update fails**: close the game and try again, or download the zip from the Releases page and use `--install-zip`
+  (or extract it over your current folder).
+
+## Project structure (development)
+
+```
+launcher/                 Launcher/injector/updater (.NET 8 WinForms)
+  Resources/              Banner, logo and icon (game artwork)
+mod/ue4ss/                Content shipped next to UE4SS.dll (settings, mods.txt, Lua mods)
+  Mods/MOHABPlus/Scripts  main, config, util, syringe, weapongrip, holster, haptics, crouch, sprint, slide, cutscene, menu, devtools
+  Mods/MOHABDump          Class dump (only with build -Dev)
+third_party/UE4SS         Official UE4SS v4.0.0 release (unmodified)
+tools/                    release.ps1, get-ue4ss.ps1, pak_list.py, pak_extract.py, uasset_info.py, kismet_dis.py (Blueprint disassembler)
+research/                 Game class/header dump generated with UE4SS
+VERSION                   Mod version (MAJOR.MINOR.PATCH), the single source used by the launcher
+CHANGELOG.md              Release history
+FEATURES.md               Player-facing feature/fix list, embedded in the launcher's Features tab
+build.ps1                 Builds dist\MOHABPlus
+```
+
+Build (the first time, download UE4SS into `third_party\UE4SS`; it is not in the repository):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\get-ue4ss.ps1
@@ -126,7 +180,28 @@ powershell -ExecutionPolicy Bypass -File .\tools\get-ue4ss.ps1
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-## Licencias
+### Releases
 
-UE4SS se distribuye bajo su propia licencia (`ue4ss\UE4SS-LICENSE.txt`). Medal of Honor: Above and Beyond pertenece a
-Electronic Arts / Respawn. Este mod no incluye ningún contenido del juego.
+Versions follow `MAJOR.MINOR.PATCH` and are tagged `vMAJOR.MINOR.PATCH`. To prepare one (clean working tree, launcher
+and game closed):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\release.ps1 -Version 1.2.0 -Draft
+```
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\release.ps1 -Version 1.2.0 -Notes .\dist\release\CHANGELOG-DRAFT-v1.2.0.md
+```
+
+The first command writes a changelog draft from the commits since the last tag; edit it and pass it with `-Notes`. It
+warns if there are `feat`/`fix` commits but `FEATURES.md` was not updated. The
+second one bumps `VERSION`, adds the section to `CHANGELOG.md`, builds, writes `dist\release\MOHABPlus-v1.2.0.zip` and
+`dist\release\RELEASE-NOTES-v1.2.0.md`, commits and creates the tag. Then push (`git push origin main --follow-tags`) and
+create the GitHub release for the tag with the zip as its binary and the notes as its description. The launcher's update
+check uses the latest published (non-prerelease) GitHub release.
+
+## Licenses
+
+UE4SS is distributed under its own license (`ue4ss\UE4SS-LICENSE.txt`). Medal of Honor: Above and Beyond belongs to
+Electronic Arts / Respawn. The launcher's banner, logo and icon use official artwork of the game, © Electronic Arts;
+this is a non-commercial fan project, not affiliated with or endorsed by them. The mod does not include any other game
+content.

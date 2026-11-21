@@ -10,6 +10,8 @@ internal static class Program
     ///   --launch           start the game with the mod and exit (no window)
     ///   --watch            stay in the background and inject when the game starts (no window)
     ///   --inject PID       inject into a running game process and exit
+    ///   --install-zip ZIP  install a downloaded release zip over this folder (offline update; settings are kept)
+    ///   --updated X.Y.Z    (internal) open the window after a self-update
     /// Headless modes write to launcher.log next to the exe.
     /// </summary>
     [STAThread]
@@ -18,13 +20,47 @@ internal static class Program
         string baseDir = AppContext.BaseDirectory;
         var settings = LauncherSettings.Load(baseDir);
 
-        if (args.Length > 0)
+        bool justUpdated = args.Length > 0 && args[0].Equals("--updated", StringComparison.OrdinalIgnoreCase);
+        if (args.Length > 0 && !justUpdated)
             return RunHeadless(args, baseDir, settings);
 
+        // Leftovers of a previous self-update. Right after an update the old launcher may still be closing.
+        if (justUpdated) Task.Delay(4000).ContinueWith(_ => Updater.CleanupOldFiles(baseDir));
+        else Updater.CleanupOldFiles(baseDir);
+
+        // One launcher window per user: starting it again shows the running one (it may be hidden in the tray)
+        // instead of opening a second copy that would also watch and inject.
+        using var mutex = new Mutex(true, SingleInstanceName, out bool first);
+        if (!first)
+        {
+            // After a self-update the old launcher is still closing: wait for it instead of handing over.
+            bool acquired = false;
+            if (justUpdated) { try { acquired = mutex.WaitOne(15000); } catch (AbandonedMutexException) { acquired = true; } }
+            if (!acquired)
+            {
+                try { using var show = EventWaitHandle.OpenExisting(ShowEventName); show.Set(); } catch { /* old version without the event */ }
+                return 0;
+            }
+        }
+        using var showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
+
         ApplicationConfiguration.Initialize();
-        Application.Run(new MainForm(baseDir, settings));
+        var form = new MainForm(baseDir, settings, justUpdated);
+        var listener = new Thread(() =>
+        {
+            while (showEvent.WaitOne())
+            {
+                if (form.IsDisposed) return;
+                try { form.BeginInvoke(form.RestoreFromTray); } catch (InvalidOperationException) { return; }
+            }
+        }) { IsBackground = true, Name = "single-instance" };
+        listener.Start();
+        Application.Run(form);
         return 0;
     }
+
+    private const string SingleInstanceName = @"Local\MOHABPlusLauncher.SingleInstance";
+    private const string ShowEventName = @"Local\MOHABPlusLauncher.Show";
 
     private static int RunHeadless(string[] args, string baseDir, LauncherSettings settings)
     {
@@ -49,6 +85,16 @@ internal static class Program
                     return 0;
                 }
                 catch (Exception ex) { Log("Injection failed: " + ex.Message); return 1; }
+            case "--install-zip":
+                if (args.Length < 2 || !File.Exists(args[1])) { Log("usage: --install-zip PATH_TO_ZIP"); return 2; }
+                if (ModInjectorService.FindGameProcesses().Length > 0) { Log("Close the game before updating."); return 1; }
+                try
+                {
+                    Updater.InstallFromZip(args[1], baseDir, new Progress<string>(Log));
+                    Log("Installed " + args[1]);
+                    return 0;
+                }
+                catch (Exception ex) { Log("Install failed: " + ex.Message); return 1; }
             case "--watch":
                 svc.StartWatching();
                 Thread.Sleep(Timeout.Infinite);

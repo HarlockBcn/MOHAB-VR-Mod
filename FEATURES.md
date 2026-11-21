@@ -1,0 +1,52 @@
+# MOHAB Plus features
+
+<!--
+  Player-facing list shown in the launcher's FEATURES tab (embedded at build time) and linked from the README.
+  Keep it short and non-technical. Update it in the same commit as any feat/fix that players notice.
+  Format: "## Group" (Features / Fixes), "### Category", "- **Title** - one or two sentences."
+-->
+
+## Features
+
+### Syringes
+- **Trigger to inject** - A syringe only injects when you bring it to your chest *and* pull the trigger of the hand holding it.
+- **Smaller syringes on the sleeve** - Stored syringes look smaller on your sleeve and get their normal size back when you grab them.
+- **Shorter sleeve grab distance** - Your hand has to be closer to the sleeve to take a syringe, so you don't grab them by accident.
+
+### Weapons
+- **Precise two-handed grip** - Your free hand only grabs the front grip of a weapon when it is really close to it.
+- **Helmet-safe back holsters** - Reaching over your head (to touch your helmet or hat) no longer pulls a weapon from your back.
+
+### Movement
+- **Crouch with the turn stick** - Push the turn stick down to crouch and up to stand.
+- **Arm-swing sprint** - Swing your arms like a runner to sprint; the faster you swing, the faster you run. Stick-click sprint still works.
+- **Faster sprint** - Raise the maximum sprint speed up to x1.5.
+- **Slide** - Crouch while sprinting (with the stick or for real) to slide, with a scraping sound.
+
+### Haptics
+- **Damage vibration** - The controllers vibrate when you get hurt, stronger for big hits and on the side of the impact.
+- **Weapon handling vibration** - Feel magazines, clips, shells and bullets going in, and break-action shotguns opening and closing.
+
+### Cutscenes
+- **Skip cutscenes** - Hold both triggers and both grips for a second to skip a cutscene.
+- **Fast-forward dialogue** - The same gesture speeds through dialogue scenes where you just stand and wait.
+
+### Launcher and menu
+- **In-game settings menu** - Hold the left Y button to change every option without leaving VR.
+- **Auto-load from Virtual Desktop / Oculus** - Start the game as usual; the launcher loads the mod by itself.
+- **Automatic updates** - The launcher tells you when a new version is out and installs it with one click.
+- **No game files modified** - Start the game without the launcher and it is exactly the original.
+
+## Fixes
+
+### Weapons
+- **Front grips grabbed from far away** - The game let your free hand grab a weapon's front grip from up to two metres away.
+- **Loose front grips** - If a weapon's front grip comes loose and falls, it is put back so you can keep using both hands.
+- **Weapons pulled instead of your helmet** - Grabbing near your head took a weapon from the back holster first.
+
+### Syringes
+- **Accidental sleeve grabs** - Syringes were easy to grab by mistake when your hands passed near your sleeve.
+- **Accidental injections** - Syringes no longer inject just because they touch your chest while you move them around.
+
+### Cutscenes
+- **Unskippable scenes** - Many scenes and dialogues the game did not let you skip can now be skipped or sped up.

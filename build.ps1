@@ -8,7 +8,7 @@ $dist = Join-Path $root 'dist\MOHABPlus'
 
 # A running launcher locks its DLL: the clean-up would stop halfway and lose launcher.ini / config.ini.
 if (Get-Process -Name 'MOHABPlusLauncher', 'Mohab-Win64-Shipping' -ErrorAction SilentlyContinue) {
-    throw 'Close MOHAB Plus launcher and the game before building.'
+    throw 'Close MOHAB Plus launcher and the game before building (the launcher may be hidden in the system tray: right-click its icon > Exit).'
 }
 
 # Keep user data (configs, logs) of an existing dist folder.
@@ -39,6 +39,12 @@ New-Item -ItemType Directory -Force $ue4ss | Out-Null
 Copy-Item (Join-Path $root 'third_party\UE4SS\ue4ss\UE4SS.dll') $ue4ss -Force
 Copy-Item (Join-Path $root 'third_party\UE4SS\ue4ss\LICENSE') (Join-Path $ue4ss 'UE4SS-LICENSE.txt') -Force
 Copy-Item (Join-Path $root 'mod\ue4ss\*') $ue4ss -Recurse -Force
+
+# Stamp the mod version (VERSION file, also used by the launcher) into the Lua mod.
+$version = (Get-Content (Join-Path $root 'VERSION') -Raw).Trim()
+$mainLua = Join-Path $ue4ss 'Mods\MOHABPlus\Scripts\main.lua'
+$lua = [IO.File]::ReadAllText($mainLua) -replace 'local VERSION = "[^"]*"', "local VERSION = `"$version`""
+[IO.File]::WriteAllText($mainLua, $lua, (New-Object System.Text.UTF8Encoding $false))
 
 if ($Dev) {
     (Get-Content (Join-Path $ue4ss 'Mods\mods.txt')) -replace 'MOHABDump : 0', 'MOHABDump : 1' |

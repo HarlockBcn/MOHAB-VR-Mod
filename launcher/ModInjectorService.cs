@@ -75,7 +75,7 @@ internal sealed class ModInjectorService : IDisposable
     public void StartWatching()
     {
         if (_watchTimer != null) return;
-        Say("Waiting for the game to start (launch it from Virtual Desktop / Oculus)...");
+        Say("Waiting for the game to start (start it from Virtual Desktop or Meta Quest Link)...");
         _watchTimer = new System.Threading.Timer(_ => WatchTick(), null, 0, 250);
     }
 
