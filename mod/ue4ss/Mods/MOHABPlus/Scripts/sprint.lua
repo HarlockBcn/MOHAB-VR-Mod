@@ -57,7 +57,9 @@ function M.updateGesture(pawn, now)
                 local anti = -(vlA * vrA + vlB * vrB) / (sl * sr)   -- 1 = hands move in opposite directions
                 if anti > 0.2 then score = math.min(sl, sr) * anti end
             end
-            local tau = 0.2
+            -- The raw score pulses with every swing (hands stop at the ends of each swing), so rise fast and fall
+            -- slowly: the energy follows the swing rhythm, not each individual swing.
+            local tau = score > energy and 0.1 or 0.7
             local a = 1 - math.exp(-dt / tau)
             energy = energy + (score - energy) * a
         elseif dt >= 0.25 then
@@ -67,7 +69,7 @@ function M.updateGesture(pawn, now)
     prev = cur
 
     local sens = U.clamp(C.get("sprint_arm_sensitivity"), 0.1, 5)
-    local onThr = 45 / sens       -- start sprinting
+    local onThr = 38 / sens       -- start sprinting
     local offThr = 30 / sens      -- stop sprinting
     local fullThr = 140 / sens    -- full speed
     if energy >= onThr then
@@ -75,7 +77,7 @@ function M.updateGesture(pawn, now)
         lastAbove = now
     elseif energy >= offThr then
         if active then lastAbove = now end
-    elseif active and now - lastAbove > 0.15 then
+    elseif active and now - lastAbove > 0.45 then
         active = false
     end
     M.gestureActive = active
@@ -87,6 +89,18 @@ local gameSpeeds = U.gameSpeeds
 M.gameSpeeds = gameSpeeds
 
 local smoothSpeed = nil
+
+-- Moves the speed towards the target with limited acceleration plus easing, so it never jumps.
+local ACCEL, DECEL = 260, 380      -- cm/s^2
+function M.glide(cur, target, dt)
+    dt = dt or 0.016
+    local a = 1 - math.exp(-dt / 0.3)
+    local want = cur + (target - cur) * a
+    local maxUp, maxDown = ACCEL * dt, DECEL * dt
+    if want > cur + maxUp then want = cur + maxUp end
+    if want < cur - maxDown then want = cur - maxDown end
+    return want
+end
 local lastSeen = nil      -- pawn seen last frame (detects respawn / new pawn)
 
 -- Post-hook of BP_R6PlayerController_C:TickInput (runs every frame right after the game set MaxWalkSpeed).
@@ -133,16 +147,26 @@ function M.afterTickInput(ctrl, pawn, dt)
                 isSprinting = true
             end
             startedByUs = true
-            -- Progressive: the faster the arms swing, the closer to the maximum sprint speed.
+            -- Progressive: the swing rhythm sets the top speed; the speed glides towards it (no jumps per swing).
             local target = (walk + (sprint * mult - walk) * M.intensity) * stick
-            local a = 1 - math.exp(-(dt or 0.016) / 0.15)
-            smoothSpeed = smoothSpeed and (smoothSpeed + (target - smoothSpeed) * a) or math.max(target, walk * stick)
+            if not smoothSpeed then
+                local cur = U.get(cmc, "MaxWalkSpeed")
+                smoothSpeed = (type(cur) == "number" and cur > 0) and cur or walk * stick
+            end
+            smoothSpeed = M.glide(smoothSpeed, target, dt)
+            pcall(function() cmc.MaxWalkSpeed = smoothSpeed end)
+            M.lastSpeed = smoothSpeed
+            return
+        end
+        if startedByUs and moving and smoothSpeed and not disabled and not crouched and smoothSpeed > walk * stick + 5 then
+            -- Arms stopped: slow down smoothly to walking speed instead of braking at once.
+            smoothSpeed = M.glide(smoothSpeed, walk * stick, dt)
             pcall(function() cmc.MaxWalkSpeed = smoothSpeed end)
             M.lastSpeed = smoothSpeed
             return
         end
         if startedByUs or (mode == "arms" and isSprinting) then
-            -- Stop at once: back to walking speed this very frame (the game computed a sprint speed).
+            -- Stop: back to walking speed this very frame (the game computed a sprint speed).
             pcall(function() ctrl.IsSprinting = false end)
             pcall(function() cmc.MaxWalkSpeed = walk * stick end)
             isSprinting, startedByUs, smoothSpeed = false, false, nil

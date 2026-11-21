@@ -6,34 +6,37 @@ M.defaults = {
     syringe_trigger_threshold = 0.5,
     syringe_small_holstered = true,
     syringe_holster_scale = 0.5,
-    syringe_grab_distance = 0.5,
+    syringe_grab_distance = 0.25,
+
+    weapon_grip_reach = 15,       -- cm from the free hand to a weapon's off-hand grip
 
     haptics_damage = true,
     haptics_intensity = 1.0,
-    haptics_duration = 0.25,
+    haptics_duration = 0.35,
     haptics_directional = true,
 
     crouch_stick = true,
     crouch_stick_threshold = 0.7,
 
-    sprint_mode = "stick",          -- "stick" | "arms" | "both"
+    sprint_mode = "both",           -- "stick" | "arms" | "both"
     sprint_arm_sensitivity = 1.0,
     sprint_speed_multiplier = 1.5,
 
     slide_enabled = true,
-    slide_strength = 1.0,
+    slide_strength = 1.5,
     slide_sound = "body",           -- "body" | "wood" | "metal" | "off"
 
     skip_cutscenes = true,
     skip_hold_time = 1.0,
 
-    menu_hold_time = 0.8,
+    menu_hold_time = 1.0,
     debug_log = false,
 }
 
 -- Order + sections used when writing the file (keep in sync with the launcher).
 M.order = {
     { "Syringes", { "syringe_require_trigger", "syringe_trigger_threshold", "syringe_small_holstered", "syringe_holster_scale", "syringe_grab_distance" } },
+    { "Weapons", { "weapon_grip_reach" } },
     { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional" } },
     { "Crouch", { "crouch_stick", "crouch_stick_threshold" } },
     { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier" } },

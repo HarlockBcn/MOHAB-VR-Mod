@@ -21,6 +21,8 @@ local items = {
     { key = "syringe_small_holstered", label = "Smaller on the sleeve", kind = "bool" },
     { key = "syringe_holster_scale", label = "Sleeve scale", kind = "num", min = 0.25, max = 1.0, step = 0.05 },
     { key = "syringe_grab_distance", label = "Sleeve grab distance", kind = "num", min = 0.25, max = 1.0, step = 0.05, suffix = "x" },
+    { header = "WEAPONS" },
+    { key = "weapon_grip_reach", label = "Second hand grab distance", kind = "num", min = 5, max = 40, step = 1, digits = 0, suffix = " cm" },
     { header = "HAPTICS" },
     { key = "haptics_damage", label = "Vibrate on damage", kind = "bool" },
     { key = "haptics_intensity", label = "Intensity", kind = "num", min = 0.1, max = 1.0, step = 0.1, digits = 1 },

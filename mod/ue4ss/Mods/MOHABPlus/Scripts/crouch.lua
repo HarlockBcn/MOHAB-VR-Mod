@@ -19,6 +19,16 @@ local applied = 0           -- offset currently applied to VROrigin (cm, positiv
 local lastPawnAddr = nil
 local lastNow = nil
 local SPEED = 260           -- cm/s transition speed
+local lastSprintT = -100    -- last time the controller was sprinting (the game may clear it the frame we crouch)
+local physArmed = false     -- physical crouch: the head must be above the crouch height before a new slide
+local PHYS_EASE = 0.18      -- s to ease the view into the crouch height at the start of a physical slide
+local lastStandH = nil      -- standing head height (cm): follows the head up, decays slowly
+local lastStandT = nil
+local PHYS_DROP = 22        -- cm below the standing height that counts as a physical crouch while sprinting
+-- Slide started by a physical crouch: { head0 = head height at start, cam0 = camera tracking Z at start,
+-- targetHead = the head height the stick crouch would give }. While it lasts, the view is held at targetHead
+-- whatever the real head does; afterwards it goes back to the real height.
+M.physSlide = nil
 M.minHeadHeight = 70        -- never push the camera below this height above the floor (cm)
 
 -- In standing mode the game keeps VROrigin at Z = 0 (ConfigureCharacterHeight / ResetOrientation), so the
@@ -37,6 +47,24 @@ end
 local function originZ(pawn)
     local rel = U.get(U.get(pawn, "VROrigin"), "RelativeLocation")
     return rel and rel.Z or 0
+end
+
+-- Camera height from tracking only (relative to the VR origin): not affected by our offset or the capsule resize.
+local function camTrackZ(pawn)
+    local rel = U.get(U.get(pawn, "VRReplicatedCamera"), "RelativeLocation")
+    return rel and rel.Z or nil
+end
+
+-- Offset the stick crouch applies for a given real head height (cm, positive = down).
+local function crouchDepth(pawn, raw)
+    local dist = U.get(pawn, "CrouchDistance")
+    if type(dist) ~= "number" or dist <= 0 then dist = 60 end
+    local crouchH = U.get(pawn, "PlayerCrouchHeight")
+    if type(crouchH) ~= "number" then crouchH = 120 end
+    -- deep enough for the game to detect the crouch (<= PlayerCrouchHeight) even for tall players,
+    -- but never bring the eyes closer than minHeadHeight to the floor.
+    local fixed = math.max(dist, raw - (crouchH - 10))
+    return U.clamp(math.min(fixed, raw - M.minHeadHeight), 0, 150)
 end
 
 local function headHeight(pawn)
@@ -70,6 +98,7 @@ function M.toggle(pawn)
 end
 
 local function updateOffset(pawn, now)
+    -- (now is also used by the physical-slide ease)
     local dt = 0
     if lastNow then dt = U.clamp(now - lastNow, 0, 0.1) end
     lastNow = now
@@ -81,25 +110,30 @@ local function updateOffset(pawn, now)
         local ok, sitting = pcall(function() return seat.bSitting end)
         if ok and sitting then blocked = true end
     end
-    if not standing or blocked then M.virtualCrouched = false end
+    if not standing or blocked then M.virtualCrouched = false; M.physSlide = nil end
 
     local target = 0
-    if M.virtualCrouched then
+    local direct = false
+    if M.physSlide and not Slide.active then M.physSlide = nil end
+    if M.physSlide then
+        local ps = M.physSlide
+        local camZ = camTrackZ(pawn) or ps.cam0
+        local raw = ps.head0 + (camZ - ps.cam0)           -- real head height now
+        target = U.clamp(raw - ps.targetHead, -60, 150)   -- negative raises the view if the real head is lower
+        -- Ease into the held height (smoothstep over PHYS_EASE s); the target already follows the real head every
+        -- frame, so it is applied directly instead of through the speed limit.
+        local k = U.clamp((now - ps.t0) / PHYS_EASE, 0, 1)
+        target = target * k * k * (3 - 2 * k)
+        direct = true
+        M.fixedTarget = nil
+    elseif M.virtualCrouched then
         if not M.fixedTarget then
             -- Decide the depth once, when the crouch starts (avoids feedback with the capsule resize).
             local dist = U.get(pawn, "CrouchDistance")
             if type(dist) ~= "number" or dist <= 0 then dist = 60 end
             local fixed = dist
             local h = headHeight(pawn)
-            if h then
-                local raw = h + applied                       -- head height without our offset
-                local crouchH = U.get(pawn, "PlayerCrouchHeight")
-                if type(crouchH) ~= "number" then crouchH = 120 end
-                -- deep enough for the game to detect the crouch (<= PlayerCrouchHeight) even for tall players,
-                -- but never bring the eyes closer than minHeadHeight to the floor.
-                fixed = math.max(dist, raw - (crouchH - 10))
-                fixed = U.clamp(math.min(fixed, raw - M.minHeadHeight), 0, 150)
-            end
+            if h then fixed = crouchDepth(pawn, h + applied) end   -- real head height without our offset
             M.fixedTarget = fixed
         end
         target = M.fixedTarget
@@ -114,9 +148,10 @@ local function updateOffset(pawn, now)
     if applied == 0 and target == 0 then return end
     local step = (Slide.active and 520 or SPEED) * dt
     local newApplied
-    if target > applied then newApplied = math.min(target, applied + step)
+    if direct then newApplied = target
+    elseif target > applied then newApplied = math.min(target, applied + step)
     else newApplied = math.max(target, applied - step) end
-    if newApplied < 0.01 then newApplied = 0 end
+    if math.abs(newApplied) < 0.01 then newApplied = 0 end
     -- Write when the value changes or when the game moved the origin back (e.g. recenter).
     if newApplied ~= applied or math.abs(originZ(pawn) + newApplied) > 0.5 then
         if applyOffset(pawn, newApplied) then
@@ -133,6 +168,7 @@ function M.tick(pawn, menuOpen, now)
         applied, lastNow, armed = 0, nil, false
         M.fixedTarget = nil
         M.virtualCrouched = false
+        M.physSlide, lastStandH, lastStandT = nil, nil, nil
     end
 
     if not C.get("crouch_stick") then
@@ -156,6 +192,47 @@ function M.tick(pawn, menuOpen, now)
             elseif y >= thr then
                 armed = false
                 M.setCrouched(pawn, false)
+            end
+        end
+    end
+
+    -- Physical crouch while sprinting also starts a slide. It triggers as soon as the real head drops PHYS_DROP cm
+    -- below the standing height (or below the game's crouch height, whichever comes first), so it reacts at the
+    -- start of the crouch instead of waiting for the head to reach 120 cm; the slide then holds the view at the
+    -- crouch height, which makes the game treat the player as crouched.
+    if U.pc and U.get(U.pc, "IsSprinting") == true then lastSprintT = now end
+    if Slide.active or M.virtualCrouched or applied ~= 0 or U.get(pawn, "IsStandingMode") == false then
+        physArmed = false
+    else
+        local h = headHeight(pawn)
+        local crouchH = U.get(pawn, "PlayerCrouchHeight")
+        if type(crouchH) ~= "number" then crouchH = 120 end
+        if h then
+            -- Standing height: follows the head up at once, down only slowly (running bob / a real crouch must
+            -- not lower it).
+            local dt = lastStandT and U.clamp(now - lastStandT, 0, 0.5) or 0
+            lastStandT = now
+            if h > crouchH and (not lastStandH or h > lastStandH) then lastStandH = h
+            elseif lastStandH then lastStandH = math.max(h, lastStandH - 4 * dt) end
+            local trigger = math.max(crouchH, (lastStandH or 0) - PHYS_DROP)
+            local sprinting = now - lastSprintT < 0.3
+            if h > trigger + 8 then
+                physArmed = true
+            elseif physArmed and sprinting and h <= trigger then
+                physArmed = false
+                U.dlog("physical crouch while sprinting (head %.0f cm, standing %.0f)", h, lastStandH or -1)
+                local walk = U.gameSpeeds(U.pc, pawn)
+                if Slide.tryStart(pawn, U.pc, now, walk) then
+                    -- Hold the view at the stick-crouch height during the slide.
+                    local standH = lastStandH or (crouchH + 50)
+                    local cam0 = camTrackZ(pawn)
+                    if cam0 then
+                        M.physSlide = { t0 = now, head0 = h, cam0 = cam0, targetHead = standH - crouchDepth(pawn, standH) }
+                        U.dlog("physical slide: stand %.0f, view held at %.0f cm", standH, M.physSlide.targetHead)
+                    end
+                end
+            elseif not sprinting then
+                physArmed = h > trigger + 8
             end
         end
     end

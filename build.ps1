@@ -6,6 +6,11 @@ $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $dist = Join-Path $root 'dist\MOHABPlus'
 
+# A running launcher locks its DLL: the clean-up would stop halfway and lose launcher.ini / config.ini.
+if (Get-Process -Name 'MOHABPlusLauncher', 'Mohab-Win64-Shipping' -ErrorAction SilentlyContinue) {
+    throw 'Close MOHAB Plus launcher and the game before building.'
+}
+
 # Keep user data (configs, logs) of an existing dist folder.
 $keep = @{}
 foreach ($rel in @('ue4ss\Mods\MOHABPlus\config.ini', 'launcher.ini')) {

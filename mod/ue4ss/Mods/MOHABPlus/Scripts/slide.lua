@@ -1,4 +1,4 @@
--- Sprint slide: crouching (turn stick down) while sprinting starts a short slide along the current direction.
+-- Sprint slide: crouching (turn stick down, or physically: see crouch.lua) while sprinting starts a short slide along the current direction.
 -- The slide starts a bit faster than the current speed and decelerates to the crouched walking speed, so its length
 -- is proportional to the sprint speed. The player ends crouched. A floor-scrape sound plays during the slide.
 --

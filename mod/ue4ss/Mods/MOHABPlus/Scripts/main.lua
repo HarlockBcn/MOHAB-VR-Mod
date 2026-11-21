@@ -6,6 +6,7 @@ local modDir = debug.getinfo(1, "S").source:match("^@(.*)[\\/]Scripts[\\/]main%.
 local U = require("util")
 local C = require("config")
 local Syringe = require("syringe")
+local WeaponGrip = require("weapongrip")
 local Haptics = require("haptics")
 local Crouch = require("crouch")
 local Sprint = require("sprint")
@@ -57,6 +58,20 @@ local hooks = {
         path = "/Script/VRExpansionPlugin.GripMotionControllerComponent:GripObjectByInterface",
         fn = function(ctx, objectToGrip)
             pcall(function() Syringe.onBeforeGrab(objectToGrip:get()) end)
+        end,
+    },
+    {
+        -- Native, pre: BP_MotionController:UpdateGrabCapsule moves the hand's grab capsule forward every frame.
+        path = "/Script/Engine.SceneComponent:K2_SetRelativeLocation",
+        fn = function(ctx, newLoc)
+            pcall(WeaponGrip.onSetRelativeLocation, ctx, newLoc)
+        end,
+    },
+    {
+        -- Native, pre: ... and stretches it (half height 40-100 cm).
+        path = "/Script/Engine.CapsuleComponent:SetCapsuleHalfHeight",
+        fn = function(ctx, halfHeight)
+            pcall(WeaponGrip.onSetHalfHeight, ctx, halfHeight)
         end,
     },
     {
@@ -118,6 +133,7 @@ local function findPlayer(now)
                         Slide.reset(pawn)
                         Sprint.reset()
                         Syringe.reset()
+                        WeaponGrip.reset()
                         return pawn, pc
                     end
                 end
@@ -156,6 +172,7 @@ local function tick()
     if Dev then Dev.afterTick() end
     Crouch.tick(pawn, menuOpen, now)
     Syringe.tick(pawn, now)
+    WeaponGrip.tick(pawn, now)
     Haptics.tick(pawn, pc, now)
 end
 
