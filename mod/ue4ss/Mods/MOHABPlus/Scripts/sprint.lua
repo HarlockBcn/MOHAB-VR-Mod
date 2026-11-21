@@ -10,6 +10,7 @@
 local U = require("util")
 local C = require("config")
 local Crouch = require("crouch")
+local Slide = require("slide")
 
 local M = {}
 
@@ -82,21 +83,7 @@ function M.updateGesture(pawn, now)
     M.intensity = U.clamp((energy - onThr) / (fullThr - onThr), 0, 1)
 end
 
--- Game speeds (cm/s) from the pawn's MoveSpeedData struct, scaled by the controller's MovementSpeedMultiplier.
-local WALK_FIELD = "MaxWalkSpeed_5_E35CBBE24E042E5DAC0107A3910250D1"
-local SPRINT_FIELD = "MaxSprintSpeed_3_6EB63D2A41BC620D5EEA93B63C088CB3"
-local function gameSpeeds(ctrl, pawn)
-    local walk, sprint = 175, 375
-    pcall(function()
-        local msd = pawn.MoveSpeedData
-        local w, r = msd[WALK_FIELD], msd[SPRINT_FIELD]
-        if type(w) == "number" and w > 0 then walk = w end
-        if type(r) == "number" and r > 0 then sprint = r end
-    end)
-    local m = U.get(ctrl, "MovementSpeedMultiplier")
-    if type(m) == "number" and m > 0 then walk, sprint = walk * m, sprint * m end
-    return walk, sprint
-end
+local gameSpeeds = U.gameSpeeds
 M.gameSpeeds = gameSpeeds
 
 local smoothSpeed = nil
@@ -105,6 +92,12 @@ local lastSeen = nil      -- pawn seen last frame (detects respawn / new pawn)
 -- Post-hook of BP_R6PlayerController_C:TickInput (runs every frame right after the game set MaxWalkSpeed).
 function M.afterTickInput(ctrl, pawn, dt)
     if not U.valid(pawn) then return end
+    -- A slide in progress drives the movement itself.
+    if Slide.update(ctrl, pawn, U.now(pawn)) then
+        startedByUs, smoothSpeed = false, nil
+        return
+    end
+    if not M.gestureActive then Slide.gestureReleased() end
     local mode = C.get("sprint_mode")
     local mult = U.clamp(C.get("sprint_speed_multiplier"), 1.0, 1.5)
     local cmc = U.get(pawn, "CharacterMovement")
@@ -125,7 +118,7 @@ function M.afterTickInput(ctrl, pawn, dt)
 
     if mode == "arms" or mode == "both" then
         local disabled = U.get(ctrl, "DisableSprinting") == true
-        if M.gestureActive and moving and not disabled and Crouch.virtualCrouched then
+        if M.gestureActive and moving and not disabled and Crouch.virtualCrouched and not Slide.blockGesture then
             Crouch.virtualCrouched = false        -- swinging the arms while crouched stands the player up
         end
         local crouched = U.get(pawn, "IsCurrentlyCrouched") == true

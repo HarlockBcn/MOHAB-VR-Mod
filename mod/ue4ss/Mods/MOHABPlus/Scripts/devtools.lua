@@ -9,7 +9,9 @@
 --   simwalk | simgesture   pretend the movement stick is pushed / the arms are swinging
 --   set <key> <value>      change a setting in memory (not saved)
 --   openlevel <path>       open a map, e.g. /Game/R6/Maps/100_BasicTraining/P_100_BasicTraining
---   spawnsyringe | gripsyringe | syringe_overlapon   syringe tests
+--   spawnsyringe | attachgrab | release | forceinject | syrdebug | simtrigger   syringe tests
+--   slide | slidetest      start a slide (slidetest also traces its speed);  sound <body|wood|metal>
+--   probe | skip           list cinematics / skip the current one;   setpc <prop> <value>, lift <cm>
 --   unlock                 clear the controller's foot lock (tutorial intro)
 --   where                  list player controllers / pawns
 local U = require("util")
@@ -43,7 +45,21 @@ end
 
 -- Called every frame after the regular tick.
 M.gestureIntensity = 0
+M.slideTrace = nil
 function M.afterTick()
+    -- Trace the speed during a test slide (every ~0.1 s)
+    if M.slideTrace then
+        local pawn = ctx.getPlayer()
+        local Slide = require("slide")
+        M.slideTrace = M.slideTrace + 1
+        if M.slideTrace % 30 == 0 or not Slide.active then
+            local cmc = U.get(pawn, "CharacterMovement")
+            local v = U.get(cmc, "Velocity")
+            U.log("slide trace: active=%s speed=%.0f maxWalk=%s", tostring(Slide.active),
+                v and math.sqrt(v.X * v.X + v.Y * v.Y) or -1, tostring(U.get(cmc, "MaxWalkSpeed")))
+            if not Slide.active then M.slideTrace = nil end
+        end
+    end
     if M.gesture then
         Sprint.gestureActive = true
         Sprint.intensity = M.gestureIntensity
@@ -62,12 +78,22 @@ local function status(pawn, pc)
     local cfg = {}
     for _, sec in ipairs(C.order) do for _, k in ipairs(sec[2]) do cfg[#cfg + 1] = k .. "=" .. tostring(C.get(k)) end end
     U.log("config in memory: %s", table.concat(cfg, " "))
+    local cmc2 = U.get(pawn, "CharacterMovement")
+    local v = U.get(cmc2, "Velocity")
+    U.log("movement mode=%s falling=%s velocity=(%.0f, %.0f, %.0f)", tostring(U.get(cmc2, "MovementMode")),
+        tostring(select(2, U.call(cmc2, "IsFalling"))), v and v.X or 0, v and v.Y or 0, v and v.Z or 0)
     local w, r = Sprint.gameSpeeds(pc, pawn)
     U.log("game speeds walk=%s sprint=%s intensity=%.2f lastSpeed=%s", tostring(w), tostring(r), Sprint.intensity or 0, tostring(Sprint.lastSpeed))
     U.log("locks: game=%s foot=%s death=%s  stickY=%s inputFwd=%s moving=%s",
         tostring(U.get(pc, "bGamelocked")), tostring(U.get(pc, "bFootlocked")), tostring(U.get(pc, "bDeathlocked")),
         tostring(U.get(pawn, "MovementStick_YAxis")), tostring(U.get(pc, "InputForward")), tostring(U.get(pc, "IsCurrentlyMoving")))
     for _, l in ipairs(Syringe.debugInfo(pawn)) do U.log("%s", l) end
+    local map = U.get(pawn, "SlotToDistanceSquaredLeewayMap")
+    if map then
+        local parts = {}
+        pcall(function() map:ForEach(function(k, v) parts[#parts + 1] = tostring(k:get()) .. "=" .. tostring(v:get()) end) end)
+        U.log("holster leeway map: %s", table.concat(parts, " "))
+    end
     local okA, vA = pcall(function() return pc:GetInputAnalogKeyState({ KeyName = FName("OculusTouch_Right_Trigger_Axis") }) end)
     local okD, vD = pcall(function() return pc:IsInputKeyDown({ KeyName = FName("OculusTouch_Left_Y_Click") }) end)
     U.log("input api: analog ok=%s v=%s | keydown ok=%s v=%s", tostring(okA), tostring(vA), tostring(okD), tostring(vD))
@@ -167,6 +193,70 @@ function M.process()
         local hm = U.get(rc, "HandMesh")
         local okH, hs = U.call(hm, "K2_GetComponentScale")
         U.log("release: hand world scale=%s", okH and tostring(hs.X) or "?")
+    elseif cmd == "probe" then
+        -- Cinematics: level sequence players and the game mode skip state.
+        for _, sp in ipairs(FindAllOf("LevelSequencePlayer") or {}) do
+            if U.valid(sp) then
+                local okP, playing = U.call(sp, "IsPlaying")
+                local okL, len = U.call(sp, "GetDuration")
+                local okR, rate = U.call(sp, "GetPlayRate")
+                local seq = U.get(sp, "Sequence")
+                U.log("  seqplayer %s playing=%s rate=%s seq=%s outer=%s", sp:GetFName():ToString(), tostring(playing),
+                    tostring(rate), U.valid(seq) and seq:GetFName():ToString() or "?", U.valid(sp:GetOuter()) and sp:GetOuter():GetFName():ToString() or "?")
+            end
+        end
+        for _, mp in ipairs(FindAllOf("MediaPlayer") or {}) do
+            if U.valid(mp) then U.log("  mediaplayer %s playing=%s", mp:GetFullName(), tostring(select(2, U.call(mp, "IsPlaying")))) end
+        end
+        local gm = FindFirstOf("BP_R6GameModeBase_C") or FindFirstOf("GameModeBase")
+        U.log("  gamemode %s skippable=%s scene=%s", U.valid(gm) and gm:GetFullName() or "?", tostring(U.get(gm, "bInSkippableScene")),
+            (function() local s0 = U.get(gm, "CurrentSkipScene"); local ok, v = pcall(function() return s0:ToString() end); return ok and v or "?" end)())
+        U.log("  ctrl locks game=%s foot=%s", tostring(U.get(pc, "bGamelocked")), tostring(U.get(pc, "bFootlocked")))
+    elseif cmd:sub(1, 6) == "sound " then
+        local Slide = require("slide")
+        U.log("sound test -> %s", tostring(Slide.debugPlay(pawn, cmd:sub(7))))
+    elseif cmd == "skip" then
+        U.log("skip -> %s", tostring(require("cutscene").skip(pawn, pc, U.now(pawn))))
+    elseif cmd == "slide" then
+        local walk = U.gameSpeeds(pc, pawn)
+        U.log("slide start -> %s", tostring(require("slide").tryStart(pawn, pc, U.now(pawn), walk)))
+        Crouch.setCrouched(pawn, true)
+    elseif cmd == "simtrigger" then
+        U.forceTrigger = (U.forceTrigger == nil) and 1.0 or nil
+        U.log("simtrigger=%s", tostring(U.forceTrigger))
+    elseif cmd == "syrdebug" then
+        local chest = U.get(pawn, "Mesh_Chest")
+        U.log("chest valid=%s genOverlap=%s collision=%s", tostring(U.valid(chest)), tostring(U.get(chest, "bGenerateOverlapEvents")),
+            tostring(select(2, U.call(chest, "GetCollisionEnabled"))))
+        for _, syr in ipairs(FindAllOf("BP_HealthSyringe_C") or {}) do
+            if U.get(syr, "IsGripped") == true then
+                local box = U.get(syr, "Box")
+                local okO, r = U.call(box, "IsOverlappingComponent", chest)
+                local okA, ra = U.call(box, "IsOverlappingActor", pawn)
+                local okB, bl = U.call(box, "K2_GetComponentLocation")
+                local okC, cl = U.call(chest, "K2_GetComponentLocation")
+                U.log("box overlapsChest ok=%s r=%s | overlapsPawn ok=%s r=%s | box=(%.0f,%.0f,%.0f) chest=(%.0f,%.0f,%.0f)",
+                    tostring(okO), tostring(r), tostring(okA), tostring(ra), bl.X, bl.Y, bl.Z, cl.X, cl.Y, cl.Z)
+            end
+        end
+    elseif cmd:sub(1, 6) == "setpc " then
+        local k, v = cmd:match("^setpc%s+([%w_]+)%s+(.+)$")
+        if k then pcall(function() pc[k] = tonumber(v) or v end) end
+        U.log("pc.%s = %s", tostring(k), tostring(U.get(pc, k)))
+    elseif cmd == "slidetest" then
+        pcall(function() pc.CrouchSpeedMultiplier = 0.5 end)
+        local walk = U.gameSpeeds(pc, pawn)
+        U.log("slide start -> %s", tostring(require("slide").tryStart(pawn, pc, U.now(pawn), walk)))
+        Crouch.setCrouched(pawn, true)
+        M.slideTrace = 0
+    elseif cmd == "forceinject" then
+        -- Runs the same injection call the trigger logic uses, on the gripped syringe.
+        for _, syr in ipairs(FindAllOf("BP_HealthSyringe_C") or {}) do
+            if U.get(syr, "IsGripped") == true then
+                pcall(function() syr.Player = pawn end)
+                U.log("SyringeUsed -> %s", tostring(U.call(syr, "SyringeUsed")))
+            end
+        end
     elseif cmd == "syringe_overlapon" then
         for _, syr in ipairs(FindAllOf("BP_HealthSyringe_C") or {}) do U.call(syr, "SyringeOverlapOn") end
     end

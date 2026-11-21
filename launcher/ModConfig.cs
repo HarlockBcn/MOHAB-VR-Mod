@@ -22,6 +22,8 @@ internal sealed class ModConfig
         new("syringe_small_holstered", "Syringe: smaller when on the sleeve", OptionKind.Bool, "true", Section: "Syringes"),
         new("syringe_holster_scale", "Syringe: sleeve scale", OptionKind.Float, "0.5", 0.25, 1.0, 0.05, Section: "Syringes"),
 
+        new("syringe_grab_distance", "Syringe: sleeve grab distance", OptionKind.Float, "0.5", 0.25, 1.0, 0.05, Section: "Syringes"),
+
         new("haptics_damage", "Haptics on damage", OptionKind.Bool, "true", Section: "Haptics"),
         new("haptics_intensity", "Haptics: intensity", OptionKind.Float, "1.0", 0.1, 1.0, 0.1, Section: "Haptics"),
         new("haptics_duration", "Haptics: duration (s)", OptionKind.Float, "0.25", 0.05, 1.0, 0.05, Section: "Haptics"),
@@ -33,6 +35,13 @@ internal sealed class ModConfig
         new("sprint_mode", "Sprint mode", OptionKind.Choice, "stick", Choices: new[] { "stick", "arms", "both" }, Section: "Sprint"),
         new("sprint_arm_sensitivity", "Sprint: arm swing sensitivity", OptionKind.Float, "1.0", 0.3, 2.0, 0.1, Section: "Sprint"),
         new("sprint_speed_multiplier", "Sprint: max speed multiplier", OptionKind.Float, "1.5", 1.0, 1.5, 0.05, Section: "Sprint"),
+
+        new("slide_enabled", "Slide when crouching while sprinting", OptionKind.Bool, "true", Section: "Slide"),
+        new("slide_strength", "Slide: length", OptionKind.Float, "1.0", 0.5, 2.0, 0.1, Section: "Slide"),
+        new("slide_sound", "Slide: sound", OptionKind.Choice, "body", Choices: new[] { "body", "wood", "metal", "off" }, Section: "Slide"),
+
+        new("skip_cutscenes", "Skip cutscenes (hold both triggers + grips)", OptionKind.Bool, "true", Section: "Cutscenes"),
+        new("skip_hold_time", "Skip: hold time (s)", OptionKind.Float, "1.0", 0.3, 3.0, 0.1, Section: "Cutscenes"),
 
         new("menu_hold_time", "Menu: hold time to open (s)", OptionKind.Float, "0.8", 0.3, 2.0, 0.1, Section: "Menu"),
 

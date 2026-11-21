@@ -9,6 +9,7 @@
 -- Seated mode (IsStandingMode = false): we use the game's own button crouch (UserToggleVRCrouch).
 local U = require("util")
 local C = require("config")
+local Slide = require("slide")
 
 local M = {}
 
@@ -111,7 +112,7 @@ local function updateOffset(pawn, now)
         U.dlog("crouch dbg: want=%s target=%.1f applied=%.1f dt=%.4f standing=%s blocked=%s", tostring(M.virtualCrouched), target, applied, dt, tostring(standing), tostring(blocked))
     end
     if applied == 0 and target == 0 then return end
-    local step = SPEED * dt
+    local step = (Slide.active and 520 or SPEED) * dt
     local newApplied
     if target > applied then newApplied = math.min(target, applied + step)
     else newApplied = math.max(target, applied - step) end
@@ -146,6 +147,11 @@ function M.tick(pawn, menuOpen, now)
         elseif armed then
             if y <= -thr then
                 armed = false
+                -- Crouching while sprinting starts a slide (ends crouched).
+                if U.pc and U.get(U.pc, "IsSprinting") == true and U.get(pawn, "IsStandingMode") ~= false then
+                    local walk = U.gameSpeeds(U.pc, pawn)
+                    Slide.tryStart(pawn, U.pc, now, walk)
+                end
                 M.setCrouched(pawn, true)
             elseif y >= thr then
                 armed = false
@@ -155,7 +161,7 @@ function M.tick(pawn, menuOpen, now)
     end
 
     -- Sprinting stands the player up (like the game's own crouch).
-    if M.virtualCrouched and U.pc and U.get(U.pc, "IsSprinting") == true then
+    if M.virtualCrouched and not Slide.active and U.pc and U.get(U.pc, "IsSprinting") == true then
         M.virtualCrouched = false
     end
 

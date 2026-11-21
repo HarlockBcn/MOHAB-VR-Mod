@@ -10,6 +10,8 @@ local Haptics = require("haptics")
 local Crouch = require("crouch")
 local Sprint = require("sprint")
 local Menu = require("menu")
+local Slide = require("slide")
+local Cutscene = require("cutscene")
 
 C.init(modDir)
 U.debug = C.get("debug_log") == true
@@ -113,6 +115,7 @@ local function findPlayer(now)
                         cachedPawn, cachedPC = pawn, pc
                         U.log("player found: %s", pawn:GetFullName())
                         Haptics.reset(pc)
+                        Slide.reset(pawn)
                         Sprint.reset()
                         Syringe.reset()
                         return pawn, pc
@@ -144,6 +147,11 @@ local function tick()
     end
 
     local menuOpen = Menu.tick(pawn, pc, now)
+    if menuOpen and Slide.active then Slide.stop(pawn, "menu") end
+    Cutscene.tick(pawn, pc, now, menuOpen, function(ok)
+        -- short confirmation buzz (two pulses if something was skipped)
+        Haptics.pulse(pc, now, ok and 0.6 or 0.25, ok and 0.6 or 0.25, ok and 0.15 or 0.08)
+    end)
     Sprint.updateGesture(pawn, now)
     if Dev then Dev.afterTick() end
     Crouch.tick(pawn, menuOpen, now)

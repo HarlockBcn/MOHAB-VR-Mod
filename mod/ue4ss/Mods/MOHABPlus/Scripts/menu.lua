@@ -20,6 +20,7 @@ local items = {
     { key = "syringe_trigger_threshold", label = "Trigger threshold", kind = "num", min = 0.1, max = 1.0, step = 0.05 },
     { key = "syringe_small_holstered", label = "Smaller on the sleeve", kind = "bool" },
     { key = "syringe_holster_scale", label = "Sleeve scale", kind = "num", min = 0.25, max = 1.0, step = 0.05 },
+    { key = "syringe_grab_distance", label = "Sleeve grab distance", kind = "num", min = 0.25, max = 1.0, step = 0.05, suffix = "x" },
     { header = "HAPTICS" },
     { key = "haptics_damage", label = "Vibrate on damage", kind = "bool" },
     { key = "haptics_intensity", label = "Intensity", kind = "num", min = 0.1, max = 1.0, step = 0.1, digits = 1 },
@@ -32,6 +33,13 @@ local items = {
       names = { stick = "Stick click", arms = "Arm swing", both = "Click + arms" } },
     { key = "sprint_arm_sensitivity", label = "Arm swing sensitivity", kind = "num", min = 0.3, max = 2.0, step = 0.1, digits = 1 },
     { key = "sprint_speed_multiplier", label = "Sprint speed", kind = "num", min = 1.0, max = 1.5, step = 0.05, digits = 2, suffix = "x" },
+    { key = "slide_enabled", label = "Slide (sprint + crouch)", kind = "bool" },
+    { key = "slide_strength", label = "Slide length", kind = "num", min = 0.5, max = 2.0, step = 0.1, digits = 1, suffix = "x" },
+    { key = "slide_sound", label = "Slide sound", kind = "choice",
+      choices = { "body", "wood", "metal", "off" },
+      names = { body = "Body", wood = "Wood scrape", metal = "Metal scrape", off = "Off" } },
+    { header = "CUTSCENES" },
+    { key = "skip_cutscenes", label = "Skip: hold triggers + grips", kind = "bool" },
     { action = "close", label = "Close menu" },
 }
 

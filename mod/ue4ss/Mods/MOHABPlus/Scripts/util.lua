@@ -89,7 +89,9 @@ function M.down(name)
 end
 
 -- Trigger value (0..1) for "Left" / "Right".
+M.forceTrigger = nil   -- devtools: simulated trigger value
 function M.trigger(hand)
+    if M.forceTrigger then return M.forceTrigger end
     return M.axis("OculusTouch_" .. hand .. "_Trigger_Axis")
 end
 
@@ -106,6 +108,23 @@ function M.now(worldContext)
         if ok and type(t) == "number" then return t end
     end
     return os.clock()
+end
+
+-- Walking / sprint speeds (cm/s) from the pawn's MoveSpeedData struct, scaled by the controller's
+-- MovementSpeedMultiplier (same values BP_R6PlayerController.TickInput uses).
+local WALK_FIELD = "MaxWalkSpeed_5_E35CBBE24E042E5DAC0107A3910250D1"
+local SPRINT_FIELD = "MaxSprintSpeed_3_6EB63D2A41BC620D5EEA93B63C088CB3"
+function M.gameSpeeds(ctrl, pawn)
+    local walk, sprint = 175, 375
+    pcall(function()
+        local msd = pawn.MoveSpeedData
+        local w, r = msd[WALK_FIELD], msd[SPRINT_FIELD]
+        if type(w) == "number" and w > 0 then walk = w end
+        if type(r) == "number" and r > 0 then sprint = r end
+    end)
+    local m = M.get(ctrl, "MovementSpeedMultiplier")
+    if type(m) == "number" and m > 0 then walk, sprint = walk * m, sprint * m end
+    return walk, sprint
 end
 
 return M

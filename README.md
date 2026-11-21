@@ -11,10 +11,13 @@ Es un **lanzador** que inyecta [UE4SS](https://github.com/UE4SS-RE/RE-UE4SS) (v4
 |---|---|---|
 | Jeringuillas con gatillo | La jeringuilla solo se inyecta si, además de acercarla al pecho, aprietas el **gatillo de la mano que la sostiene** (umbral configurable). | Activada |
 | Jeringuillas pequeñas en la manga | Todas las jeringuillas guardadas en la manga se dibujan a escala 0.5 (configurable). Al cogerlas recuperan su tamaño real antes de llegar a la mano. | Activada |
+| Distancia para coger de la manga | Reduce la distancia a la que la otra mano puede coger una jeringuilla (u otro objeto) de la manga, para no cogerlas sin querer. Factor sobre la distancia original del juego (30 cm). | x0.5 (15 cm) |
 | Vibración al recibir daño | Los dos mandos vibran al perder vida. La intensidad y la duración crecen con el daño. Opcionalmente, vibra más fuerte el mando del lado del impacto. | Activada |
 | Agacharse con el stick de giro | Stick de giro **abajo** = agacharse; **arriba** = levantarse. Te mueves agachado (con la velocidad de agachado del juego). Al hacer sprint te levantas. | Activada |
 | Sprint con los brazos | Modo `Arm swing`: corres al mover el stick **y** balancear los brazos como al correr, sin pulsar el stick. Es **progresivo**: cuanto más rápido mueves los brazos, más rápido corres (de la velocidad de andar al sprint máximo). Al dejar de balancearlos vuelves a andar en el acto. Modo `Click + arms`: funcionan las dos formas. | `Stick click` (como el original) |
 | Velocidad de sprint | Multiplicador del sprint máximo del juego, de x1.0 a x1.5. También vale para el sprint con clic. | x1.5 |
+| Deslizamiento | Si te agachas (stick de giro abajo) mientras esprintas, haces un deslizamiento en la dirección en que corrías. Empieza algo más rápido que tu velocidad y frena hasta la velocidad de agachado, así que es más largo cuanto más rápido corrías. Terminas agachado. Suena un arrastre (`Body`, `Wood scrape`, `Metal scrape` u `Off`). Necesita *Crouch with turn stick* activado. | Activado, longitud x1.0, sonido `Body` |
+| Saltar cinemáticas | **Mantén los dos gatillos y los dos grips 1 s.** Si la escena la marca el juego como saltable, usa el salto del propio juego. Si no, y estás bloqueado en una escena, salta las secuencias que se estén reproduciendo hasta su final. Vibra al saltar. | Activado |
 
 ## Requisitos
 
@@ -56,7 +59,12 @@ Líneas de comandos (sin ventana; escriben en `launcher.log`):
   (`Mesh_Chest`). El Blueprint activa los eventos de solape del `Box` 0.05 s después de cogerla (`SyringeOverlapOn`).
   El mod los vuelve a apagar al instante y solo los enciende mientras aprietas el gatillo de esa mano.
   Al pulsar el gatillo se fuerza una comprobación del solape (si no, el juego esperaba a que la caja se moviera), y la caja
-  sigue activa 0.4 s después de soltarlo.
+  sigue activa 0.4 s después de soltarlo. Además, como el Blueprint solo inyecta si el *último* evento de solape fue con
+  `Mesh_Chest` (y al encender la caja tocando varias partes del cuerpo el orden es aleatorio), mientras aprietas el gatillo
+  el mod comprueba él mismo `Box.IsOverlappingComponent(Mesh_Chest)` y llama a la inyección del juego (`SyringeUsed`).
+  La distancia para coger de la manga es `SlotToDistanceSquaredLeewayMap[6/7]` del jugador (distancia², 900 = 30 cm),
+  que el mod multiplica por el factor².
+  El juego oculta jeringuillas de reserva con escala 0, así que el mod solo deshace la escala que ha puesto él.
   Una jeringuilla está "en la manga" si está enganchada (directa o indirectamente) a los puños, las manos o el jugador.
   Se escalan con `SetActorScale3D`. Al cogerla, el juego (`BP_MotionController:AttachObjectToHand`) lee su escala y
   luego engancha la mano a ella: por eso la escala vuelve a 1 en un pre-hook de `Actor:GetActorRelativeScale3D`, antes de
@@ -74,6 +82,16 @@ Líneas de comandos (sin ventana; escriben en `launcher.log`):
   sueltas el stick, también al desplazarte de lado).
   El gesto se detecta con la velocidad de cada mano respecto a la cabeza (componentes adelante/arriba): manos moviéndose en
   sentidos opuestos, con media suavizada e histéresis.
+* **Deslizamiento**: al agacharse con `IsSprinting` activo y velocidad real > 1.15 × andar, fija la velocidad inicial
+  (velocidad actual × 1.25) y en cada frame, tras `TickInput`, baja `MaxWalkSpeed` a 650 cm/s² (÷ longitud) y añade
+  movimiento en esa dirección. Termina al llegar a la velocidad de agachado, al chocar o al caer. El sonido es un evento
+  Wwise: el mod carga su banco (`RequiredBank`) con `AkGameplayStatics.LoadBanks` y lo lanza con `PostEventAttached`; los
+  sonidos en bucle se paran con su evento `Stop_`. Después, el balanceo de brazos tiene que pararse una vez antes de
+  poder levantarte de nuevo.
+* **Saltar cinemáticas**: el juego ya tiene un salto para algunas escenas (`BP_R6GameModeBase.bInSkippableScene`,
+  `TimerExpired_SceneSkip` → `CutsceneSkipped` en el nivel). Fuera de esas, solo con el jugador bloqueado
+  (`bFootlocked`/`bGamelocked`), llama a `GoToEndAndStop` en los `LevelSequencePlayer` que se estén reproduciendo y no
+  estén en bucle.
 
 ## Solución de problemas
 

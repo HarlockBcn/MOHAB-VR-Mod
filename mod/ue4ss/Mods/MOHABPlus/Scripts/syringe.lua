@@ -90,6 +90,32 @@ local function isOnPlayer(syr, pawn)
     return false
 end
 
+-- Sleeve grab distance. BP_VRPlayerCharacter:GetNearestHolsterSlot lets a hand take an item from a holster slot
+-- when its squared distance is <= SlotToDistanceSquaredLeewayMap[slot]. Slots 6 and 7 are the sleeves (the
+-- CuffGrabPoint of the other hand). We scale those entries by factor^2 and keep the originals.
+local SLEEVE_SLOTS = { 6, 7 }
+local leewayPawn, leewayOrig = nil, {}
+local function applyGrabDistance(pawn)
+    local map = U.get(pawn, "SlotToDistanceSquaredLeewayMap")
+    if not map then return end
+    local addr = pawn:GetAddress()
+    if addr ~= leewayPawn then leewayPawn, leewayOrig = addr, {} end
+    local f = U.clamp(C.get("syringe_grab_distance"), 0.1, 1.0)
+    for _, slot in ipairs(SLEEVE_SLOTS) do
+        pcall(function()
+            if not map:Contains(slot) then return end
+            local cur = map:Find(slot):get()
+            if leewayOrig[slot] == nil then leewayOrig[slot] = cur end
+            local want = leewayOrig[slot] * f * f
+            if math.abs(cur - want) > 0.01 then
+                map:Add(slot, want)
+                U.dlog("sleeve slot %d grab leeway %.0f -> %.0f (distance x%.2f)", slot, cur, want, f)
+            end
+        end)
+    end
+end
+M.applyGrabDistance = applyGrabDistance
+
 -- Post-hook of SyringeOverlapOn (the BP just enabled the overlap box).
 function M.onOverlapOn(syr)
     if not C.get("syringe_require_trigger") then return end
@@ -102,6 +128,8 @@ end
 function M.onBeforeGrab(obj)
     if not U.valid(obj) or not isSyringe(obj) then return end
     if U.get(obj, "IsGripped") == true then return end
+    local st = tracked[obj:GetAddress()]
+    if not (st and st.scaledByUs) then return end
     local cur = currentScale(obj)
     if cur and math.abs(cur - 1) > 0.001 then
         U.call(obj, "SetActorScale3D", { X = 1, Y = 1, Z = 1 })
@@ -112,6 +140,7 @@ function M.tick(pawn, now)
     if now - lastScan > 0.5 or now < lastScan then
         lastScan = now
         scanList = FindAllOf(SYRINGE_CLASS) or {}
+        applyGrabDistance(pawn)
     end
     local requireTrigger = C.get("syringe_require_trigger")
     local thr = C.get("syringe_trigger_threshold")
@@ -134,7 +163,22 @@ function M.tick(pawn, now)
                     -- Keep the box enabled a little after releasing so a quick squeeze is enough
                     -- (the BP checks the overlap again 3 frames after it begins).
                     if pressed then st.latchUntil = now + 0.4 end
-                    setOverlap(st, syr, pressed or (st.latchUntil ~= nil and now < st.latchUntil))
+                    local enabled = pressed or (st.latchUntil ~= nil and now < st.latchUntil)
+                    setOverlap(st, syr, enabled)
+                    -- The BP only injects if the *last* overlap event it got was with Mesh_Chest; when the box is
+                    -- enabled while already touching several body parts the event order is random. So while the
+                    -- trigger is held we test the chest overlap ourselves and run the game's injection directly.
+                    if enabled and not st.injected then
+                        local box = U.get(syr, "Box")
+                        local chest = U.get(pawn, "Mesh_Chest")
+                        local okO, touching = U.call(box, "IsOverlappingComponent", chest)
+                        if okO and touching then
+                            st.injected = true
+                            pcall(function() syr.Player = pawn end)
+                            U.call(syr, "SyringeUsed")
+                            U.dlog("syringe injected (trigger + chest overlap)")
+                        end
+                    end
                 elseif st.overlap == false then
                     setOverlap(st, syr, true)   -- feature switched off: give control back to the game
                 end
@@ -142,13 +186,18 @@ function M.tick(pawn, now)
                 st.latchUntil = nil
             end
 
-            -- Sleeve scale (never touch a gripped syringe: the hand is attached to it)
+            -- Sleeve scale (never touch a gripped syringe: the hand is attached to it). Only undo our own scaling:
+            -- the game hides spare syringes with scale 0.
             if not gripped then
                 if small and not used and not stuck and isOnPlayer(syr, pawn) then
                     setScale(syr, hscale)
-                else
+                    st.scaledByUs = true
+                elseif st.scaledByUs then
                     setScale(syr, 1.0)
+                    st.scaledByUs = false
                 end
+            else
+                st.scaledByUs = false
             end
         end
     end
