@@ -31,6 +31,9 @@ local lastScan = -100
 local weaponClass = nil
 local caps = {}           -- free hand GrabCapsule address -> { center =, half = } while the other hand holds a weapon
 local setFailed = false
+local shrinking = false
+local gripWasDown = false
+local NEAR_ON, NEAR_OFF = 3, 8     -- cm beyond weapon_grip_reach where the capsule shrink starts / stops
 
 local function parentOf(actor)
     local ok, p = U.call(actor, "GetAttachParentActor")
@@ -38,6 +41,41 @@ local function parentOf(actor)
     ok, p = U.call(actor, "GetParentActor")
     if ok and U.valid(p) then return p end
     return nil
+end
+
+-- An off-hand grip (child actor) that is no longer attached to its weapon while no hand holds it: after letting go
+-- of the second grip it sometimes detaches and falls through the world, and the weapon can no longer be held with
+-- two hands. Put it back on the weapon's child actor component.
+local lastReattach = {}
+local function checkAttached(grip, weapon, otherHeld, freeHeld)
+    if U.same(otherHeld, grip) or U.same(freeHeld, grip) then return end
+    local okC, cac = U.call(grip, "GetParentComponent")
+    if not (okC and U.valid(cac)) then return end
+    local okR, root = U.call(grip, "K2_GetRootComponent")
+    local ok, ap = U.call(grip, "GetAttachParentActor")
+    -- Still attached in the hierarchy is not enough: the grip's root may be simulating physics (it then falls while
+    -- "attached"), so also compare its position with the child actor component it belongs to.
+    local okS, simulating = U.call(root, "IsSimulatingPhysics", FName("None"))
+    local okG, gl = U.call(grip, "K2_GetActorLocation")
+    local okP, pl = U.call(cac, "K2_GetComponentLocation")
+    local away = 0
+    if okG and okP and gl and pl then
+        local d = U.vsub(U.vec(gl), U.vec(pl))
+        away = math.sqrt(U.vdot(d, d))
+    end
+    if ok and U.same(ap, weapon) and not (okS and simulating) and away < 30 then return end
+    local addr = grip:GetAddress()
+    local t = os.clock()
+    if lastReattach[addr] and t - lastReattach[addr] < 1.0 then return end
+    lastReattach[addr] = t
+    if okR and U.valid(root) then U.call(root, "SetSimulatePhysics", false) end
+    -- EAttachmentRule::SnapToTarget = 2
+    U.call(grip, "K2_AttachToComponent", cac, FName("None"), 2, 2, 2, true)
+    local okA, ap2 = U.call(grip, "GetAttachParentActor")
+    U.log("weapon grip %s was loose on %s (parent %s, physics %s, %.0f cm away) -> reattached=%s",
+        grip:GetFName():ToString(), weapon:GetFName():ToString(),
+        (ok and U.valid(ap)) and ap:GetFName():ToString() or "none", tostring(okS and simulating), away,
+        tostring(okA and U.same(ap2, weapon)))
 end
 
 local function scan()
@@ -115,24 +153,19 @@ function M.tick(pawn, now)
     local reach = U.clamp(C.get("weapon_grip_reach"), 3, 100)
     local handLoc = nil
     local freeHeld = nil
-    caps = {}
+    local minDist = nil
     if weapon then
         handLoc = location(U.get(free, "GrabSphere")) or location(U.get(free, "GrabCapsule"))
         freeHeld = U.get(free, "AttachedObject")
-        local cap = U.get(free, "GrabCapsule")
-        if U.valid(cap) then
-            local ok, r = U.call(cap, "GetUnscaledCapsuleRadius")
-            if not (ok and type(r) == "number") then r = 8 end
-            -- capsule along the hand's forward axis, centred on the hand: reaches `reach` in front of and behind it
-            -- (pistols are two-handed from below/behind the other hand), and r sideways.
-            caps[cap:GetAddress()] = { center = r * 0.5, half = reach + r }
-        end
     end
 
     for _, g in ipairs(grips) do
         local grip = g.actor
         if U.valid(grip) then
             local want, dist = false, nil
+            if weapon and g.parent and U.same(g.parent, weapon) then
+                pcall(checkAttached, grip, weapon, U.get(U.same(free, left) and right or left, "AttachedObject"), freeHeld)
+            end
             if weapon and handLoc and g.parent and U.same(g.parent, weapon) and not U.same(freeHeld, grip) then
                 -- Distance from the hand to the nearest point of the grip's collision (its HandAttachPoint can be
                 -- far from where the hand actually touches it, e.g. pistols and scoped rifles).
@@ -154,10 +187,53 @@ function M.tick(pawn, now)
                         dist = math.sqrt(U.vdot(d, d))
                     end
                 end
-                if dist then want = dist > reach end
+                if dist then
+                    want = dist > reach
+                    if not minDist or dist < minDist then minDist = dist end
+                end
             end
             setGated(grip, want, dist)
         end
+    end
+
+    -- Shrink the free hand's grab capsule only while it is within reach of the held weapon's grips (taking the second
+    -- grip). Otherwise it keeps the game's long forward capsule, so ammo, grenades... can still be picked up (also
+    -- near the weapon); the grip itself stays out of reach thanks to the gate above. Hysteresis avoids flicker.
+    local near = minDist and minDist <= reach + (shrinking and NEAR_OFF or NEAR_ON)
+    caps = {}
+    shrinking = false
+    if weapon and near and not U.valid(freeHeld) then
+        local cap = U.get(free, "GrabCapsule")
+        if U.valid(cap) then
+            local ok, r = U.call(cap, "GetUnscaledCapsuleRadius")
+            if not (ok and type(r) == "number") then r = 8 end
+            -- capsule along the hand's forward axis, centred on the hand: reaches `reach` in front of and behind it
+            -- (pistols are two-handed from below/behind the other hand), and r sideways.
+            caps[cap:GetAddress()] = { center = r * 0.5, half = reach + r }
+            shrinking = true
+        end
+    end
+
+    -- Diagnostics (debug_log only, once per press): free hand presses grip while the other hand holds a weapon.
+    if weapon and U.debug then
+        local side = U.same(free, left) and "Left" or "Right"
+        local down = U.axis("OculusTouch_" .. side .. "_Grip_Axis") > 0.6
+        if down and not gripWasDown then
+            local parts = {}
+            for _, g in ipairs(grips) do
+                if U.valid(g.actor) and g.parent and U.same(g.parent, weapon) then
+                    local st = gated[g.actor:GetAddress()]
+                    parts[#parts + 1] = string.format("%s gated=%s", g.actor:GetFName():ToString(), tostring(st ~= nil))
+                end
+            end
+            U.dlog("2-hand diag: %s hand grip on %s: nearest grip %s cm (reach %.0f), small capsule=%s, holding=%s, grips: %s",
+                side, weapon:GetFName():ToString(), minDist and string.format("%.1f", minDist) or "none", reach,
+                tostring(shrinking), U.valid(freeHeld) and freeHeld:GetFName():ToString() or "nothing",
+                #parts > 0 and table.concat(parts, ", ") or "NONE FOUND")
+        end
+        gripWasDown = down
+    else
+        gripWasDown = false
     end
 
     -- Grips that disappeared from the list (scan) but are still gated: restore them.
@@ -192,7 +268,7 @@ function M.onSetHalfHeight(ctx, halfHeight)
 end
 
 function M.reset()
-    caps = {}
+    caps, shrinking = {}, false
     grips, gated = {}, {}
     lastScan = -100
 end

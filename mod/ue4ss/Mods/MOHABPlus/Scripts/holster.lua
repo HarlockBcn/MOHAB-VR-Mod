@@ -2,8 +2,8 @@
 -- BP_VRPlayerCharacter:GetNearestHolsterSlot measures the hand's distance to every holster (indices 0-5: back,
 -- shoulders, hips...; 6-7: the sleeves) and takes the nearest one if it is within SlotToDistanceSquaredLeewayMap
 -- [index]. The back/shoulder holsters reach over the top of the head, so reaching for a hat or helmet grabbed a
--- weapon instead. While a hand is over the head (above eye level and within holster_head_zone cm of the head's
--- vertical axis) we set the leeway of holsters 0-5 to 0, so the hand grabs what it touches (the hat); beside the
+-- weapon instead. While a hand is over the head (above eye level, within SIDE cm to the left/right of the head's axis
+-- and within holster_head_zone cm in front/behind it) we set the leeway of holsters 0-5 to 0, so the hand grabs what it touches (the hat); beside the
 -- head, at the shoulders, the holsters work as before. The sleeves (6-7) are handled by syringe.lua.
 local U = require("util")
 local C = require("config")
@@ -15,7 +15,9 @@ local orig = {}            -- index -> original leeway (for the current pawn)
 local origPawn = nil
 local blocked = false
 
-local function handInZone(pawn, ctrl, headLoc, radius)
+local SIDE = 14             -- cm from the head's axis to the side: beyond it the hand is at a shoulder, not on the head
+
+local function handInZone(pawn, ctrl, headLoc, right, radius)
     if not U.valid(ctrl) then return false end
     local mc = U.get(ctrl, "MotionController")
     local ok, l = U.call(mc, "K2_GetComponentLocation")
@@ -23,7 +25,9 @@ local function handInZone(pawn, ctrl, headLoc, radius)
     l = U.vec(l)
     if l.Z < headLoc.Z - 3 then return false end           -- below eye level: shoulders, chest...
     local dx, dy = l.X - headLoc.X, l.Y - headLoc.Y
-    return dx * dx + dy * dy <= radius * radius
+    -- To the left or right of the head the hand is reaching for a shoulder holster, however high it is.
+    if math.abs(dx * right.X + dy * right.Y) > SIDE then return false end
+    return dx * dx + dy * dy <= radius * radius             -- over the head, within radius front/back
 end
 
 local function setLeeway(pawn, block)
@@ -50,14 +54,18 @@ function M.tick(pawn)
         local cam = U.get(pawn, "VRReplicatedCamera")
         local okL, camLoc = U.call(cam, "K2_GetComponentLocation")
         local okF, fwd = U.call(cam, "GetForwardVector")
-        if okL and okF and camLoc and fwd then
+        local okR, right = U.call(cam, "GetRightVector")
+        if okL and okF and okR and camLoc and fwd and right then
+            right = U.vec(right)
+            right.Z = 0
+            right = U.vnorm(right)
             camLoc, fwd = U.vec(camLoc), U.vec(fwd)
             fwd.Z = 0
             fwd = U.vnorm(fwd)
             -- the head's vertical axis is a bit behind the eyes
             local head = { X = camLoc.X - fwd.X * 8, Y = camLoc.Y - fwd.Y * 8, Z = camLoc.Z }
-            want = handInZone(pawn, U.get(pawn, "LeftController"), head, radius)
-                or handInZone(pawn, U.get(pawn, "RightController"), head, radius)
+            want = handInZone(pawn, U.get(pawn, "LeftController"), head, right, radius)
+                or handInZone(pawn, U.get(pawn, "RightController"), head, right, radius)
         end
     end
     if want ~= blocked then setLeeway(pawn, want) end
