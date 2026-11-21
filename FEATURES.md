@@ -16,6 +16,7 @@
 
 ### Weapons
 - **Precise two-handed grip** - Your free hand only grabs the front grip of a weapon when it is really close to it.
+- **Second grip first** - With your free hand at your weapon's front grip, nearby weapons and ammo boxes are ignored, so you always grab your own weapon.
 - **Helmet-safe back holsters** - Reaching over your head (to touch your helmet or hat) no longer pulls a weapon from your back.
 
 ### Movement

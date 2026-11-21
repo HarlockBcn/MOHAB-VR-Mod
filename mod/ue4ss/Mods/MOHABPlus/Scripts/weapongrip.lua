@@ -78,6 +78,73 @@ local function checkAttached(grip, weapon, otherHeld, freeHeld)
         tostring(okA and U.same(ap2, weapon)))
 end
 
+-- Priority for the second grip: while the free hand is within reach of the held weapon's grip, other grabbable
+-- things touching that hand (another weapon, an ammo box...) stop overlapping it, so the game can only pick the
+-- grip. Overlap events are restored as soon as the hand leaves the grip's reach (or grabs it).
+local blocked = {}        -- actor address -> { actor =, comps = { component, ... } }
+local primClass = nil
+
+local function arrayItems(arr)
+    local list = {}
+    if not arr then return list end
+    pcall(function()
+        for i = 1, #arr do
+            local o = arr[i]
+            if type(o) == "userdata" and o.get and not o.GetAddress then o = o:get() end
+            if U.valid(o) then list[#list + 1] = o end
+        end
+    end)
+    return list
+end
+
+local function blockActor(actor)
+    local addr = actor:GetAddress()
+    if blocked[addr] then return end
+    if not U.valid(primClass) then primClass = StaticFindObject("/Script/Engine.PrimitiveComponent") end
+    local st = { actor = actor, comps = {} }
+    local ok, arr = U.call(actor, "K2_GetComponentsByClass", primClass)
+    if ok then
+        for _, comp in ipairs(arrayItems(arr)) do
+            if U.get(comp, "bGenerateOverlapEvents") ~= false then
+                U.call(comp, "SetGenerateOverlapEvents", false)
+                st.comps[#st.comps + 1] = comp
+            end
+        end
+    end
+    blocked[addr] = st
+    U.dlog("2-hand priority: %s blocked near the grip", actor:GetFName():ToString())
+end
+
+local function unblockAll()
+    for addr, st in pairs(blocked) do
+        blocked[addr] = nil
+        if U.valid(st.actor) then
+            for _, comp in ipairs(st.comps) do
+                if U.valid(comp) then U.call(comp, "SetGenerateOverlapEvents", true) end
+            end
+        end
+    end
+end
+
+-- Blocks everything the free hand overlaps except the held weapon and its grips.
+local function prioritiseGrip(free, weapon)
+    local function keep(actor)
+        if U.same(actor, weapon) then return true end
+        for _, g in ipairs(grips) do
+            if U.same(actor, g.actor) then return true end
+        end
+        local okP, p = U.call(actor, "GetAttachParentActor")
+        return okP and U.same(p, weapon)
+    end
+    for _, actor in ipairs(arrayItems(U.get(free, "OverlappingGrabActors"))) do
+        if not keep(actor) then blockActor(actor) end
+    end
+    for _, comp in ipairs(arrayItems(U.get(free, "OverlappingGrabComponents"))) do
+        local ok, owner = U.call(comp, "GetOwner")
+        if ok and U.valid(owner) and not keep(owner) then blockActor(owner) end
+    end
+end
+
 local function scan()
     grips = {}
     for _, cls in ipairs(GRIP_CLASSES) do
@@ -213,6 +280,7 @@ function M.tick(pawn, now)
             shrinking = true
         end
     end
+    if shrinking then pcall(prioritiseGrip, free, weapon) elseif next(blocked) then unblockAll() end
 
     -- Diagnostics (debug_log only, once per press): free hand presses grip while the other hand holds a weapon.
     if weapon and U.debug then
@@ -268,6 +336,8 @@ function M.onSetHalfHeight(ctx, halfHeight)
 end
 
 function M.reset()
+    pcall(unblockAll)
+    blocked = {}
     caps, shrinking = {}, false
     grips, gated = {}, {}
     lastScan = -100
