@@ -99,8 +99,11 @@ research/                 Volcado de clases/headers del juego generado con UE4SS
 build.ps1                 Genera dist\MOHABPlus
 ```
 
-Compilar:
+Compilar (la primera vez, descarga UE4SS en `third_party\UE4SS`; no está en el repositorio):
 
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\get-ue4ss.ps1
+```
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
