@@ -14,6 +14,7 @@ M.defaults = {
     haptics_intensity = 1.0,
     haptics_duration = 0.35,
     haptics_directional = true,
+    haptics_weapons = true,
 
     crouch_stick = true,
     crouch_stick_threshold = 0.7,
@@ -37,7 +38,7 @@ M.defaults = {
 M.order = {
     { "Syringes", { "syringe_require_trigger", "syringe_trigger_threshold", "syringe_small_holstered", "syringe_holster_scale", "syringe_grab_distance" } },
     { "Weapons", { "weapon_grip_reach" } },
-    { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional" } },
+    { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons" } },
     { "Crouch", { "crouch_stick", "crouch_stick_threshold" } },
     { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier" } },
     { "Slide", { "slide_enabled", "slide_strength", "slide_sound" } },

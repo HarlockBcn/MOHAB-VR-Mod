@@ -84,6 +84,35 @@ function M.tick(pawn, pc, now)
     M.pulse(pc, now, left, right, dur)
 end
 
+-- Weapon handling feedback (the game has none for reloading).
+-- kind: "load" (magazine / shell / clip / rocket inserted), "open" / "close" (break-action barrels).
+-- Amplitudes are for { hand holding the weapon, other hand } and the pulse duration in seconds.
+local WEAPON_FX = {
+    load  = { 0.45, 0.8, 0.09 },
+    open  = { 0.55, 0.0, 0.07 },
+    close = { 0.8, 0.0, 0.1 },
+}
+
+function M.onWeaponEvent(weapon, kind)
+    if not C.get("haptics_weapons") or not U.valid(weapon) then return end
+    local pc = U.pc
+    local pawn = U.get(pc, "SpawnedPlayerCharacter")
+    if not U.valid(pawn) then return end
+    -- Only weapons in the player's hands (AI soldiers reload through the same functions).
+    local left, right = U.get(pawn, "LeftController"), U.get(pawn, "RightController")
+    local inLeft = U.valid(left) and U.same(U.get(left, "AttachedObject"), weapon)
+    local inRight = U.valid(right) and U.same(U.get(right, "AttachedObject"), weapon)
+    if not (inLeft or inRight) then return end
+    local fx = WEAPON_FX[kind]
+    if not fx then return end
+    local k = U.clamp(C.get("haptics_intensity"), 0, 1)
+    local held, other = fx[1] * k, fx[2] * k
+    local l, r
+    if inRight then l, r = other, held else l, r = held, other end
+    U.dlog("weapon %s %s -> haptics L=%.2f R=%.2f", weapon:GetFName():ToString(), kind, l, r)
+    M.pulse(pc, U.now(pawn), l, r, fx[3])
+end
+
 function M.reset(pc)
     lastHealth, lastHealthComp = nil, nil
     if U.valid(pc) then

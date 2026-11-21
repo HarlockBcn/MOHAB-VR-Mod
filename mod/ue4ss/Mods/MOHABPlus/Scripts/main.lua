@@ -84,6 +84,29 @@ local hooks = {
     },
 }
 
+-- Weapon reload / break-action haptics (BP functions: post-hooks; each override in a subclass is its own UFunction).
+for _, e in ipairs({
+    { "/Game/R6/Weapons/BP_Weapon_Rifle_MagazineLoaded.BP_Weapon_Rifle_MagazineLoaded_C:LoadMag", "load" },
+    { "/Game/R6/Weapons/BP_Weapon_Pistol_MagazineLoaded.BP_Weapon_Pistol_MagazineLoaded_C:LoadMag", "load" },
+    { "/Game/R6/Weapons/M1_Garand/BP_m1_Garand.BP_m1_Garand_C:LoadMag", "load" },
+    { "/Game/R6/Weapons/LittleJoeCrossbow/BP_LittleJoeCrossbow.BP_LittleJoeCrossbow_C:LoadMag", "load" },
+    { "/Game/R6/Weapons/Speargun/BP_Speargun.BP_Speargun_C:LoadMag", "load" },
+    { "/Game/R6/Weapons/SawedOff/BP_SawedOff.BP_SawedOff_C:LoadMag", "load" },
+    { "/Game/R6/Weapons/BP_CombatShotgun.BP_CombatShotgun_C:LoadAnotherShell", "load" },
+    { "/Game/R6/Weapons/LeverAction/BP_LeverAction.BP_LeverAction_C:LoadAnotherShell", "load" },
+    { "/Game/R6/Weapons/Bazooka/BP_Bazooka.BP_Bazooka_C:LoadAmmo", "load" },
+    { "/Game/R6/Weapons/SawedOff/BP_SawedOff.BP_SawedOff_C:AnimateBarrelsOpen", "open" },
+    { "/Game/R6/Weapons/SawedOff/BP_SawedOff.BP_SawedOff_C:AnimateBarrelsClosed", "close" },
+}) do
+    local kind = e[2]
+    hooks[#hooks + 1] = {
+        path = e[1],
+        fn = function(ctx)
+            pcall(function() Haptics.onWeaponEvent(ctx:get(), kind) end)
+        end,
+    }
+end
+
 -- Developer tools (cmd.txt test channel), only with debug_log=true at start-up.
 local Dev = nil
 if C.get("debug_log") == true then

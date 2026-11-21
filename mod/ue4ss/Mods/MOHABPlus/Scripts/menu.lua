@@ -28,6 +28,7 @@ local items = {
     { key = "haptics_intensity", label = "Intensity", kind = "num", min = 0.1, max = 1.0, step = 0.1, digits = 1 },
     { key = "haptics_duration", label = "Duration (s)", kind = "num", min = 0.05, max = 1.0, step = 0.05 },
     { key = "haptics_directional", label = "Stronger on hit side", kind = "bool" },
+    { key = "haptics_weapons", label = "Vibrate when reloading", kind = "bool" },
     { header = "MOVEMENT" },
     { key = "crouch_stick", label = "Crouch with turn stick", kind = "bool" },
     { key = "sprint_mode", label = "Sprint", kind = "choice",
