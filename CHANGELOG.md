@@ -1,3 +1,41 @@
 # Changelog
 
 All notable changes to MOHAB Plus. Versions follow MAJOR.MINOR.PATCH.
+
+## v1.0.0 - 2026-11-21
+
+First public release of MOHAB Plus, a gameplay enhancement mod for **Medal of Honor: Above and Beyond** (Oculus/Meta PC version). It does not modify any game file: it is a launcher that loads the mod when the game starts.
+
+### Syringes
+- **Trigger to inject**: a syringe only injects when you bring it to your chest *and* pull the trigger of the hand holding it.
+- **Smaller syringes on the sleeve**: they get their normal size back when you grab them.
+- **Shorter sleeve grab distance**, so you no longer grab syringes by accident.
+
+### Weapons
+- **Precise two-handed grip**: your free hand only grabs a weapon's front grip when it is really close to it (the game let you grab it from up to two metres away).
+- **Helmet-safe back holsters**: reaching over your head no longer pulls a weapon from your back.
+- Front grips that come loose and fall are put back, so you can keep using both hands.
+
+### Movement
+- **Crouch with the turn stick** (down = crouch, up = stand).
+- **Arm-swing sprint**: swing your arms like a runner to sprint; the faster you swing, the faster you run.
+- **Faster sprint**: maximum sprint speed up to x1.5.
+- **Slide**: crouch while sprinting (with the stick or for real) to slide.
+
+### Haptics
+- Vibration when you take damage, stronger for big hits and on the side of the impact.
+- Vibration when loading magazines, clips, shells and bullets, and when opening/closing break-action shotguns.
+
+### Cutscenes
+- **Skip cutscenes** by holding both triggers and both grips for a second.
+- The same gesture **fast-forwards dialogue scenes** where you just stand and wait.
+
+### Launcher
+- In-game settings menu (hold the left Y button) and the same settings in the launcher.
+- Loads the mod automatically when you start the game from **Virtual Desktop or Meta Quest Link / Air Link**: just keep the launcher open or minimised.
+- Shows the installed version and **updates itself** when a new release is published here.
+
+### Requirements
+- Windows 10/11 x64, the game from the Oculus/Meta store and the [.NET 8 Desktop Runtime x64](https://dotnet.microsoft.com/download/dotnet/8.0).
+
+*Fan-made by Harlock with the help of AI tools. Not affiliated with Respawn Entertainment, Electronic Arts or Meta.*
