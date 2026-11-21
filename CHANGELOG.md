@@ -2,6 +2,13 @@
 
 All notable changes to MOHAB Plus. Versions follow MAJOR.MINOR.PATCH.
 
+## v1.0.2 - 2026-11-21
+
+### New
+- **Second grip first**: when your free hand reaches for the front grip of the weapon you are holding, nearby weapons and ammo boxes are ignored, so you always grab your own weapon with both hands instead of picking up something else by mistake.
+
+**Updating:** if you have v1.0.0 or v1.0.1, the launcher offers this update by itself (click "Update to v1.0.2" at the top). Your settings are kept.
+
 ## v1.0.1 - 2026-11-21
 
 ### Fixes
