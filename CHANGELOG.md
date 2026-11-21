@@ -2,6 +2,13 @@
 
 All notable changes to MOHAB Plus. Versions follow MAJOR.MINOR.PATCH.
 
+## v1.0.1 - 2026-11-21
+
+### Fixes
+- After respawning, reaching a checkpoint or starting a new mission, some features could stop working because the mod kept following the previous player character. It now always follows the current one, so the two-handed grip and the helmet-safe back holsters keep working for the whole session.
+
+**Updating:** if you have v1.0.0, the launcher offers this update by itself (click "Update to v1.0.1" at the top). Your settings are kept.
+
 ## v1.0.0 - 2026-11-21
 
 First public release of MOHAB Plus, a gameplay enhancement mod for **Medal of Honor: Above and Beyond** (Oculus/Meta PC version). It does not modify any game file: it is a launcher that loads the mod when the game starts.
