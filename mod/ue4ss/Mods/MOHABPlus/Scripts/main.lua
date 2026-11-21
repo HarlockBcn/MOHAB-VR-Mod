@@ -138,8 +138,53 @@ local cachedPawn, cachedPC = nil, nil
 local lastHookTry, lastConfigCheck, lastPawnSearch = -100, -100, -100
 local errorCount = 0
 
+local lastPawnCheck, lastPCCheck = -100, -100
+local stale = {}           -- address -> full name of a replaced pawn / controller: never pick them again
+
+local function isStale(o)
+    local name = stale[o:GetAddress()]
+    return name ~= nil and name == o:GetFullName()   -- the address may be reused by a new object
+end
+
+local function dropStale(controllerToo)
+    if U.valid(cachedPawn) then stale[cachedPawn:GetAddress()] = cachedPawn:GetFullName() end
+    if controllerToo and U.valid(cachedPC) then stale[cachedPC:GetAddress()] = cachedPC:GetFullName() end
+    cachedPawn, cachedPC = nil, nil
+    lastPawnSearch = -100
+end
+
 local function findPlayer(now)
-    if U.valid(cachedPawn) and U.valid(cachedPC) then return cachedPawn, cachedPC end
+    if U.valid(cachedPawn) and U.valid(cachedPC) then
+        -- The game can spawn a new player pawn (respawn, checkpoint, new mission) while the old one is still alive
+        -- for a while; keep following the controller's current pawn or every feature works on the stale one.
+        local t = os.clock()
+        if t - lastPawnCheck < 0.5 and t >= lastPawnCheck then return cachedPawn, cachedPC end
+        lastPawnCheck = t
+        -- Every few seconds also make sure the cached controller is still the local one (a new level brings a new
+        -- controller while the previous one may not be destroyed yet).
+        if t - lastPCCheck > 3.0 or t < lastPCCheck then
+            lastPCCheck = t
+            for _, pc in ipairs(FindAllOf("BP_R6PlayerController_C") or {}) do
+                if U.valid(pc) and not U.same(pc, cachedPC) then
+                    local ok, isLocal = U.call(pc, "IsLocalController")
+                    local pawn = U.get(pc, "SpawnedPlayerCharacter")
+                    if (not ok or isLocal) and U.valid(pawn) and not U.same(pawn, cachedPawn) then
+                        if not isStale(pc) and not isStale(pawn) then
+                            U.log("player controller changed (%s -> %s)", cachedPC:GetFName():ToString(), pc:GetFName():ToString())
+                            dropStale(true)
+                            break
+                        end
+                    end
+                end
+            end
+            if not cachedPawn then return nil, nil end
+        end
+        local current = U.get(cachedPC, "SpawnedPlayerCharacter")
+        if not U.valid(current) then current = U.get(cachedPC, "Pawn") end
+        if not U.valid(current) or U.same(current, cachedPawn) then return cachedPawn, cachedPC end
+        U.log("player pawn changed (%s -> %s)", cachedPawn:GetFName():ToString(), current:GetFName():ToString())
+        dropStale(false)
+    end
     if now - lastPawnSearch < 1.0 and now >= lastPawnSearch then return nil, nil end
     lastPawnSearch = now
     local pcs = FindAllOf("BP_R6PlayerController_C")
@@ -148,7 +193,7 @@ local function findPlayer(now)
             if U.valid(pc) then
                 local ok, isLocal = U.call(pc, "IsLocalController")
                 local pawn = U.get(pc, "SpawnedPlayerCharacter")
-                if (not ok or isLocal) and U.valid(pawn) then
+                if (not ok or isLocal) and U.valid(pawn) and not isStale(pc) and not isStale(pawn) then
                     local okc, cls = pcall(function() return pawn:GetClass():GetFName():ToString() end)
                     if okc and cls and cls:find("BP_VRPlayerCharacter") then
                         cachedPawn, cachedPC = pawn, pc

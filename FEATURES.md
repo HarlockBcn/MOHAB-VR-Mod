@@ -3,6 +3,7 @@
 <!--
   Player-facing list shown in the launcher's FEATURES tab (embedded at build time) and linked from the README.
   Keep it short and non-technical. Update it in the same commit as any feat/fix that players notice.
+  "Fixes" lists only problems of the original game that the mod fixes, never bugs of the mod itself.
   Format: "## Group" (Features / Fixes), "### Category", "- **Title** - one or two sentences."
 -->
 
