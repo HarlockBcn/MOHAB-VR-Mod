@@ -8,6 +8,7 @@ M.defaults = {
     syringe_holster_scale = 0.5,
     syringe_grab_distance = 0.25,
 
+    holster_head_zone = 30,       -- cm: no holster grabs with the hand over the head (hats/helmets); 0 = off
     weapon_grip_reach = 15,       -- cm from the free hand to a weapon's off-hand grip
 
     haptics_damage = true,
@@ -38,7 +39,7 @@ M.defaults = {
 -- Order + sections used when writing the file (keep in sync with the launcher).
 M.order = {
     { "Syringes", { "syringe_require_trigger", "syringe_trigger_threshold", "syringe_small_holstered", "syringe_holster_scale", "syringe_grab_distance" } },
-    { "Weapons", { "weapon_grip_reach" } },
+    { "Weapons", { "weapon_grip_reach", "holster_head_zone" } },
     { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons" } },
     { "Crouch", { "crouch_stick", "crouch_stick_threshold" } },
     { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier" } },

@@ -25,6 +25,7 @@ internal sealed class ModConfig
         new("syringe_grab_distance", "Syringe: sleeve grab distance", OptionKind.Float, "0.25", 0.25, 1.0, 0.05, Section: "Syringes"),
 
         new("weapon_grip_reach", "Weapons: second hand grab distance (cm)", OptionKind.Float, "15", 5, 40, 1, Section: "Weapons"),
+        new("holster_head_zone", "Weapons: no holster grab over the head (cm, 0 = off)", OptionKind.Float, "30", 0, 30, 1, Section: "Weapons"),
 
         new("haptics_damage", "Haptics on damage", OptionKind.Bool, "true", Section: "Haptics"),
         new("haptics_intensity", "Haptics: intensity", OptionKind.Float, "1.0", 0.1, 1.0, 0.1, Section: "Haptics"),
