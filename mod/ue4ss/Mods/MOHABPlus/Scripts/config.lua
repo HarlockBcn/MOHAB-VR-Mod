@@ -29,6 +29,7 @@ M.defaults = {
 
     skip_cutscenes = true,
     skip_hold_time = 1.0,
+    skip_speed = 12,               -- fast-forward speed for dialogue scenes
 
     menu_hold_time = 1.0,
     debug_log = false,
@@ -42,7 +43,7 @@ M.order = {
     { "Crouch", { "crouch_stick", "crouch_stick_threshold" } },
     { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier" } },
     { "Slide", { "slide_enabled", "slide_strength", "slide_sound" } },
-    { "Cutscenes", { "skip_cutscenes", "skip_hold_time" } },
+    { "Cutscenes", { "skip_cutscenes", "skip_hold_time", "skip_speed" } },
     { "Menu", { "menu_hold_time" } },
     { "Debug", { "debug_log" } },
 }

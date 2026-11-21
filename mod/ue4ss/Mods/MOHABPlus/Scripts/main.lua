@@ -157,6 +157,7 @@ local function findPlayer(now)
                         Sprint.reset()
                         Syringe.reset()
                         WeaponGrip.reset()
+                        Cutscene.reset(pawn)
                         return pawn, pc
                     end
                 end
@@ -164,6 +165,16 @@ local function findPlayer(now)
         end
     end
     return nil, nil
+end
+
+local moduleErrors = {}
+local function guarded(name, fn, ...)
+    local ok, err = pcall(fn, ...)
+    if not ok then
+        local n = (moduleErrors[name] or 0) + 1
+        moduleErrors[name] = n
+        if n <= 5 or n % 500 == 0 then U.log("%s error #%d: %s", name, n, tostring(err)) end
+    end
 end
 
 local function tick()
@@ -187,16 +198,17 @@ local function tick()
 
     local menuOpen = Menu.tick(pawn, pc, now)
     if menuOpen and Slide.active then Slide.stop(pawn, "menu") end
-    Cutscene.tick(pawn, pc, now, menuOpen, function(ok)
+    -- Each feature runs isolated: an error in one must not stop the others.
+    guarded("cutscene", Cutscene.tick, pawn, pc, now, menuOpen, function(ok)
         -- short confirmation buzz (two pulses if something was skipped)
         Haptics.pulse(pc, now, ok and 0.6 or 0.25, ok and 0.6 or 0.25, ok and 0.15 or 0.08)
     end)
-    Sprint.updateGesture(pawn, now)
-    if Dev then Dev.afterTick() end
-    Crouch.tick(pawn, menuOpen, now)
-    Syringe.tick(pawn, now)
-    WeaponGrip.tick(pawn, now)
-    Haptics.tick(pawn, pc, now)
+    guarded("sprint", Sprint.updateGesture, pawn, now)
+    if Dev then guarded("devtools", Dev.afterTick) end
+    guarded("crouch", Crouch.tick, pawn, menuOpen, now)
+    guarded("syringe", Syringe.tick, pawn, now)
+    guarded("weapongrip", WeaponGrip.tick, pawn, now)
+    guarded("haptics", Haptics.tick, pawn, pc, now)
 end
 
 local function safeTick()

@@ -43,6 +43,7 @@ local items = {
       names = { body = "Body", wood = "Wood scrape", metal = "Metal scrape", off = "Off" } },
     { header = "CUTSCENES" },
     { key = "skip_cutscenes", label = "Skip: hold triggers + grips", kind = "bool" },
+    { key = "skip_speed", label = "Dialogue fast-forward", kind = "num", min = 2, max = 15, step = 1, digits = 0, suffix = "x" },
     { action = "close", label = "Close menu" },
 }
 

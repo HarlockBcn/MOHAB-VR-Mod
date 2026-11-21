@@ -45,6 +45,7 @@ internal sealed class ModConfig
 
         new("skip_cutscenes", "Skip cutscenes (hold both triggers + grips)", OptionKind.Bool, "true", Section: "Cutscenes"),
         new("skip_hold_time", "Skip: hold time (s)", OptionKind.Float, "1.0", 0.3, 3.0, 0.1, Section: "Cutscenes"),
+        new("skip_speed", "Skip: dialogue fast-forward speed (x)", OptionKind.Float, "12", 2, 15, 1, Section: "Cutscenes"),
 
         new("menu_hold_time", "Menu: hold time to open (s)", OptionKind.Float, "1.0", 0.3, 2.0, 0.1, Section: "Menu"),
 
