@@ -2,6 +2,19 @@
 
 All notable changes to MOHAB Plus. Versions follow MAJOR.MINOR.PATCH.
 
+## v1.1.0 - 2026-11-22
+
+### New
+- **Jump (experimental)**: push the turn stick up while standing to jump (pushing it up while crouched still stands you up). On by default: you can turn it off in the in-game menu or the launcher, where you can also set the height and the sounds (effort grunt with your character's voice and cloth rustle). You can climb onto and walk around on tables, crates and rocks, but jumps can't take you over the level's invisible barriers, and you can't jump under a low ceiling, while swimming or while skiing. The levels were not designed for jumping, so a few spots may still let you reach places you should not.
+- **Sprint slows down on sharp turns**: turning hard while sprinting cuts your speed for a moment (adjustable, 0 = off), and sprinting straight backwards is limited to half speed.
+
+### Fixes
+- Swinging your arms while crouched no longer makes you sprint or stand up.
+- The sprint could briefly go faster than the configured maximum speed.
+- Weapon front grips whose collision parts fell away with the physics are put back, so two-handed grip keeps working.
+
+**Updating:** if you have v1.0.x, the launcher offers this update by itself (click "Update to v1.1.0" at the top). Your settings are kept.
+
 ## v1.0.2 - 2026-11-21
 
 ### New
