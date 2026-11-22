@@ -153,6 +153,25 @@ local function directionFactor(ctrl)
     return SIDE_BACK_FACTOR + (1 - SIDE_BACK_FACTOR) * math.max(0, fwd / len)
 end
 
+-- Firing: the trigger of a hand holding a weapon is pulled (or the weapon is firing). Stick-click sprint is cancelled
+-- while firing; the arm-swing sprint is not (swinging the arms and shooting is the player's choice).
+local weaponClass = nil
+local function isFiring(pawn)
+    if not U.valid(weaponClass) then
+        weaponClass = StaticFindObject("/Game/R6/Core/Weapons/BP_WeaponBase.BP_WeaponBase_C")
+        if not U.valid(weaponClass) then return false end
+    end
+    for _, side in ipairs({ "Left", "Right" }) do
+        local obj = U.get(U.get(pawn, side .. "Controller"), "AttachedObject")
+        if U.valid(obj) then
+            local ok, isGun = pcall(function() return obj:IsA(weaponClass) end)
+            if ok and isGun and (U.trigger(side) > 0.5 or U.get(obj, "IsWeaponFiring_0") == true) then return true end
+        end
+    end
+    return false
+end
+local lastFireCancelLog = -100
+
 -- Speed guard: MaxWalkSpeed must never go above the configured top sprint speed (game sprint speed x multiplier).
 -- The game's own sprint speed is Lerp(StartSprintSpeed, MaxSprintSpeed, alpha) with an unclamped alpha, so it can
 -- overshoot; anything above the cap is clamped and logged with the values involved (to find the cause).
@@ -271,7 +290,21 @@ afterTickInput = function(ctrl, pawn, dt)
         end
     end
 
-    -- Stick-click sprint (game behaviour) with the speed multiplier.
+    -- Stick-click sprint (game behaviour) with the speed multiplier. No sprinting while firing: cancel it (click the
+    -- stick again to sprint after shooting).
+    if isSprinting and isFiring(pawn) then
+        pcall(function() ctrl.IsSprinting = false end)
+        local walk = gameSpeeds(ctrl, pawn)
+        local fwd, right = U.get(ctrl, "InputForward") or 0, U.get(ctrl, "InputRight") or 0
+        local stick = U.clamp(math.sqrt(fwd * fwd + right * right), 0, 1)
+        pcall(function() cmc.MaxWalkSpeed = walk * stick end)
+        penalty = 0
+        if U.now(pawn) - lastFireCancelLog > 1.0 then
+            lastFireCancelLog = U.now(pawn)
+            U.dlog("sprint: stick sprint cancelled (firing)")
+        end
+        return
+    end
     if isSprinting and U.get(pawn, "IsCurrentlyCrouched") ~= true then
         local cut = updateTurnPenalty(pawn, cmc, dt)
         local speed = U.get(cmc, "MaxWalkSpeed")

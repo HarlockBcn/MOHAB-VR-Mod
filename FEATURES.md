@@ -23,6 +23,7 @@
 ### Movement
 - **Crouch with the turn stick** - Push the turn stick down to crouch and up to stand.
 - **Arm-swing sprint** - Swing your arms like a runner to sprint; the faster you swing, the faster you run. Stick-click sprint still works.
+- **No stick sprint while shooting** - Pulling the trigger of a weapon cancels the stick-click sprint; arm-swing sprinting still lets you shoot.
 - **Faster sprint** - Raise the maximum sprint speed up to x1.5.
 - **Realistic turns** - Turning sharply while sprinting costs speed, which comes back over a second; a full U-turn drops you to walking pace (strength adjustable, 0 turns it off). Sprinting sideways or backwards is at most half as fast.
 - **Slide** - Crouch while sprinting (with the stick or for real) to slide, with a scraping sound.
