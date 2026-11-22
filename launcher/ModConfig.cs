@@ -26,12 +26,15 @@ internal sealed class ModConfig
 
         new("weapon_grip_reach", "Weapons: second hand grab distance (cm)", OptionKind.Float, "15", 5, 40, 1, Section: "Weapons"),
         new("holster_head_zone", "Weapons: no holster grab over the head (cm, 0 = off)", OptionKind.Float, "30", 0, 30, 1, Section: "Weapons"),
+        new("weapon_empty_click", "Weapons: dry click when the second hand grabs an empty weapon", OptionKind.Bool, "false", Section: "Weapons"),
 
         new("haptics_damage", "Haptics on damage", OptionKind.Bool, "true", Section: "Haptics"),
         new("haptics_intensity", "Haptics: intensity", OptionKind.Float, "1.0", 0.1, 1.0, 0.1, Section: "Haptics"),
         new("haptics_duration", "Haptics: duration (s)", OptionKind.Float, "0.35", 0.05, 1.0, 0.05, Section: "Haptics"),
         new("haptics_directional", "Haptics: stronger on the side of the hit", OptionKind.Bool, "true", Section: "Haptics"),
         new("haptics_weapons", "Haptics when reloading / opening weapons", OptionKind.Bool, "true", Section: "Haptics"),
+        new("haptics_empty", "Haptics when the second hand grabs an empty weapon", OptionKind.Bool, "true", Section: "Haptics"),
+        new("haptics_no_ammo", "Haptics when pressing grip at the magazine pouch with no ammo left", OptionKind.Bool, "true", Section: "Haptics"),
 
         new("crouch_stick", "Crouch with turn stick (down / up)", OptionKind.Bool, "true", Section: "Crouch"),
         new("crouch_stick_threshold", "Crouch: stick threshold", OptionKind.Float, "0.95", 0.3, 0.95, 0.05, Section: "Crouch"),

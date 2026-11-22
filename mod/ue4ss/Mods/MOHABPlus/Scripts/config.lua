@@ -10,12 +10,15 @@ M.defaults = {
 
     holster_head_zone = 30,       -- cm: no holster grabs with the hand over the head (hats/helmets); 0 = off
     weapon_grip_reach = 15,       -- cm from the free hand to a weapon's off-hand grip
+    weapon_empty_click = false,   -- dry-fire click when the second hand grabs an empty weapon
 
     haptics_damage = true,
     haptics_intensity = 1.0,
     haptics_duration = 0.35,
     haptics_directional = true,
     haptics_weapons = true,
+    haptics_empty = true,         -- two knocks when the second hand grabs an empty weapon
+    haptics_no_ammo = true,       -- two taps when pressing grip at the magazine pouch with no ammo left
 
     crouch_stick = true,
     crouch_stick_threshold = 0.95,
@@ -45,8 +48,8 @@ M.defaults = {
 -- Order + sections used when writing the file (keep in sync with the launcher).
 M.order = {
     { "Syringes", { "syringe_require_trigger", "syringe_trigger_threshold", "syringe_small_holstered", "syringe_holster_scale", "syringe_grab_distance" } },
-    { "Weapons", { "weapon_grip_reach", "holster_head_zone" } },
-    { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons" } },
+    { "Weapons", { "weapon_grip_reach", "holster_head_zone", "weapon_empty_click" } },
+    { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons", "haptics_empty", "haptics_no_ammo" } },
     { "Crouch", { "crouch_stick", "crouch_stick_threshold" } },
     { "Jump (experimental)", { "jump_enabled", "jump_height", "jump_sound", "jump_guard" } },
     { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier", "sprint_turn_slowdown" } },

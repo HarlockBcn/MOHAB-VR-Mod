@@ -17,6 +17,7 @@
 ### Weapons
 - **Precise two-handed grip** - Your free hand only grabs the front grip of a weapon when it is really close to it.
 - **Second grip first** - With your free hand at your weapon's front grip, nearby weapons and ammo boxes are ignored, so you always grab your own weapon.
+- **Two hands on empty weapons** - You can hold an empty weapon, or one with its magazine out, with both hands; taking its front grip gives two dry knocks on that hand (and, if you turn it on, the weapon's empty click).
 - **Helmet-safe back holsters** - Reaching over your head (to touch your helmet or hat) no longer pulls a weapon from your back.
 
 ### Movement
@@ -30,6 +31,7 @@
 ### Haptics
 - **Damage vibration** - The controllers vibrate when you get hurt, stronger for big hits and on the side of the impact.
 - **Weapon handling vibration** - Feel magazines, clips, shells and bullets going in, and break-action shotguns opening and closing.
+- **Out of ammo vibration** - Pressing grip at your magazine pouch when you have no ammo left gives two taps on that hand.
 
 ### Cutscenes
 - **Skip cutscenes** - Hold both triggers and both grips for a second to skip a cutscene.

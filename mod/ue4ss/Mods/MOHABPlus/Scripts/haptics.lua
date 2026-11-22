@@ -40,7 +40,37 @@ function M.onDamageCauser(causer, now)
     end
 end
 
+-- Queued pulse patterns: { t =, hand =, amp =, dur = } started when their time comes (see M.tick).
+local queue = {}
+
+-- "Empty weapon": two short, dry knocks on one hand (EControllerHand: 0 left, 1 right).
+function M.emptyKnock(now, hand)
+    if not C.get("haptics_empty") then return end
+    local k = U.clamp(C.get("haptics_intensity"), 0, 1)
+    queue[#queue + 1] = { t = now, hand = hand, amp = 0.9 * k, dur = 0.035 }
+    queue[#queue + 1] = { t = now + 0.11, hand = hand, amp = 0.9 * k, dur = 0.035 }
+end
+
+-- "No ammo left": two taps on one hand (softer and slower than the empty-weapon knocks).
+function M.noAmmoBuzz(now, hand)
+    if not C.get("haptics_no_ammo") then return end
+    local k = U.clamp(C.get("haptics_intensity"), 0, 1)
+    queue[#queue + 1] = { t = now, hand = hand, amp = 0.7 * k, dur = 0.05 }
+    queue[#queue + 1] = { t = now + 0.18, hand = hand, amp = 0.7 * k, dur = 0.05 }
+end
+
 function M.tick(pawn, pc, now)
+    -- Start queued pulses
+    for i = #queue, 1, -1 do
+        local q = queue[i]
+        if now >= q.t then
+            table.remove(queue, i)
+            if q.amp > 0 then
+                setHaptics(pc, q.hand, 1.0, U.clamp(q.amp, 0, 1))
+                stopAt[q.hand] = now + q.dur
+            end
+        end
+    end
     -- Stop finished pulses
     for hand, t in pairs(stopAt) do
         if t and now >= t then
@@ -120,6 +150,7 @@ function M.reset(pc)
         setHaptics(pc, HAND_RIGHT, 0, 0)
     end
     stopAt = { [HAND_LEFT] = nil, [HAND_RIGHT] = nil }
+    queue = {}
 end
 
 return M
