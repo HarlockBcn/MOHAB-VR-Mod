@@ -20,6 +20,7 @@ M.defaults = {
 
     crouch_stick = true,
     crouch_stick_threshold = 0.95,
+    crouch_speed = 0.6,             -- walking speed while crouched (x normal walking); the game has its own multiplier
 
     jump_enabled = true,            -- EXPERIMENTAL: turn stick up while standing
     jump_height = 75,               -- cm
@@ -48,7 +49,7 @@ M.order = {
     { "Syringes", { "syringe_require_trigger", "syringe_trigger_threshold", "syringe_small_holstered", "syringe_holster_scale", "syringe_grab_distance" } },
     { "Weapons", { "weapon_grip_reach", "holster_below_eyes" } },
     { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons", "haptics_no_ammo" } },
-    { "Crouch", { "crouch_stick", "crouch_stick_threshold" } },
+    { "Crouch", { "crouch_stick", "crouch_stick_threshold", "crouch_speed" } },
     { "Jump (experimental)", { "jump_enabled", "jump_height", "jump_sound", "jump_guard" } },
     { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier", "sprint_turn_slowdown" } },
     { "Slide", { "slide_enabled", "slide_strength", "slide_sound" } },
@@ -135,6 +136,7 @@ M.vanilla = {
     haptics_weapons = false,
     haptics_no_ammo = false,
     crouch_stick = false,
+    crouch_speed = 0,               -- 0 = the game's own crouch speed
     jump_enabled = false,
     jump_guard = false,
     sprint_mode = "stick",

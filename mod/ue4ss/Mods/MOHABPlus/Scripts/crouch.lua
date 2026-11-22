@@ -162,7 +162,29 @@ local function updateOffset(pawn, now)
     end
 end
 
+-- Crouched walking speed. BP_R6PlayerController.TickInput multiplies the walking speed by its CrouchSpeedMultiplier
+-- while the pawn IsCurrentlyCrouched, which covers the physical crouch, the stick crouch (the lowered view makes the game
+-- detect a crouch) and the seated button crouch; the slide also ends at that speed. We set it to crouch_speed and keep
+-- the game's own value per controller (crouch_speed <= 0 puts it back: master switch off).
+local origCrouchMult, multPC = nil, nil
+local function applyCrouchSpeed()
+    local pc = U.pc
+    if not U.valid(pc) then return end
+    local addr = pc:GetAddress()
+    if addr ~= multPC then multPC, origCrouchMult = addr, nil end
+    local cur = U.get(pc, "CrouchSpeedMultiplier")
+    if type(cur) ~= "number" then return end
+    if origCrouchMult == nil then
+        origCrouchMult = cur
+        U.log("game crouch speed multiplier: %.2f", cur)
+    end
+    local want = tonumber(C.get("crouch_speed")) or 0
+    if want <= 0 then want = origCrouchMult end
+    if math.abs(cur - want) > 0.001 then pcall(function() pc.CrouchSpeedMultiplier = want end) end
+end
+
 function M.tick(pawn, menuOpen, now)
+    pcall(applyCrouchSpeed)
     local addr = pawn:GetAddress()
     if addr ~= lastPawnAddr then
         lastPawnAddr = addr

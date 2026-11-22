@@ -55,6 +55,8 @@ local tabs = {
     { name = "Movement", items = {
         { key = "crouch_stick", label = "Crouch with turn stick", kind = "bool",
           help = "Turn stick down: crouch.  Up: stand up" },
+        { key = "crouch_speed", label = "Crouched speed", kind = "num", min = 0.3, max = 1.0, step = 0.05, digits = 2, suffix = "x",
+          help = "Walking speed while crouched, for real or with the stick (1x = normal walking)" },
         { key = "sprint_mode", label = "Sprint", kind = "choice",
           choices = { "stick", "arms", "both" },
           names = { stick = "Stick click", arms = "Arm swing", both = "Click + arms" },
@@ -106,7 +108,7 @@ local MASTER_INFO = {
     "click a thumbstick.",
 }
 
-local ROWS = 8      -- option rows in the right column (and rows of the left column)
+local ROWS = 9      -- option rows in the right column (and rows of the left column)
 
 local function valueText(it)
     local v = C.raw(it.key)
