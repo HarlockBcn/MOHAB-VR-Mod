@@ -132,10 +132,8 @@ function M.afterTickInput(ctrl, pawn, dt)
 
     if mode == "arms" or mode == "both" then
         local disabled = U.get(ctrl, "DisableSprinting") == true
-        if M.gestureActive and moving and not disabled and Crouch.virtualCrouched and not Slide.blockGesture then
-            Crouch.virtualCrouched = false        -- swinging the arms while crouched stands the player up
-        end
-        local crouched = U.get(pawn, "IsCurrentlyCrouched") == true
+        -- Swinging the arms while crouched (stick crouch or the game's own) does nothing: no sprint, no standing up.
+        local crouched = Crouch.virtualCrouched or U.get(pawn, "IsCurrentlyCrouched") == true
         local want = M.gestureActive and moving and not disabled and not crouched
         local walk, sprint = gameSpeeds(ctrl, pawn)
         local fwd, right = U.get(ctrl, "InputForward") or 0, U.get(ctrl, "InputRight") or 0
