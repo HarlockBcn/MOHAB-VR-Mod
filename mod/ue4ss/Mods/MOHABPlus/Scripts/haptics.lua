@@ -43,15 +43,7 @@ end
 -- Queued pulse patterns: { t =, hand =, amp =, dur = } started when their time comes (see M.tick).
 local queue = {}
 
--- "Empty weapon": two short, dry knocks on one hand (EControllerHand: 0 left, 1 right).
-function M.emptyKnock(now, hand)
-    if not C.get("haptics_empty") then return end
-    local k = U.clamp(C.get("haptics_intensity"), 0, 1)
-    queue[#queue + 1] = { t = now, hand = hand, amp = 0.9 * k, dur = 0.035 }
-    queue[#queue + 1] = { t = now + 0.11, hand = hand, amp = 0.9 * k, dur = 0.035 }
-end
-
--- "No ammo left": two taps on one hand (softer and slower than the empty-weapon knocks).
+-- "No ammo left": two taps on one hand (EControllerHand: 0 left, 1 right).
 function M.noAmmoBuzz(now, hand)
     if not C.get("haptics_no_ammo") then return end
     local k = U.clamp(C.get("haptics_intensity"), 0, 1)

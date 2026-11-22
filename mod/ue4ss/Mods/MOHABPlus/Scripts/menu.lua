@@ -35,8 +35,6 @@ local tabs = {
     { name = "Weapons", items = {
         { key = "weapon_grip_reach", label = "Second hand reach", kind = "num", min = 5, max = 40, step = 1, digits = 0, suffix = " cm",
           help = "How close the second hand must be to grab a weapon's front grip" },
-        { key = "weapon_empty_click", label = "Click on empty weapon", kind = "bool",
-          help = "Dry-fire click when the second hand grabs an empty weapon" },
         { key = "holster_below_eyes", label = "No holster grab above eyes", kind = "bool",
           help = "A hand above your eyes grabs hats and helmets, not back weapons" },
     } },
@@ -51,8 +49,6 @@ local tabs = {
           help = "The controller on the side the hit came from vibrates harder" },
         { key = "haptics_weapons", label = "Vibrate when reloading", kind = "bool",
           help = "Magazines, shells and opening / closing the sawed-off" },
-        { key = "haptics_empty", label = "Vibrate on empty weapon", kind = "bool",
-          help = "Two knocks when the second hand grabs an empty weapon" },
         { key = "haptics_no_ammo", label = "Vibrate when out of ammo", kind = "bool",
           help = "Two taps when you reach for the magazine pouch with no ammo left" },
     } },

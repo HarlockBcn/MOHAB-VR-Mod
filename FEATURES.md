@@ -17,7 +17,6 @@
 ### Weapons
 - **Precise two-handed grip** - Your free hand only grabs the front grip of a weapon when it is really close to it.
 - **Second grip first** - With your free hand at your weapon's front grip, nearby weapons and ammo boxes are ignored, so you always grab your own weapon.
-- **Two hands on empty weapons** - You can hold an empty weapon, or one with its magazine out, with both hands; taking its front grip gives two dry knocks on that hand (and, if you turn it on, the weapon's empty click).
 - **Helmet-safe back holsters** - With your hand above your eyes (touching your helmet or hat) no weapon is pulled from a holster; take them from behind your shoulders, also with your head bent down.
 
 ### Movement
