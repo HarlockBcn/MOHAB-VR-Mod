@@ -11,6 +11,7 @@
 --   openlevel <path>       open a map, e.g. /Game/R6/Maps/100_BasicTraining/P_100_BasicTraining
 --   spawnsyringe | attachgrab | release | forceinject | syrdebug | simtrigger   syringe tests
 --   slide | slidetest      start a slide (slidetest also traces its speed);  sound <body|wood|metal>
+--   jump                   jump as if the turn stick was pushed up
 --   probe | skip           list cinematics / skip the current one;   setpc <prop> <value>, lift <cm>
 --   unlock                 clear the controller's foot lock (tutorial intro)
 --   where                  list player controllers / pawns
@@ -21,6 +22,7 @@ local Haptics = require("haptics")
 local Crouch = require("crouch")
 local Sprint = require("sprint")
 local Menu = require("menu")
+local Jump = require("jump")
 
 local M = {}
 M.walk = false
@@ -217,6 +219,8 @@ function M.process()
         U.log("sound test -> %s", tostring(Slide.debugPlay(pawn, cmd:sub(7))))
     elseif cmd == "skip" then
         U.log("skip -> %s", tostring(require("cutscene").skip(pawn, pc, U.now(pawn))))
+    elseif cmd == "jump" then
+        U.log("jump -> %s", tostring(Jump.tryJump(pawn, pc, U.now(pawn))))
     elseif cmd == "slide" then
         local walk = U.gameSpeeds(pc, pawn)
         U.log("slide start -> %s", tostring(require("slide").tryStart(pawn, pc, U.now(pawn), walk)))

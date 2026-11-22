@@ -6,6 +6,7 @@
 -- CharacterMovement.MaxWalkSpeed plus a movement input along the slide direction.
 local U = require("util")
 local C = require("config")
+local Audio = require("audio")
 
 local M = {}
 
@@ -18,7 +19,7 @@ local startTime = 0
 local soundEvent, stopEvent = nil, nil
 
 -- ---------------------------------------------------------------------------------------------
--- Sound (Wwise). Events need their sound bank loaded; we load the event's RequiredBank once.
+-- Sound (Wwise, see audio.lua).
 -- ---------------------------------------------------------------------------------------------
 local SOUNDS = {
     body = { play = "/Game/R6/Audio/AI/Skits/131/Play_SKT_131_BodySlideOnTruck.Play_SKT_131_BodySlideOnTruck" },
@@ -29,49 +30,21 @@ local SOUNDS = {
 }
 M.SOUND_NAMES = { "body", "wood", "metal", "off" }
 
-local ak = nil
-local loadedBanks = {}
-local function akStatics()
-    if not U.valid(ak) then ak = StaticFindObject("/Script/AkAudio.Default__AkGameplayStatics") end
-    return ak
-end
-
-local function loadEvent(path)
-    if not path then return nil end
-    local ev = StaticFindObject(path)
-    if not U.valid(ev) then
-        pcall(LoadAsset, path)
-        ev = StaticFindObject(path)
-    end
-    if not U.valid(ev) then return nil end
-    local bank = U.get(ev, "RequiredBank")
-    if U.valid(bank) and not loadedBanks[bank:GetAddress()] then
-        -- SynchronizeSoundBanks MUST be false: true makes Wwise unload every bank not in this list
-        -- (all of the game's sounds and music).
-        local ok = U.call(akStatics(), "LoadBanks", { bank }, false)
-        loadedBanks[bank:GetAddress()] = ok
-        U.dlog("sound bank %s loaded=%s", bank:GetFName():ToString(), tostring(ok))
-    end
-    return ev
-end
-
 local function playSound(pawn, name)
     local def = SOUNDS[name]
     if not def then return false end
-    local ev = loadEvent(def.play)
+    local ev = Audio.loadEvent(def.play)
     if not ev then return false end
-    stopEvent = loadEvent(def.stop)
+    stopEvent = Audio.loadEvent(def.stop)
     soundEvent = ev
-    local ok, id = U.call(akStatics(), "PostEventAttached", ev, pawn, FName("None"), true, "")
-    return ok and id
+    return Audio.post(ev, pawn)
 end
 
 local function stopSound(pawn)
     if U.valid(stopEvent) then
-        U.call(akStatics(), "PostEventAttached", stopEvent, pawn, FName("None"), true, "")
-    elseif U.valid(soundEvent) then
-        -- ExecuteActionOnEvent(Stop) with a short fade
-        U.call(akStatics(), "ExecuteActionOnEvent", soundEvent, 0, pawn, 200, 4, 0)
+        Audio.post(stopEvent, pawn)
+    else
+        Audio.stopEvent(soundEvent, pawn)
     end
     soundEvent, stopEvent = nil, nil
 end
@@ -79,7 +52,7 @@ end
 function M.debugPlay(pawn, name)
     local def = SOUNDS[name]
     if not def then return "unknown sound" end
-    local ev = loadEvent(def.play)
+    local ev = Audio.loadEvent(def.play)
     if not ev then return "event not found" end
     local bank = U.get(ev, "RequiredBank")
     local okI, inf = U.call(ev, "GetIsInfinite")

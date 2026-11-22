@@ -1,4 +1,4 @@
--- Virtual crouch with the turn stick: push down = crouch, push up = stand up.
+-- Virtual crouch with the turn stick: push down = crouch, push up = stand up (or jump if already standing, see jump.lua).
 -- The turn stick Y axis is not used by the game (turning only uses X).
 --
 -- Standing play mode (IsStandingMode = true, the usual case): the game has no button crouch; it derives
@@ -10,6 +10,7 @@
 local U = require("util")
 local C = require("config")
 local Slide = require("slide")
+local Jump = require("jump")
 
 local M = {}
 
@@ -171,8 +172,9 @@ function M.tick(pawn, menuOpen, now)
         M.physSlide, lastStandH, lastStandT = nil, nil, nil
     end
 
-    if not C.get("crouch_stick") then
-        M.virtualCrouched = false
+    local crouchOn, jumpOn = C.get("crouch_stick"), C.get("jump_enabled")
+    if not crouchOn then M.virtualCrouched = false end
+    if not crouchOn and not jumpOn then
         armed = false
     elseif not menuOpen then
         local y = U.get(pawn, "FlickTurningStick_YAxis")
@@ -181,7 +183,7 @@ function M.tick(pawn, menuOpen, now)
         if math.abs(y) < 0.3 then
             armed = true
         elseif armed then
-            if y <= -thr then
+            if y <= -thr and crouchOn then
                 armed = false
                 -- Crouching while sprinting starts a slide (ends crouched).
                 if U.pc and U.get(U.pc, "IsSprinting") == true and U.get(pawn, "IsStandingMode") ~= false then
@@ -191,7 +193,13 @@ function M.tick(pawn, menuOpen, now)
                 M.setCrouched(pawn, true)
             elseif y >= thr then
                 armed = false
-                M.setCrouched(pawn, false)
+                -- Up: stand up if crouched with the stick, otherwise jump.
+                local seatedCrouch = U.get(pawn, "IsStandingMode") == false and U.get(pawn, "IsCurrentlyCrouched") == true
+                if (crouchOn and (M.virtualCrouched or seatedCrouch)) or not jumpOn then
+                    M.setCrouched(pawn, false)
+                elseif U.pc then
+                    Jump.tryJump(pawn, U.pc, now)
+                end
             end
         end
     end

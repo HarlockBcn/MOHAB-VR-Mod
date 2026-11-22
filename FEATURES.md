@@ -24,6 +24,7 @@
 - **Arm-swing sprint** - Swing your arms like a runner to sprint; the faster you swing, the faster you run. Stick-click sprint still works.
 - **Faster sprint** - Raise the maximum sprint speed up to x1.5.
 - **Slide** - Crouch while sprinting (with the stick or for real) to slide, with a scraping sound.
+- **Jump** - Push the turn stick up while standing to jump, with an effort grunt and cloth sounds. You can climb onto and walk around on tables, rocks and crates, but jumps can't take you over the level's invisible barriers (off by default; height and sounds can be adjusted).
 
 ### Haptics
 - **Damage vibration** - The controllers vibrate when you get hurt, stronger for big hits and on the side of the impact.
