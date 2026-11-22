@@ -47,8 +47,76 @@ end
 -- of the second grip it sometimes detaches and falls through the world, and the weapon can no longer be held with
 -- two hands. Put it back on the weapon's child actor component.
 local lastReattach = {}
+
+-- The grip actor's root can stay in place while one of its collision components (the part the hand actually grabs)
+-- starts simulating physics: it detaches from the grip and falls forever, so the hand never reaches it again. We
+-- remember where each collision component sits while healthy and snap it back when it starts simulating or loses
+-- its attach parent.
+local compHome = {}       -- component address -> { parent =, socket =, loc =, rot = }
+local classHome = {}      -- "<grip class>/<component name>" -> { loc =, rot = } (fallback for a grip first seen loose)
+
+local function rotOf(r)
+    if not r then return nil end
+    local ok, v = pcall(function() return { Pitch = r.Pitch, Yaw = r.Yaw, Roll = r.Roll } end)
+    return ok and v or nil
+end
+
+local function relLoc(comp)
+    local v = U.get(comp, "RelativeLocation")
+    return v and U.vec(v) or nil
+end
+
+local function checkComponents(grip, root)
+    local cls = grip:GetClass():GetFName():ToString()
+    for _, name in ipairs(COMP_NAMES) do
+        local comp = U.get(grip, name)
+        if U.valid(comp) and not U.same(comp, root) then
+            local addr = comp:GetAddress()
+            local okS, sim = U.call(comp, "IsSimulatingPhysics", FName("None"))
+            local okP, parent = U.call(comp, "GetAttachParent")
+            local attached = okP and U.valid(parent)
+            local simulating = okS and sim
+            if attached and not simulating then
+                if not compHome[addr] then
+                    local okN, socket = U.call(comp, "GetAttachSocketName")
+                    local home = {
+                        parent = parent, socket = okN and socket or FName("None"),
+                        loc = relLoc(comp), rot = rotOf(U.get(comp, "RelativeRotation")),
+                    }
+                    if home.loc and home.rot then
+                        compHome[addr] = home
+                        classHome[cls .. "/" .. name] = classHome[cls .. "/" .. name] or { loc = home.loc, rot = home.rot }
+                    end
+                end
+            else
+                local key = addr .. "c"
+                local t = os.clock()
+                if not (lastReattach[key] and t - lastReattach[key] < 1.0) then
+                    lastReattach[key] = t
+                    local home = compHome[addr]
+                    local target = home and U.valid(home.parent) and home.parent or root
+                    local socket = home and home.socket or FName("None")
+                    local rel = home or classHome[cls .. "/" .. name]
+                    U.call(comp, "SetSimulatePhysics", false)
+                    U.call(comp, "SetPhysicsLinearVelocity", { X = 0, Y = 0, Z = 0 }, false, FName("None"))
+                    -- Location/rotation SnapToTarget (2), scale KeepRelative (0).
+                    U.call(comp, "K2_AttachToComponent", target, socket, 2, 2, 0, true)
+                    if rel then
+                        U.call(comp, "K2_SetRelativeLocationAndRotation", rel.loc, rel.rot, false, {}, true)
+                    end
+                    local okA, p2 = U.call(comp, "GetAttachParent")
+                    U.log("weapon grip %s: %s was loose (physics %s, attached %s) -> reattached=%s%s",
+                        grip:GetFName():ToString(), name, tostring(simulating), tostring(attached),
+                        tostring(okA and U.valid(p2)), rel and "" or " (position unknown)")
+                end
+            end
+        end
+    end
+end
+
 local function checkAttached(grip, weapon, otherHeld, freeHeld)
     if U.same(otherHeld, grip) or U.same(freeHeld, grip) then return end
+    pcall(checkComponents, grip, select(2, U.call(grip, "K2_GetRootComponent")))
     local okC, cac = U.call(grip, "GetParentComponent")
     if not (okC and U.valid(cac)) then return end
     local okR, root = U.call(grip, "K2_GetRootComponent")
@@ -340,6 +408,7 @@ function M.reset()
     blocked = {}
     caps, shrinking = {}, false
     grips, gated = {}, {}
+    compHome, lastReattach = {}, {}
     lastScan = -100
 end
 
