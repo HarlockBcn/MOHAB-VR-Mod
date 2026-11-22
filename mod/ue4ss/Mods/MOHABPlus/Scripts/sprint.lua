@@ -151,9 +151,55 @@ local function backFactor(ctrl)
     return 1 - (1 - BACK_FACTOR) * (-fwd / len)
 end
 
+-- Speed guard: MaxWalkSpeed must never go above the configured top sprint speed (game sprint speed x multiplier).
+-- The game's own sprint speed is Lerp(StartSprintSpeed, MaxSprintSpeed, alpha) with an unclamped alpha, so it can
+-- overshoot; anything above the cap is clamped and logged with the values involved (to find the cause).
+local lastGuardLog = -100
+local MSD = {
+    start = "StartSprintSpeed_16_8A5281B24785F79CEDE59E92E0DBE5AB",
+    max = "MaxSprintSpeed_3_6EB63D2A41BC620D5EEA93B63C088CB3",
+    lerpTime = "SprintSpeedLerpTime_9_5ECBA5464BDB5F0BFA39FFAAE8ADB235",
+    alphaMult = "SprintSpeedLerpAlphaMultiplier_11_3D016C8C4C823D5F0A4EEDA9AC38CC5D",
+}
+local function guardSpeed(ctrl, pawn, gameSpeed)
+    if Slide.active then return end
+    local cmc = U.get(pawn, "CharacterMovement")
+    local speed = U.get(cmc, "MaxWalkSpeed")
+    if type(speed) ~= "number" then return end
+    local _, sprint = gameSpeeds(ctrl, pawn)
+    local cap = sprint * U.clamp(C.get("sprint_speed_multiplier"), 1.0, 1.5)
+    local v = U.get(cmc, "Velocity")
+    local vh = v and math.sqrt(v.X * v.X + v.Y * v.Y) or 0
+    local over = speed > cap * 1.02
+    local fast = vh > cap * 1.2 and U.get(cmc, "MovementMode") == 1    -- walking on the ground
+    if over then pcall(function() cmc.MaxWalkSpeed = cap end) end
+    if (over or fast) and U.now(pawn) - lastGuardLog > 1.0 then
+        lastGuardLog = U.now(pawn)
+        local msd = {}
+        pcall(function()
+            local d = pawn.MoveSpeedData
+            for k, f in pairs(MSD) do msd[k] = d[f] end
+        end)
+        U.log("sprint guard: MaxWalkSpeed %.0f (game set %s) velocity %.0f, cap %.0f%s | sprinting=%s ours=%s arms=%s(%.2f) " ..
+            "smooth=%s | MoveSpeedData start=%s max=%s lerpTime=%s alphaMult=%s speedMult=%s",
+            speed, tostring(gameSpeed), vh, cap, over and " -> clamped" or "",
+            tostring(U.get(ctrl, "IsSprinting")), tostring(startedByUs), tostring(M.gestureActive), M.intensity or 0,
+            tostring(smoothSpeed), tostring(msd.start), tostring(msd.max), tostring(msd.lerpTime),
+            tostring(msd.alphaMult), tostring(U.get(ctrl, "MovementSpeedMultiplier")))
+    end
+end
+
+local afterTickInput
+
 -- Post-hook of BP_R6PlayerController_C:TickInput (runs every frame right after the game set MaxWalkSpeed).
 function M.afterTickInput(ctrl, pawn, dt)
     if not U.valid(pawn) then return end
+    local gameSpeed = U.get(U.get(pawn, "CharacterMovement"), "MaxWalkSpeed")
+    afterTickInput(ctrl, pawn, dt)
+    pcall(guardSpeed, ctrl, pawn, gameSpeed)
+end
+
+afterTickInput = function(ctrl, pawn, dt)
     -- A slide in progress drives the movement itself.
     if Slide.update(ctrl, pawn, U.now(pawn)) then
         startedByUs, smoothSpeed = false, nil
