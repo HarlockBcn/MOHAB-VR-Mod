@@ -141,14 +141,16 @@ local function updateTurnPenalty(pawn, cmc, dt)
     return strength * penalty
 end
 
--- Backwards: sprinting straight back reaches at most BACK_FACTOR of the sprint speed (never below walking);
--- sideways-back directions in between. The stick input is relative to where the player faces.
-local BACK_FACTOR = 0.5
-local function backFactor(ctrl)
+-- Direction: sprinting sideways or backwards reaches at most SIDE_BACK_FACTOR of the sprint speed (never below
+-- walking). Straight ahead keeps the full speed; in between it scales with how much of the input points forward:
+--   factor = SIDE_BACK_FACTOR + (1 - SIDE_BACK_FACTOR) * max(0, forward share)   (45 deg forward-diagonal ~0.85)
+-- The stick input is relative to where the player faces. Used by both the arm-swing and the stick-click sprint.
+local SIDE_BACK_FACTOR = 0.5
+local function directionFactor(ctrl)
     local fwd, right = U.get(ctrl, "InputForward") or 0, U.get(ctrl, "InputRight") or 0
     local len = math.sqrt(fwd * fwd + right * right)
-    if len < 0.05 or fwd >= 0 then return 1 end
-    return 1 - (1 - BACK_FACTOR) * (-fwd / len)
+    if len < 0.05 then return 1 end
+    return SIDE_BACK_FACTOR + (1 - SIDE_BACK_FACTOR) * math.max(0, fwd / len)
 end
 
 -- Speed guard: MaxWalkSpeed must never go above the configured top sprint speed (game sprint speed x multiplier).
@@ -242,7 +244,7 @@ afterTickInput = function(ctrl, pawn, dt)
             -- Progressive: the swing rhythm sets the top speed; the speed glides towards it (no jumps per swing).
             local cut = updateTurnPenalty(pawn, cmc, dt)
             local target = (walk + (sprint * mult - walk) * M.intensity * (1 - cut)) * stick
-            local back = backFactor(ctrl)
+            local back = directionFactor(ctrl)
             target = math.max(walk * stick, target * back)
             if not smoothSpeed then
                 local cur = U.get(cmc, "MaxWalkSpeed")
@@ -273,7 +275,7 @@ afterTickInput = function(ctrl, pawn, dt)
     if isSprinting and U.get(pawn, "IsCurrentlyCrouched") ~= true then
         local cut = updateTurnPenalty(pawn, cmc, dt)
         local speed = U.get(cmc, "MaxWalkSpeed")
-        local back = backFactor(ctrl)
+        local back = directionFactor(ctrl)
         if (mult > 1.001 or cut > 0 or back < 1) and type(speed) == "number" and speed > 0 then
             local walk = gameSpeeds(ctrl, pawn)
             local fast = speed * mult
