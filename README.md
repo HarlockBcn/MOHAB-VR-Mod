@@ -37,9 +37,10 @@ Short, player-facing list: [FEATURES.md](FEATURES.md) (also shown in the launche
 | No holster grabs over the head | While a hand is over your head (e.g. grabbing a helmet or hat), it does not grab the weapons holstered on your back. Hands at shoulder level still grab them. | 30 cm |
 | Haptics on damage | Both controllers vibrate when you lose health. Intensity and duration grow with the damage. Optionally, the controller on the side of the hit vibrates harder. | On |
 | Haptics on weapon handling | Vibration when inserting magazines, clips, shells or bullets, and when opening/closing break-action shotguns. | On |
-| Crouch with the turn stick | Turn stick **down** = crouch; **up** = stand up. You move crouched (at the game's crouch speed). Sprinting stands you up. | On |
-| Arm-swing sprint | `arms` mode: you run by moving the stick **and** swinging your arms like when running, without clicking the stick. It is **progressive**: the faster you swing, the faster you run (from walking speed up to maximum sprint). Stop swinging and you walk again immediately. `both` mode: both ways work. `stick` mode: like the original game. | `both` |
-| Sprint speed | Multiplier of the game's maximum sprint speed, from x1.0 to x1.5. Also applies to stick-click sprint. | x1.5 |
+| Crouch with the turn stick | Turn stick **down** = crouch; **up** = stand up (or jump, if you are already standing). The stick has to be pushed almost all the way (threshold 0.95). You move crouched (at the game's crouch speed). Sprinting stands you up. | On |
+| Jump (experimental) | Turn stick **up** while standing. Effort grunt and cloth sounds. You can climb onto tables, crates and rocks, but not over the level's invisible barriers, under a low ceiling, while swimming or while skiing. The levels were not designed for jumping, so a few spots may still let you reach places you should not. | On, 75 cm |
+| Arm-swing sprint | `arms` mode: you run by moving the stick **and** swinging your arms like when running, without clicking the stick. It is **progressive**: the faster you swing, the faster you run (from walking speed up to maximum sprint). Stop swinging and you walk again immediately. `both` mode: both ways work. `stick` mode: like the original game. | `both`, sensitivity 1.3 |
+| Sprint speed | Multiplier of the game's maximum sprint speed, from x1.0 to x1.5. Also applies to stick-click sprint. | x1.4 |
 | Slide | Crouching while sprinting (with the turn stick or physically) makes you slide in the direction you were running. It starts a bit faster than your speed and slows down to crouch speed, so it is longer the faster you were running. You end up crouched. A scraping sound plays (`body`, `wood`, `metal` or `off`). | On, length x1.5, sound `body` |
 | Skip cutscenes | **Hold both triggers and both grips for 1 s.** If the game marks the scene as skippable, the game's own skip is used. Otherwise, if you are locked in a scene, the sequences playing are skipped to their end. In dialogue scenes (NPC skits) the action is fast-forwarded (x12 by default) until the dialogue ends. Vibrates when skipping. | On |
 
@@ -89,7 +90,7 @@ Without an internet connection the launcher works as usual. You can also update 
 
 ## In-game menu
 
-* **Hold the Y button (left controller) for 1 s** to open or close it. In the original game that button does nothing.
+* **Hold the Y button (left controller) for 1.5 s** to open or close it. In the original game that button does nothing.
 * A text panel floats in front of you. While it is open you do not move or shoot.
 * **Stick up/down**: select an option. **Stick left/right**: change its value.
 * **A** or **trigger**: toggle. **B**: close.

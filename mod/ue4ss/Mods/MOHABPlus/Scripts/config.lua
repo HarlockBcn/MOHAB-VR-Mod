@@ -18,16 +18,16 @@ M.defaults = {
     haptics_weapons = true,
 
     crouch_stick = true,
-    crouch_stick_threshold = 0.7,
+    crouch_stick_threshold = 0.95,
 
-    jump_enabled = false,           -- EXPERIMENTAL: turn stick up while standing
-    jump_height = 40,               -- cm
+    jump_enabled = true,            -- EXPERIMENTAL: turn stick up while standing
+    jump_height = 75,               -- cm
     jump_sound = "all",             -- "all" (voice + cloth) | "cloth" | "off"
     jump_guard = true,              -- invisible level barriers become infinitely tall (anything visible can be climbed)
 
     sprint_mode = "both",           -- "stick" | "arms" | "both"
-    sprint_arm_sensitivity = 1.0,
-    sprint_speed_multiplier = 1.5,
+    sprint_arm_sensitivity = 1.3,
+    sprint_speed_multiplier = 1.4,
     sprint_turn_slowdown = 1.0,     -- 0..1: speed lost on sharp turns while sprinting (0 = off)
 
     slide_enabled = true,
@@ -38,7 +38,7 @@ M.defaults = {
     skip_hold_time = 1.0,
     skip_speed = 12,               -- fast-forward speed for dialogue scenes
 
-    menu_hold_time = 1.0,
+    menu_hold_time = 1.5,
     debug_log = false,
 }
 

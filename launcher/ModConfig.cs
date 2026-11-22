@@ -34,16 +34,16 @@ internal sealed class ModConfig
         new("haptics_weapons", "Haptics when reloading / opening weapons", OptionKind.Bool, "true", Section: "Haptics"),
 
         new("crouch_stick", "Crouch with turn stick (down / up)", OptionKind.Bool, "true", Section: "Crouch"),
-        new("crouch_stick_threshold", "Crouch: stick threshold", OptionKind.Float, "0.7", 0.3, 0.95, 0.05, Section: "Crouch"),
+        new("crouch_stick_threshold", "Crouch: stick threshold", OptionKind.Float, "0.95", 0.3, 0.95, 0.05, Section: "Crouch"),
 
-        new("jump_enabled", "Jump with turn stick up (while standing)", OptionKind.Bool, "false", Section: "Jump (experimental)"),
-        new("jump_height", "Jump: height (cm)", OptionKind.Float, "40", 20, 80, 5, Section: "Jump (experimental)"),
+        new("jump_enabled", "Jump with turn stick up (while standing)", OptionKind.Bool, "true", Section: "Jump (experimental)"),
+        new("jump_height", "Jump: height (cm)", OptionKind.Float, "75", 20, 80, 5, Section: "Jump (experimental)"),
         new("jump_sound", "Jump: sounds", OptionKind.Choice, "all", Choices: new[] { "all", "cloth", "off" }, Section: "Jump (experimental)"),
         new("jump_guard", "Jump: stay inside the level (furniture can still be climbed)", OptionKind.Bool, "true", Section: "Jump (experimental)"),
 
         new("sprint_mode", "Sprint mode", OptionKind.Choice, "both", Choices: new[] { "stick", "arms", "both" }, Section: "Sprint"),
-        new("sprint_arm_sensitivity", "Sprint: arm swing sensitivity", OptionKind.Float, "1.0", 0.3, 2.0, 0.1, Section: "Sprint"),
-        new("sprint_speed_multiplier", "Sprint: max speed multiplier", OptionKind.Float, "1.5", 1.0, 1.5, 0.05, Section: "Sprint"),
+        new("sprint_arm_sensitivity", "Sprint: arm swing sensitivity", OptionKind.Float, "1.3", 0.3, 2.0, 0.1, Section: "Sprint"),
+        new("sprint_speed_multiplier", "Sprint: max speed multiplier", OptionKind.Float, "1.4", 1.0, 1.5, 0.05, Section: "Sprint"),
         new("sprint_turn_slowdown", "Sprint: slow down on sharp turns (0 = off)", OptionKind.Float, "1.0", 0.0, 1.0, 0.1, Section: "Sprint"),
 
         new("slide_enabled", "Slide when crouching while sprinting", OptionKind.Bool, "true", Section: "Slide"),
@@ -54,7 +54,7 @@ internal sealed class ModConfig
         new("skip_hold_time", "Skip: hold time (s)", OptionKind.Float, "1.0", 0.3, 3.0, 0.1, Section: "Cutscenes"),
         new("skip_speed", "Skip: dialogue fast-forward speed (x)", OptionKind.Float, "12", 2, 15, 1, Section: "Cutscenes"),
 
-        new("menu_hold_time", "Menu: hold time to open (s)", OptionKind.Float, "1.0", 0.3, 2.0, 0.1, Section: "Menu"),
+        new("menu_hold_time", "Menu: hold time to open (s)", OptionKind.Float, "1.5", 0.3, 2.0, 0.1, Section: "Menu"),
 
         new("debug_log", "Verbose logging to UE4SS.log", OptionKind.Bool, "false", Section: "Debug"),
     };
