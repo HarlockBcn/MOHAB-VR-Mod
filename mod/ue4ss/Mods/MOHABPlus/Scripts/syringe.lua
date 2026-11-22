@@ -18,19 +18,60 @@ local tracked = {}      -- address -> { actor=, overlap=, latchUntil=, wasPresse
 local lastScan = -1
 local scanList = {}
 
+-- Subclasses count too: the Quartermaster health pack hands out BP_HealthSyringe_Quartermaster_C (FindAllOf already
+-- returns them, so they get the sleeve scale and must also get full size back when grabbed).
+local syringeClass = nil
 local function isSyringe(obj)
+    if not U.valid(syringeClass) then
+        syringeClass = StaticFindObject("/Game/R6/Core/Placeables/BP_HealthSyringe.BP_HealthSyringe_C")
+    end
+    if U.valid(syringeClass) then
+        local ok, r = pcall(function() return obj:IsA(syringeClass) end)
+        if ok then return r == true end
+    end
     local ok, cls = pcall(function() return obj:GetClass():GetFName():ToString() end)
-    return ok and cls == SYRINGE_CLASS
+    return ok and cls:find("HealthSyringe", 1, true) ~= nil
 end
 
+-- Per-syringe state, keyed by address. A new syringe (health pack refill) can be spawned at the address of one that
+-- was destroyed, so the full name is compared too: a different object starts with a fresh state.
 local function state(syr)
     local addr = syr:GetAddress()
+    local name = ""
+    pcall(function() name = syr:GetFullName() end)
     local st = tracked[addr]
-    if not st then
-        st = { actor = syr }
+    if not st or st.name ~= name then
+        st = { actor = syr, name = name, fresh = true }
         tracked[addr] = st
     end
     return st
+end
+
+-- Diagnostics (debug_log): where the syringe and its visible parts are when it is
+-- first seen and every time a hand grabs it.
+local function compInfo(comp)
+    if not U.valid(comp) then return "none" end
+    local okV, vis = U.call(comp, "IsVisible")
+    local okP, parent = U.call(comp, "GetAttachParent")
+    local okS, sc = U.call(comp, "K2_GetComponentScale")
+    local okPh, phys = U.call(comp, "IsSimulatingPhysics")
+    return string.format("vis=%s parent=%s scale=%s phys=%s", okV and tostring(vis) or "?",
+        (okP and U.valid(parent)) and parent:GetFName():ToString() or "none",
+        (okS and sc) and string.format("%.2f", sc.X) or "?", okPh and tostring(phys) or "?")
+end
+
+local function syringeInfo(syr)
+    local okL, loc = U.call(syr, "K2_GetActorLocation")
+    local mid = U.get(syr, "Syringe_Middle")
+    local okM, mloc = U.call(mid, "K2_GetComponentLocation")
+    local dist = "?"
+    if okL and okM and loc and mloc then dist = string.format("%.0f", U.vlen(U.vsub(U.vec(mloc), U.vec(loc)))) end
+    local okP, parent = U.call(syr, "GetAttachParentActor")
+    local okS, s = U.call(syr, "GetActorScale3D")
+    return string.format("scale=%s hidden=%s used=%s stuck=%s parent=%s | middle %s (%s cm from actor) | contents %s",
+        (okS and s) and string.format("%.2f", s.X) or "?", tostring(U.get(syr, "bHidden")), tostring(U.get(syr, "Used")),
+        tostring(U.get(syr, "StuckInPlayer")), (okP and U.valid(parent)) and parent:GetFName():ToString() or "none",
+        compInfo(mid), dist, compInfo(U.get(syr, "Syringe_Contents")))
 end
 
 local function handOf(pawn, syr)
@@ -153,6 +194,18 @@ function M.tick(pawn, now)
             local gripped = U.get(syr, "IsGripped") == true
             local used = U.get(syr, "Used") == true
             local stuck = U.get(syr, "StuckInPlayer") == true
+
+            if st.fresh then
+                st.fresh = false
+                pcall(function() U.dlog("syringe seen: %s %s", syr:GetFName():ToString(), syringeInfo(syr)) end)
+            end
+            if gripped and not st.wasGripped then
+                pcall(function()
+                    U.dlog("syringe grabbed (%s hand, was scaled by us: %s): %s %s", handOf(pawn, syr) or "?",
+                        tostring(st.scaledByUs == true), syr:GetFName():ToString(), syringeInfo(syr))
+                end)
+            end
+            st.wasGripped = gripped
 
             -- Trigger requirement
             if gripped and not used then
