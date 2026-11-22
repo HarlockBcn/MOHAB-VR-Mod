@@ -2,6 +2,23 @@
 
 All notable changes to MOHAB Plus. Versions follow MAJOR.MINOR.PATCH.
 
+## v1.2.0 - 2026-11-23
+
+### New
+- **New in-game menu**: options are grouped in categories (Syringes, Weapons, Haptics, Movement, Jump, Cutscenes) shown side by side, with a short explanation of the selected option. Use the grips to jump between categories.
+- **Mod on/off switch**: from the in-game menu (or by clicking a thumbstick while it is open) you can turn every change of the mod off and on again at once, to compare with the original game without leaving it. Your settings are kept, and the mod is always on when the game starts.
+- **Slower when crouched**: crouched, for real or with the turn stick, you walk at 60% of your normal speed (the original game does not slow you down at all). Adjustable in the menu and the launcher.
+- **Out of ammo vibration**: pressing grip at your magazine pouch when you have no ammo left for that weapon gives two taps on that hand.
+- **Sprint**: sprinting sideways is limited to half speed, like sprinting backwards, and firing a weapon cancels the stick-click sprint (click again to keep running).
+
+### Changes
+- **Hats and helmets**: back and shoulder weapons are only blocked while your hand is above your eyes (it used to be a zone over your head). Reaching for a holster with your head tilted down works as before.
+
+### Fixes
+- Syringes taken from the Quartermaster's health pack appeared tiny in your hand when you took them from your sleeve.
+
+**Updating:** if you have v1.1.0 or v1.0.x, the launcher offers this update by itself (click "Update to v1.2.0" at the top). Your settings are kept; the new crouched speed option starts at 60%.
+
 ## v1.1.0 - 2026-11-22
 
 ### New
