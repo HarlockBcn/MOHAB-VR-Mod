@@ -10,7 +10,8 @@
 -- is in the way, the player stays where they were (keeping the height) and loses the horizontal speed.
 --
 -- "Invisible blocker" = an actor whose primitive components are all invisible (props with a hidden collision box
--- but a visible mesh are climbable). Pawns (NPC capsules are hidden) never count.
+-- but a visible mesh are climbable) and that does not block the Visibility channel (invisible collision standing in
+-- for real walls and props does, see isInvisibleBlocker). Pawns (NPC capsules are hidden) never count.
 local U = require("util")
 
 local M = {}
@@ -73,6 +74,7 @@ local function ensureHelper(pawn)
     if U.valid(helper) then U.call(helper, "K2_DestroyActor") end
     helper, helperCap = nil, nil
     invisibleCache = {}
+    headIgnore = {}
     local cls = StaticFindObject("/Script/Engine.TriggerCapsule")
     local gs = StaticFindObject("/Script/Engine.Default__GameplayStatics")
     if not U.valid(cls) or not U.valid(gs) then U.log("jump guard: TriggerCapsule class not found"); return false end
@@ -133,7 +135,11 @@ local function belongsToPawn(actor, pawn)
     return false
 end
 
--- An invisible level blocker: not a pawn, and none of its primitive components is visible.
+-- An invisible level boundary: not a pawn, none of its primitive components is visible, and it does not stand in
+-- for real geometry. Levels also use invisible simplified collision for visible walls, crates and props (e.g.
+-- "WorldStaticCollision121"); those block sight / bullets (the Visibility channel) like the geometry they replace,
+-- while boundaries only meant for the player ("PlayerCollision91") let them through. Names that say "Player" are
+-- always boundaries.
 local function isInvisibleBlocker(actor)
     if not U.valid(actor) then return false end
     local addr = actor:GetAddress()
@@ -142,19 +148,29 @@ local function isInvisibleBlocker(actor)
     if c and c.name == key then return c.invisible end
     if not U.valid(primClass) then primClass = StaticFindObject("/Script/Engine.PrimitiveComponent") end
     if not U.valid(pawnClass) then pawnClass = StaticFindObject("/Script/Engine.Pawn") end
-    local invisible = true
+    local invisible, why = true, ""
     local okP, isPawn = pcall(function() return actor:IsA(pawnClass) end)
-    if okP and isPawn then invisible = false end
-    if invisible and U.get(actor, "bHidden") ~= true then
-        local ok, arr = U.call(actor, "K2_GetComponentsByClass", primClass)
-        local comps = ok and arrayItems(arr) or {}
-        for _, comp in ipairs(comps) do
+    if okP and isPawn then invisible, why = false, "pawn" end
+    local ok, arr = U.call(actor, "K2_GetComponentsByClass", primClass)
+    local comps = ok and arrayItems(arr) or {}
+    local hidden = U.get(actor, "bHidden") == true
+    local blocksSight = false
+    for _, comp in ipairs(comps) do
+        if invisible and not hidden then
             local okV, vis = U.call(comp, "IsVisible")
-            if okV and vis then invisible = false; break end
+            if okV and vis then invisible, why = false, "visible" end
         end
+        local okE, enabled = U.call(comp, "GetCollisionEnabled")
+        local okR, resp = U.call(comp, "GetCollisionResponseToChannel", 3)
+        if okE and type(enabled) == "number" and enabled ~= 0 and okR and resp == 2 then blocksSight = true end
+    end
+    local cls = "?"
+    pcall(function() cls = actor:GetClass():GetFName():ToString() end)
+    if invisible and blocksSight and not key:find("Player") and not cls:find("Player") then
+        invisible, why = false, "invisible collision of real geometry (blocks sight)"
     end
     invisibleCache[addr] = { name = key, invisible = invisible }
-    U.dlog("jump guard: %s is %s", key, invisible and "an invisible blocker" or "visible (ignored)")
+    U.dlog("jump guard: %s [%s] is %s", key, cls, invisible and "an invisible boundary" or ("ignored: " .. why))
     return invisible
 end
 
@@ -251,6 +267,125 @@ function M.update(pawn, falling)
         U.dlog("jump guard: off")
         st = nil
     end
+end
+
+-- ---------------------------------------------------------------------------------------------
+-- Head vs visible geometry. Ceilings and upper walls the player was never meant to reach often have no collision
+-- for the player capsule, so the body passes through them; they still block the Visibility channel (sight,
+-- bullets). The head is checked against that channel.
+-- ---------------------------------------------------------------------------------------------
+local HEAD_RADIUS = 12
+local kismet = nil
+local headIgnore = {}
+local head = nil             -- per jump: { loc = actor location, cam = head location } of the last valid frame
+
+local function headLoc(pawn)
+    return location(U.get(pawn, "VRReplicatedCamera"), "K2_GetComponentLocation")
+end
+
+-- Sphere trace against the real triangles (complex collision: architecture often has no simple collision) on the
+-- Visibility and Camera channels (TraceTypeQuery1 / 2). Returns the blocking actor (false if unknown) or nil.
+local traceFailLogged = false
+local function sightBlocked(pawn, a, b)
+    if not U.valid(kismet) then kismet = StaticFindObject("/Script/Engine.Default__KismetSystemLibrary") end
+    for _, channel in ipairs({ 0, 1 }) do
+        for _ = 1, MAX_RETRIES do
+            local hit = {}
+            local ok, blocked = U.call(kismet, "SphereTraceSingle", pawn, a, b, HEAD_RADIUS, channel, true, headIgnore, 0,
+                hit, true, NOCOLOR, NOCOLOR, 0)
+            if not ok then
+                if not traceFailLogged then traceFailLogged = true; U.log("jump guard: head trace failed: %s", tostring(blocked)) end
+                break
+            end
+            if not blocked then break end
+            local actor = hitInfo(hit)
+            if actor and belongsToPawn(actor, pawn) then
+                headIgnore[#headIgnore + 1] = actor
+            else
+                local okS, startPen = pcall(function() return hit.bStartPenetrating end)
+                if not (okS and startPen) then return actor or false end   -- head already inside: never trap
+                break
+            end
+        end
+    end
+    return nil
+end
+
+-- Called when a jump starts.
+function M.headStart(pawn)
+    local loc, cam = location(pawn), headLoc(pawn)
+    head = (loc and cam) and { loc = loc, cam = cam } or nil
+end
+
+-- Every airborne frame of a jump: the head may not pass through visible geometry. Returns true if it was stopped.
+function M.headUpdate(pawn)
+    if not head then return false end
+    local loc, cam = location(pawn), headLoc(pawn)
+    if not loc or not cam then return false end
+    local dx, dy, dz = cam.X - head.cam.X, cam.Y - head.cam.Y, cam.Z - head.cam.Z
+    if dx * dx + dy * dy + dz * dz < 0.25 then return false end
+    local blocker = sightBlocked(pawn, head.cam, cam)
+    if blocker == nil then
+        head.loc, head.cam = loc, cam
+        return false
+    end
+    -- Back to the last valid position, no horizontal speed, and no more rising.
+    U.call(pawn, "K2_SetActorLocation", head.loc, false, {}, true)
+    local cmc = U.get(pawn, "CharacterMovement")
+    pcall(function()
+        local v = cmc.Velocity
+        cmc.Velocity = { X = 0, Y = 0, Z = math.min(v.Z, 0) }
+    end)
+    if not head.logged then
+        head.logged = true
+        U.dlog("jump guard: head stopped by %s", name(blocker or nil))
+    end
+    return true
+end
+
+function M.headStop()
+    head = nil
+end
+
+-- Room above the player's head before a jump: sweeps the player's capsule straight up by `height` cm.
+-- Returns true when nothing (visible or not) is in the way. Unknown (helper unavailable) counts as clear.
+function M.headClear(pawn, height)
+    local loc = location(pawn)
+    local r, hh = capsuleDims(pawn)
+    if not loc or not r or not ensureHelper(pawn) then return true end
+    U.call(helperCap, "SetCapsuleSize", math.max(1, r - 1), hh, false)
+    local target = vec(loc.X, loc.Y, loc.Z + height)
+    local clear = true
+    for _ = 1, MAX_RETRIES do
+        U.call(helperCap, "K2_SetWorldLocation", loc, false, {}, true)
+        local hit = {}
+        U.call(helperCap, "K2_SetWorldLocation", target, true, hit, false)
+        local p = location(helperCap, "K2_GetComponentLocation") or loc
+        if target.Z - p.Z < 2 then clear = true; break end
+        local actor = hitInfo(hit)
+        if actor and belongsToPawn(actor, pawn) then
+            U.call(helperCap, "IgnoreActorWhenMoving", actor, true)
+        else
+            clear = false
+            U.dlog("jump refused: ceiling %.0f cm above the head (%s)", p.Z - loc.Z, name(actor))
+            break
+        end
+    end
+    park()
+    -- Ceilings without player collision: the head must not go through visible geometry either.
+    if clear then
+        local cam = headLoc(pawn)
+        if cam then
+            local blocker = sightBlocked(pawn, cam, vec(cam.X, cam.Y, cam.Z + height + 5))
+            if blocker ~= nil then
+                clear = false
+                U.dlog("jump refused: something visible above the head (%s)", name(blocker or nil))
+            else
+                U.dlog("jump: nothing above the head for %.0f cm (head at %.0f)", height + 5, cam.Z)
+            end
+        end
+    end
+    return clear
 end
 
 function M.stop()

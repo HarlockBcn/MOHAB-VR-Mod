@@ -61,6 +61,19 @@ local function blockedReason(pawn, ctrl)
     if U.get(ctrl, "bFootlocked") == true then return "foot locked" end
     if U.get(ctrl, "bDeathlocked") == true then return "dead" end
     if U.get(pawn, "IsClimbing") == true then return "climbing" end
+    -- Skiing / sledding attach the player to the skis / sled (BP_PC_Ski, BP_PC_Sled: AttachPlayer).
+    local okA, parent = U.call(pawn, "GetAttachParentActor")
+    if okA and U.valid(parent) then return "attached to " .. parent:GetFName():ToString() end
+    -- Only from normal walking (not swimming, flying or a custom mode).
+    local mode = U.get(U.get(pawn, "CharacterMovement"), "MovementMode")
+    if type(mode) == "number" and mode ~= 1 and mode ~= 2 then return "movement mode " .. mode end
+    -- Swimming / treading water is driven by BP_Swimming actors.
+    for _, sw in ipairs(FindAllOf("BP_Swimming_C") or {}) do
+        if U.valid(sw) and (U.get(sw, "Swimming") == true or U.get(sw, "TreadingWater") == true) then
+            local who = U.get(sw, "Player")
+            if not U.valid(who) or U.same(who, pawn) then return "swimming" end
+        end
+    end
     local seat = U.get(pawn, "SeatInformation")
     if seat then
         local ok, sitting = pcall(function() return seat.bSitting end)
@@ -84,12 +97,15 @@ function M.tryJump(pawn, ctrl, now)
     local okZ, g = U.call(cmc, "GetGravityZ")
     if not okZ or type(g) ~= "number" or g >= 0 then g = -980 end
     local h = U.clamp(C.get("jump_height"), 10, 100)
+    -- No jump when the head would hit a ceiling / something above.
+    if not Guard.headClear(pawn, h) then return false end
     local vz = math.sqrt(2 * -g * h)
     local ok, err = U.call(pawn, "LaunchCharacter", { X = 0, Y = 0, Z = vz }, false, true)
     if not ok then U.log("LaunchCharacter failed: %s", tostring(err)); return false end
     lastJump = now
     jumping = true
     if C.get("jump_guard") then Guard.start(pawn) else Guard.stop() end
+    Guard.headStart(pawn)
     local snd = C.get("jump_sound")
     if snd ~= "off" then
         Audio.post(SND.takeoff, pawn)
@@ -117,6 +133,7 @@ function M.tick(pawn, now)
         Guard.update(pawn, falling == true, now)
     end
     if falling then
+        if jumping then Guard.headUpdate(pawn) end
         local v = U.get(cmc, "Velocity")
         if v and v.Z and -v.Z > peakDown then peakDown = -v.Z end
     elseif wasFalling then
@@ -132,6 +149,7 @@ function M.tick(pawn, now)
             end
         end
         jumping, peakDown = false, 0
+        Guard.headStop()
     end
     wasFalling = falling == true
 end

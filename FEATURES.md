@@ -25,7 +25,7 @@
 - **Faster sprint** - Raise the maximum sprint speed up to x1.5.
 - **Realistic turns** - Turning sharply while sprinting costs speed, which comes back over a second; a full U-turn drops you to walking pace (strength adjustable, 0 turns it off). Sprinting backwards is at most half as fast.
 - **Slide** - Crouch while sprinting (with the stick or for real) to slide, with a scraping sound.
-- **Jump** - Push the turn stick up while standing to jump, with an effort grunt and cloth sounds. You can climb onto and walk around on tables, rocks and crates, but jumps can't take you over the level's invisible barriers (off by default; height and sounds can be adjusted).
+- **Jump** - Push the turn stick up while standing to jump, with an effort grunt and cloth sounds. You can climb onto and walk around on tables, rocks and crates, but jumps can't take you over the level's invisible barriers; no jumping under a low ceiling, while swimming or skiing (off by default; height and sounds can be adjusted).
 
 ### Haptics
 - **Damage vibration** - The controllers vibrate when you get hurt, stronger for big hits and on the side of the impact.
