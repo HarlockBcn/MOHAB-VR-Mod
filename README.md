@@ -92,8 +92,13 @@ Without an internet connection the launcher works as usual. You can also update 
 
 * **Hold the Y button (left controller) for 1.5 s** to open or close it. In the original game that button does nothing.
 * A text panel floats in front of you. While it is open you do not move or shoot.
-* **Stick up/down**: select an option. **Stick left/right**: change its value.
-* **A** or **trigger**: toggle. **B**: close.
+* Left column: the **MOD ON/OFF** switch and the categories. Right column: the options of the chosen category, with a
+  short explanation of the selected one at the bottom.
+* **Stick up/down**: choose. **A**, **trigger** or **stick right**: open the category. **B**: close.
+* Inside a category: **stick left/right** changes the value, **A** or **trigger** toggles it, **B** goes back.
+* **Grips**: previous / next category from anywhere.
+* **MOD ON/OFF** (or **click a thumbstick** anywhere in the menu) turns every change of the mod off and on again, to
+  compare with the original game. Your settings are kept, and the mod is always on when the game starts.
 * Changes are saved to `ue4ss\Mods\MOHABPlus\config.ini` when the menu closes.
 
 ## How it works (technical summary)

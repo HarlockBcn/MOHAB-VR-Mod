@@ -323,6 +323,13 @@ afterTickInput = function(ctrl, pawn, dt)
     end
 end
 
+-- Master switch turned off: hand the movement back to the game (it sets MaxWalkSpeed again on its next TickInput).
+function M.disable(ctrl)
+    if startedByUs and U.valid(ctrl) then pcall(function() ctrl.IsSprinting = false end) end
+    smoothSpeed, penalty = nil, 0
+    M.reset()
+end
+
 function M.reset()
     prev, energy, active, startedByUs = nil, 0, false, false
     M.gestureActive, M.intensity, M.energy = false, 0, 0

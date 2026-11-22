@@ -1,6 +1,11 @@
 -- In-game VR menu made of TextRenderActors floating in front of the player.
 --   Hold LEFT Y to open / close.
---   Stick up/down: select.  Stick left/right: change value.  A or trigger: toggle / activate.  B: close.
+--   Two columns: the master switch and the categories on the left, the options of the chosen category on the right,
+--   and a help line for the selected option at the bottom.
+--   Left column:  stick up/down = choose, A / trigger / stick right = open the category (or flip the master switch),
+--                 B = close the menu.
+--   Right column: stick up/down = choose, stick left/right = change, A / trigger = toggle, B = back to the categories.
+--   Anywhere:     grips = previous / next category, stick click = master switch (all mod changes on / off).
 -- While the menu is open the pawn's input is disabled (no walking/turning/shooting).
 local U = require("util")
 local C = require("config")
@@ -14,77 +19,116 @@ local OPEN_KEY = "OculusTouch_Left_Y_Click"
 -- Menu items ---------------------------------------------------------------------------------
 local function fmtNum(v, digits) return string.format("%." .. (digits or 2) .. "f", v) end
 
-local items = {
-    { header = "SYRINGES" },
-    { key = "syringe_require_trigger", label = "Require trigger to inject", kind = "bool" },
-    { key = "syringe_trigger_threshold", label = "Trigger threshold", kind = "num", min = 0.1, max = 1.0, step = 0.05 },
-    { key = "syringe_small_holstered", label = "Smaller on the sleeve", kind = "bool" },
-    { key = "syringe_holster_scale", label = "Sleeve scale", kind = "num", min = 0.25, max = 1.0, step = 0.05 },
-    { key = "syringe_grab_distance", label = "Sleeve grab distance", kind = "num", min = 0.25, max = 1.0, step = 0.05, suffix = "x" },
-    { header = "WEAPONS" },
-    { key = "weapon_grip_reach", label = "Second hand grab distance", kind = "num", min = 5, max = 40, step = 1, digits = 0, suffix = " cm" },
-    { key = "weapon_empty_click", label = "Click on empty weapon", kind = "bool" },
-    { key = "holster_below_eyes", label = "No holster grab above eyes", kind = "bool" },
-    { header = "HAPTICS" },
-    { key = "haptics_damage", label = "Vibrate on damage", kind = "bool" },
-    { key = "haptics_intensity", label = "Intensity", kind = "num", min = 0.1, max = 1.0, step = 0.1, digits = 1 },
-    { key = "haptics_duration", label = "Duration (s)", kind = "num", min = 0.05, max = 1.0, step = 0.05 },
-    { key = "haptics_directional", label = "Stronger on hit side", kind = "bool" },
-    { key = "haptics_weapons", label = "Vibrate when reloading", kind = "bool" },
-    { key = "haptics_empty", label = "Vibrate on empty weapon", kind = "bool" },
-    { key = "haptics_no_ammo", label = "Vibrate when out of ammo", kind = "bool" },
-    { header = "MOVEMENT" },
-    { key = "crouch_stick", label = "Crouch with turn stick", kind = "bool" },
-    { key = "jump_enabled", label = "Jump (experimental)", kind = "bool" },
-    { key = "jump_height", label = "Jump height", kind = "num", min = 20, max = 80, step = 5, digits = 0, suffix = " cm" },
-    { key = "jump_sound", label = "Jump sounds", kind = "choice",
-      choices = { "all", "cloth", "off" },
-      names = { all = "Voice + cloth", cloth = "Cloth only", off = "Off" } },
-    { key = "jump_guard", label = "Jump: stay inside level", kind = "bool" },
-    { key = "sprint_mode", label = "Sprint", kind = "choice",
-      choices = { "stick", "arms", "both" },
-      names = { stick = "Stick click", arms = "Arm swing", both = "Click + arms" } },
-    { key = "sprint_arm_sensitivity", label = "Arm swing sensitivity", kind = "num", min = 0.3, max = 2.0, step = 0.1, digits = 1 },
-    { key = "sprint_speed_multiplier", label = "Sprint speed", kind = "num", min = 1.0, max = 1.5, step = 0.05, digits = 2, suffix = "x" },
-    { key = "sprint_turn_slowdown", label = "Slow down on sharp turns", kind = "num", min = 0.0, max = 1.0, step = 0.1, digits = 1 },
-    { key = "slide_enabled", label = "Slide (sprint + crouch)", kind = "bool" },
-    { key = "slide_strength", label = "Slide length", kind = "num", min = 0.5, max = 2.0, step = 0.1, digits = 1, suffix = "x" },
-    { key = "slide_sound", label = "Slide sound", kind = "choice",
-      choices = { "body", "wood", "metal", "off" },
-      names = { body = "Body", wood = "Wood scrape", metal = "Metal scrape", off = "Off" } },
-    { header = "CUTSCENES" },
-    { key = "skip_cutscenes", label = "Skip: hold triggers + grips", kind = "bool" },
-    { key = "skip_speed", label = "Dialogue fast-forward", kind = "num", min = 2, max = 15, step = 1, digits = 0, suffix = "x" },
-    { action = "close", label = "Close menu" },
+local tabs = {
+    { name = "Syringes", items = {
+        { key = "syringe_require_trigger", label = "Trigger to inject", kind = "bool",
+          help = "Hold the trigger of the hand with the syringe to inject it" },
+        { key = "syringe_trigger_threshold", label = "Trigger threshold", kind = "num", min = 0.1, max = 1.0, step = 0.05,
+          help = "How far the trigger must be pulled to inject" },
+        { key = "syringe_small_holstered", label = "Smaller on the sleeve", kind = "bool",
+          help = "Syringes on the sleeve are drawn smaller (full size in the hand)" },
+        { key = "syringe_holster_scale", label = "Sleeve scale", kind = "num", min = 0.25, max = 1.0, step = 0.05,
+          help = "Size of the syringes on the sleeve" },
+        { key = "syringe_grab_distance", label = "Sleeve grab distance", kind = "num", min = 0.25, max = 1.0, step = 0.05, suffix = "x",
+          help = "How close the hand must be to take a syringe from the sleeve (1x = original)" },
+    } },
+    { name = "Weapons", items = {
+        { key = "weapon_grip_reach", label = "Second hand reach", kind = "num", min = 5, max = 40, step = 1, digits = 0, suffix = " cm",
+          help = "How close the second hand must be to grab a weapon's front grip" },
+        { key = "weapon_empty_click", label = "Click on empty weapon", kind = "bool",
+          help = "Dry-fire click when the second hand grabs an empty weapon" },
+        { key = "holster_below_eyes", label = "No holster grab above eyes", kind = "bool",
+          help = "A hand above your eyes grabs hats and helmets, not back weapons" },
+    } },
+    { name = "Haptics", items = {
+        { key = "haptics_damage", label = "Vibrate on damage", kind = "bool",
+          help = "Both controllers vibrate when you are hit" },
+        { key = "haptics_intensity", label = "Intensity", kind = "num", min = 0.1, max = 1.0, step = 0.1, digits = 1,
+          help = "Strength of all the mod's vibrations" },
+        { key = "haptics_duration", label = "Damage duration", kind = "num", min = 0.05, max = 1.0, step = 0.05, suffix = " s",
+          help = "Length of the damage vibration (longer on big hits)" },
+        { key = "haptics_directional", label = "Stronger on hit side", kind = "bool",
+          help = "The controller on the side the hit came from vibrates harder" },
+        { key = "haptics_weapons", label = "Vibrate when reloading", kind = "bool",
+          help = "Magazines, shells and opening / closing the sawed-off" },
+        { key = "haptics_empty", label = "Vibrate on empty weapon", kind = "bool",
+          help = "Two knocks when the second hand grabs an empty weapon" },
+        { key = "haptics_no_ammo", label = "Vibrate when out of ammo", kind = "bool",
+          help = "Two taps when you reach for the magazine pouch with no ammo left" },
+    } },
+    { name = "Movement", items = {
+        { key = "crouch_stick", label = "Crouch with turn stick", kind = "bool",
+          help = "Turn stick down: crouch.  Up: stand up" },
+        { key = "sprint_mode", label = "Sprint", kind = "choice",
+          choices = { "stick", "arms", "both" },
+          names = { stick = "Stick click", arms = "Arm swing", both = "Click + arms" },
+          help = "Click the stick, swing your arms while moving, or both" },
+        { key = "sprint_arm_sensitivity", label = "Arm swing sensitivity", kind = "num", min = 0.3, max = 2.0, step = 0.1, digits = 1,
+          help = "Higher: less arm swinging needed to sprint" },
+        { key = "sprint_speed_multiplier", label = "Sprint speed", kind = "num", min = 1.0, max = 1.5, step = 0.05, digits = 2, suffix = "x",
+          help = "Top sprint speed (1x = original)" },
+        { key = "sprint_turn_slowdown", label = "Slow down on sharp turns", kind = "num", min = 0.0, max = 1.0, step = 0.1, digits = 1,
+          help = "Speed lost when turning hard while sprinting (0 = off)" },
+        { key = "slide_enabled", label = "Slide", kind = "bool",
+          help = "Crouch while sprinting (stick or for real) to slide" },
+        { key = "slide_strength", label = "Slide length", kind = "num", min = 0.5, max = 2.0, step = 0.1, digits = 1, suffix = "x",
+          help = "How far the slide takes you" },
+        { key = "slide_sound", label = "Slide sound", kind = "choice",
+          choices = { "body", "wood", "metal", "off" },
+          names = { body = "Body", wood = "Wood scrape", metal = "Metal scrape", off = "Off" },
+          help = "Sound played while sliding" },
+    } },
+    { name = "Jump", items = {
+        { key = "jump_enabled", label = "Jump (experimental)", kind = "bool",
+          help = "Turn stick up while standing to jump" },
+        { key = "jump_height", label = "Jump height", kind = "num", min = 20, max = 80, step = 5, digits = 0, suffix = " cm",
+          help = "How high you jump" },
+        { key = "jump_sound", label = "Jump sounds", kind = "choice",
+          choices = { "all", "cloth", "off" },
+          names = { all = "Voice + cloth", cloth = "Cloth only", off = "Off" },
+          help = "Effort voice and cloth rustle when jumping" },
+        { key = "jump_guard", label = "Stay inside the level", kind = "bool",
+          help = "Jumps can't take you over the level's invisible barriers" },
+    } },
+    { name = "Cutscenes", items = {
+        { key = "skip_cutscenes", label = "Skip cutscenes", kind = "bool",
+          help = "Hold both triggers and both grips for a second to skip" },
+        { key = "skip_speed", label = "Dialogue fast-forward", kind = "num", min = 2, max = 15, step = 1, digits = 0, suffix = "x",
+          help = "Speed of dialogue scenes where you just stand and wait" },
+    } },
 }
 
+-- Text shown in the right column while the master switch is selected.
+local MASTER_INFO = {
+    "Turns every change of the mod on or off",
+    "at once, to compare with the original game.",
+    "",
+    "Your settings are kept. This switch is not",
+    "saved: the mod is on every time you start.",
+    "",
+    "Shortcut anywhere in this menu:",
+    "click a thumbstick.",
+}
+
+local ROWS = 8      -- option rows in the right column (and rows of the left column)
+
 local function valueText(it)
-    local v = C.get(it.key)
+    local v = C.raw(it.key)
     if it.kind == "bool" then return v and "ON" or "OFF" end
     if it.kind == "num" then return fmtNum(v, it.digits) .. (it.suffix or "") end
     if it.kind == "choice" then return (it.names and it.names[v]) or tostring(v) end
     return ""
 end
 
-local function lineText(it, selected)
-    if it.header then return "- " .. it.header .. " -" end
-    local t = it.label
-    if it.key then t = t .. ":  " .. valueText(it) end
-    if selected then t = ">  " .. t .. "  <" end
-    return t
-end
-
-local function isSelectable(it) return not it.header end
-
 local function change(it, dir)
     if it.kind == "bool" then
-        C.set(it.key, not C.get(it.key))
+        C.set(it.key, not C.raw(it.key))
     elseif it.kind == "num" then
-        local v = C.get(it.key) + dir * it.step
+        local v = C.raw(it.key) + dir * it.step
         v = math.floor(v / it.step + 0.5) * it.step
         C.set(it.key, U.clamp(v, it.min, it.max))
     elseif it.kind == "choice" then
-        local cur = C.get(it.key)
+        local cur = C.raw(it.key)
         local idx = 1
         for i, c in ipairs(it.choices) do if c == cur then idx = i end end
         idx = ((idx - 1 + dir) % #it.choices) + 1
@@ -92,9 +136,17 @@ local function change(it, dir)
     end
 end
 
+-- Navigation state (kept between openings: the menu reopens where it was left).
+local focus = "left"    -- "left" (categories) | "right" (options)
+local leftSel = 1       -- 0 = master switch, 1..#tabs = category
+local sel = 1           -- option in the open category
+local lastTab = 1       -- category shown on the right while the master switch is selected
+
+local function currentTab() return tabs[leftSel] or tabs[lastTab] end
+
 -- Rendering ----------------------------------------------------------------------------------
-local actors = {}       -- one TextRenderActor per line (index = item index + 1 for the title, footer last)
-local selected = 2
+local actors = {}       -- slot name -> TextRenderActor
+local shown = {}        -- slot name -> last text .. colour (skip redundant updates)
 local dirty = true
 local textRenderClass = nil
 local hasChanges = false
@@ -103,18 +155,110 @@ local COLOR_TITLE = { R = 255, G = 200, B = 60, A = 255 }
 local COLOR_HEADER = { R = 140, G = 170, B = 255, A = 255 }
 local COLOR_NORMAL = { R = 230, G = 230, B = 230, A = 255 }
 local COLOR_SELECTED = { R = 255, G = 230, B = 0, A = 255 }
-local COLOR_FOOTER = { R = 160, G = 160, B = 160, A = 255 }
+local COLOR_CURRENT = { R = 150, G = 200, B = 255, A = 255 }   -- open category while the options have the focus
+local COLOR_DIM = { R = 120, G = 120, B = 120, A = 255 }
+local COLOR_ON = { R = 110, G = 230, B = 110, A = 255 }
+local COLOR_OFF = { R = 230, G = 110, B = 100, A = 255 }
+local COLOR_HELP = { R = 190, G = 205, B = 230, A = 255 }
+local COLOR_FOOTER = { R = 150, G = 150, B = 150, A = 255 }
 
-local WORLD_SIZE = 1.7      -- character height in cm
-local LINE_SPACING = 2.3    -- cm
-local DISTANCE = 55         -- cm in front of the eyes
+local WORLD_SIZE = 1.6      -- character height in cm
+local LINE_SPACING = 2.4    -- cm
+local DISTANCE = 60         -- cm in front of the eyes
+-- Column positions, cm to the right of the panel centre (tune here if the columns overlap).
+local X_LEFT = -32          -- categories (left-aligned)
+local X_LABEL = -12         -- option names (left-aligned)
+local X_VALUE = 32          -- option values (right-aligned)
 
-local function setText(actor, text, color, size)
+local ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT = 0, 1, 2
+
+-- Slots: name, horizontal position (cm), vertical position (lines below the top), alignment, size factor.
+local slots = {}
+local function addSlot(name, x, line, align, size)
+    slots[#slots + 1] = { name = name, x = x, line = line, align = align, size = size or 1 }
+end
+addSlot("title", 0, 0, ALIGN_CENTER, 1.4)
+addSlot("heading", X_LABEL, 2, ALIGN_LEFT, 1.0)
+for r = 1, ROWS do
+    addSlot("L" .. r, X_LEFT, 2 + r, ALIGN_LEFT)
+    addSlot("R" .. r, X_LABEL, 2 + r, ALIGN_LEFT)
+    addSlot("V" .. r, X_VALUE, 2 + r, ALIGN_RIGHT)
+end
+addSlot("help", 0, 3 + ROWS + 0.6, ALIGN_CENTER, 0.85)
+addSlot("footer", 0, 3 + ROWS + 1.6, ALIGN_CENTER, 0.75)
+local TOTAL_LINES = 3 + ROWS + 1.6
+
+local FOOTER_LEFT = "Stick: choose   A: open   B: close   Grips: category   Stick click: mod on/off"
+local FOOTER_RIGHT = "Stick: choose / change   A: toggle   B: back   Grips: category   Stick click: mod on/off"
+
+-- Text and colour of every slot for the current state.
+local function content()
+    local out = {}
+    local on = C.enabled
+    out.title = on and { "MOHAB PLUS", COLOR_TITLE } or { "MOHAB PLUS  -  MOD OFF (original game)", COLOR_OFF }
+
+    -- Left column: master switch, a gap, the categories.
+    local mSel = focus == "left" and leftSel == 0
+    out.L1 = { (mSel and "> " or "") .. (on and "MOD: ON" or "MOD: OFF"), mSel and COLOR_SELECTED or (on and COLOR_ON or COLOR_OFF) }
+    out.L2 = { "", COLOR_NORMAL }
+    for i, t in ipairs(tabs) do
+        local r = i + 2
+        if r <= ROWS then
+            local color, prefix = COLOR_NORMAL, "   "
+            if leftSel == i then
+                prefix = "> "
+                color = focus == "left" and COLOR_SELECTED or COLOR_CURRENT
+            end
+            out["L" .. r] = { prefix .. t.name, color }
+        end
+    end
+
+    -- Right column
+    if leftSel == 0 then
+        out.heading = { "ALL MOD CHANGES", COLOR_HEADER }
+        for r = 1, ROWS do
+            out["R" .. r] = { MASTER_INFO[r] or "", COLOR_NORMAL }
+            out["V" .. r] = { "", COLOR_NORMAL }
+        end
+        out.help = { on and "A or trigger: turn the whole mod OFF" or "A or trigger: turn the whole mod back ON", COLOR_HELP }
+    else
+        local tab = currentTab()
+        out.heading = { tab.name:upper() .. (on and "" or "   (mod off: not applied)"), on and COLOR_HEADER or COLOR_DIM }
+        for r = 1, ROWS do
+            local it = tab.items[r]
+            if it then
+                local s = focus == "right" and sel == r
+                local v = valueText(it)
+                local vc = COLOR_NORMAL
+                if it.kind == "bool" then vc = C.raw(it.key) and COLOR_ON or COLOR_OFF end
+                if not on then vc = COLOR_DIM end
+                if s then
+                    v = "<  " .. v .. "  >"
+                    vc = COLOR_SELECTED
+                end
+                out["R" .. r] = { (s and "> " or "") .. it.label, s and COLOR_SELECTED or (on and COLOR_NORMAL or COLOR_DIM) }
+                out["V" .. r] = { v, vc }
+            else
+                out["R" .. r] = { "", COLOR_NORMAL }
+                out["V" .. r] = { "", COLOR_NORMAL }
+            end
+        end
+        local it = focus == "right" and tab.items[sel] or nil
+        if it then
+            out.help = { it.help or "", COLOR_HELP }
+        else
+            out.help = { "A or stick right: open " .. tab.name, COLOR_HELP }
+        end
+    end
+    out.footer = { focus == "left" and FOOTER_LEFT or FOOTER_RIGHT, COLOR_FOOTER }
+    return out
+end
+
+local function setText(actor, text, color)
     local tr = U.get(actor, "TextRender")
     if not U.valid(tr) then return end
     U.call(tr, "K2_SetText", FText(text))
     U.call(tr, "SetTextRenderColor", color)
-    if size then U.call(tr, "SetWorldSize", size) end
 end
 
 local function destroyActors()
@@ -122,17 +266,23 @@ local function destroyActors()
         if U.valid(a) then U.call(a, "K2_DestroyActor") end
     end
     actors = {}
+    shown = {}
 end
 
-local function buildLines()
-    local lines = { { text = "MOHAB PLUS", color = COLOR_TITLE, size = WORLD_SIZE * 1.4 } }
-    for i, it in ipairs(items) do
-        local sel = (i == selected)
-        local color = it.header and COLOR_HEADER or (sel and COLOR_SELECTED or COLOR_NORMAL)
-        lines[#lines + 1] = { text = lineText(it, sel), color = color }
+local function refresh()
+    local c = content()
+    for name, a in pairs(actors) do
+        local v = c[name]
+        if v and U.valid(a) then
+            local col = v[2]
+            local sig = string.format("%s|%d,%d,%d", v[1], col.R, col.G, col.B)
+            if shown[name] ~= sig then
+                shown[name] = sig
+                setText(a, v[1], col)
+            end
+        end
     end
-    lines[#lines + 1] = { text = "Stick: select / change    A: toggle    B or hold Y: close", color = COLOR_FOOTER, size = WORLD_SIZE * 0.8 }
-    return lines
+    dirty = false
 end
 
 local function spawnMenu(pawn)
@@ -152,6 +302,7 @@ local function spawnMenu(pawn)
     local yaw = camRot.Yaw
     local rad = math.rad(yaw)
     local fwd = { X = math.cos(rad), Y = math.sin(rad), Z = 0 }
+    local right = { X = -math.sin(rad), Y = math.cos(rad), Z = 0 }
     local world = pawn:GetWorld()
     if not U.valid(world) then return false end
 
@@ -159,64 +310,126 @@ local function spawnMenu(pawn)
     local refText = U.get(pawn, "LeftHandHolsterUIText")
     local refMat = U.get(refText, "TextMaterial")
     local refFont = U.get(refText, "Font")
+    local origin = U.get(pawn, "VROrigin")
 
-    local lines = buildLines()
-    local total = (#lines - 1) * LINE_SPACING
     local center = U.vadd(camLoc, U.vmul(fwd, DISTANCE))
     center.Z = center.Z - 6
-    for i, ln in ipairs(lines) do
-        local loc = { X = center.X, Y = center.Y, Z = center.Z + total / 2 - (i - 1) * LINE_SPACING }
+    local top = center.Z + TOTAL_LINES * LINE_SPACING / 2
+    local n = 0
+    for _, s in ipairs(slots) do
+        local base = U.vadd(center, U.vmul(right, s.x))
+        local loc = { X = base.X, Y = base.Y, Z = top - s.line * LINE_SPACING }
         local ok, a = pcall(function()
             return world:SpawnActor(textRenderClass, loc, { Pitch = 0, Yaw = yaw + 180, Roll = 0 })
         end)
         if ok and U.valid(a) then
             local tr = U.get(a, "TextRender")
             if U.valid(tr) then
-                U.call(tr, "SetHorizontalAlignment", 1)   -- EHTA_Center
+                U.call(tr, "SetHorizontalAlignment", s.align)
                 U.call(tr, "SetVerticalAlignment", 1)     -- EVRTA_TextCenter
                 if U.valid(refMat) then U.call(tr, "SetTextMaterial", refMat) end
                 if U.valid(refFont) then U.call(tr, "SetFont", refFont) end
-                U.call(tr, "SetWorldSize", ln.size or WORLD_SIZE)
+                U.call(tr, "SetWorldSize", WORLD_SIZE * s.size)
                 pcall(function() tr.CastShadow = false end)
             end
             -- Follow the player (VR origin) so the menu stays put relative to the body.
-            local origin = U.get(pawn, "VROrigin")
             if U.valid(origin) then
                 U.call(a, "K2_AttachToComponent", origin, FName("None"), 1, 1, 1, false)
             end
-            setText(a, ln.text, ln.color, ln.size or WORLD_SIZE)
-            actors[i] = a
+            actors[s.name] = a
+            n = n + 1
         end
     end
-    local n = 0
-    for _ in pairs(actors) do n = n + 1 end
-    U.log("menu: %d/%d lines spawned, centre (%.0f, %.0f, %.0f), camera (%.0f, %.0f, %.0f) yaw %.0f",
-        n, #lines, center.X, center.Y, center.Z, camLoc.X, camLoc.Y, camLoc.Z, yaw)
-    dirty = false
+    U.log("menu: %d/%d texts spawned, centre (%.0f, %.0f, %.0f), camera (%.0f, %.0f, %.0f) yaw %.0f",
+        n, #slots, center.X, center.Y, center.Z, camLoc.X, camLoc.Y, camLoc.Z, yaw)
+    refresh()
     return n > 0
 end
 
 function M.debugInfo()
     local out = {}
-    for i, a in pairs(actors) do
+    for _, s in ipairs(slots) do
+        local a = actors[s.name]
         if U.valid(a) then
             local ok, loc = U.call(a, "K2_GetActorLocation")
             local tr = U.get(a, "TextRender")
             local txt = U.get(tr, "Text")
             local ts = ""
             if txt then pcall(function() ts = txt:ToString() end) end
-            out[#out + 1] = string.format("  line %d at (%.0f,%.0f,%.0f) '%s'", i, ok and loc.X or 0, ok and loc.Y or 0, ok and loc.Z or 0, ts)
+            if ts ~= "" then
+                out[#out + 1] = string.format("  %s at (%.0f,%.0f,%.0f) '%s'", s.name, ok and loc.X or 0, ok and loc.Y or 0, ok and loc.Z or 0, ts)
+            end
         end
     end
     return out
 end
 
-local function refresh()
-    local lines = buildLines()
-    for i, ln in ipairs(lines) do
-        if U.valid(actors[i]) then setText(actors[i], ln.text, ln.color) end
+-- Navigation ---------------------------------------------------------------------------------
+local function toggleMaster()
+    C.enabled = not C.enabled
+    U.log("menu: all mod changes %s", C.enabled and "ON" or "OFF")
+    dirty = true
+end
+
+local function moveVertical(dir)
+    if focus == "left" then
+        leftSel = (leftSel + dir) % (#tabs + 1)       -- 0 (master) .. #tabs
+        if leftSel > 0 then lastTab = leftSel end
+    else
+        local n = #currentTab().items
+        sel = ((sel - 1 + dir) % n) + 1
     end
-    dirty = false
+    dirty = true
+end
+
+local function enter()
+    if leftSel == 0 then
+        toggleMaster()
+    else
+        focus, sel = "right", 1
+        dirty = true
+    end
+end
+
+local function back()
+    if focus == "right" then
+        focus = "left"
+        dirty = true
+        return true
+    end
+    return false
+end
+
+-- Previous / next category (skips the master switch).
+local function switchTab(dir)
+    local i = leftSel
+    if i == 0 then i = dir > 0 and 0 or #tabs + 1 end
+    i = ((i - 1 + dir) % #tabs) + 1
+    leftSel, lastTab, sel = i, i, 1
+    dirty = true
+end
+
+local function changeSelected(dir, repeating)
+    if focus ~= "right" then
+        if dir > 0 and not repeating then enter() end
+        return
+    end
+    local it = currentTab().items[sel]
+    if not it or (repeating and it.kind ~= "num") then return end
+    change(it, dir)
+    hasChanges, dirty = true, true
+end
+
+local function activate()
+    if focus == "left" then
+        enter()
+        return
+    end
+    local it = currentTab().items[sel]
+    if it and (it.kind == "bool" or it.kind == "choice") then
+        change(it, 1)
+        hasChanges, dirty = true, true
+    end
 end
 
 -- Input handling ------------------------------------------------------------------------------
@@ -224,7 +437,7 @@ local holdStart = nil
 local holdConsumed = false
 local navRepeatAt = 0
 local navDirY, navDirX = 0, 0
-local prevA, prevB, prevTrig = false, false, false
+local prev = {}         -- button name -> was down last frame
 
 local function stickY()
     local r = U.axis("OculusTouch_Right_Thumbstick_Y")
@@ -237,15 +450,15 @@ local function stickX()
     return math.abs(r) >= math.abs(l) and r or l
 end
 
-local function moveSelection(dir)
-    local n = #items
-    local i = selected
-    for _ = 1, n do
-        i = ((i - 1 + dir) % n) + 1
-        if isSelectable(items[i]) then break end
-    end
-    selected = i
-    dirty = true
+local function buttons()
+    return {
+        a = U.down("OculusTouch_Right_A_Click") or U.down("OculusTouch_Left_X_Click"),
+        trig = math.max(U.trigger("Right"), U.trigger("Left")) > 0.7,
+        b = U.down("OculusTouch_Right_B_Click"),
+        gripL = U.axis("OculusTouch_Left_Grip_Axis") > 0.7,
+        gripR = U.axis("OculusTouch_Right_Grip_Axis") > 0.7,
+        click = U.down("OculusTouch_Left_Thumbstick_Click") or U.down("OculusTouch_Right_Thumbstick_Click"),
+    }
 end
 
 local function setPawnInput(pawn, pc, enabled)
@@ -270,7 +483,7 @@ function M.openMenu(pawn, pc)
     M.open = true
     hasChanges = false
     setPawnInput(pawn, pc, false)
-    prevA, prevB, prevTrig = true, true, true   -- ignore buttons already held
+    prev = buttons()            -- ignore buttons already held
     navDirX, navDirY = 0, 0
     U.log("menu opened")
 end
@@ -300,47 +513,40 @@ function M.tick(pawn, pc, now)
     if not M.open then return false end
 
     -- Menu actors can be destroyed by a level change.
-    if not U.valid(actors[1]) then
+    if not U.valid(actors.title) then
         M.open = false
-        actors = {}
+        actors, shown = {}, {}
         setPawnInput(pawn, pc, true)
         return false
     end
 
-    -- Navigation with auto-repeat
+    -- Stick navigation with auto-repeat
     local sy, sx = stickY(), stickX()
     local dy = (sy > 0.6 and 1) or (sy < -0.6 and -1) or 0
     local dx = (sx > 0.6 and 1) or (sx < -0.6 and -1) or 0
     if dy ~= navDirY or dx ~= navDirX then
         navDirY, navDirX = dy, dx
         navRepeatAt = now + 0.4
-        if dy ~= 0 then moveSelection(-dy) end
-        if dx ~= 0 and items[selected].key then change(items[selected], dx); hasChanges = true; dirty = true end
+        if dy ~= 0 then moveVertical(-dy) end
+        if dx ~= 0 then changeSelected(dx, false) end
     elseif (dy ~= 0 or dx ~= 0) and now >= navRepeatAt then
         navRepeatAt = now + 0.15
-        if dy ~= 0 then moveSelection(-dy) end
-        if dx ~= 0 and items[selected].kind == "num" then change(items[selected], dx); hasChanges = true; dirty = true end
+        if dy ~= 0 then moveVertical(-dy) end
+        if dx ~= 0 then changeSelected(dx, true) end
     end
 
-    local a = U.down("OculusTouch_Right_A_Click") or U.down("OculusTouch_Left_X_Click")
-    local trig = math.max(U.trigger("Right"), U.trigger("Left")) > 0.7
-    local b = U.down("OculusTouch_Right_B_Click")
-    local activate = (a and not prevA) or (trig and not prevTrig)
-    if activate then
-        local it = items[selected]
-        if it.action == "close" then
-            M.closeMenu(pawn, pc)
-            return false
-        elseif it.kind == "bool" or it.kind == "choice" then
-            change(it, 1); hasChanges = true; dirty = true
-        end
-    end
-    if b and not prevB then
-        prevA, prevB, prevTrig = a, b, trig
+    local cur = buttons()
+    local function pressed(k) return cur[k] and not prev[k] end
+    if pressed("a") or pressed("trig") then activate() end
+    if pressed("gripL") then switchTab(-1) end
+    if pressed("gripR") then switchTab(1) end
+    if pressed("click") then toggleMaster() end
+    if pressed("b") and not back() then
+        prev = cur
         M.closeMenu(pawn, pc)
         return false
     end
-    prevA, prevB, prevTrig = a, b, trig
+    prev = cur
 
     if dirty then refresh() end
     return true
@@ -349,14 +555,16 @@ end
 -- Test helper (cmd.txt): simulate navigation without controllers.
 function M.debugInput(cmd)
     if not M.open then return end
-    if cmd == "down" then moveSelection(1)
-    elseif cmd == "up" then moveSelection(-1)
-    elseif (cmd == "left" or cmd == "right") and items[selected].key then
-        change(items[selected], cmd == "right" and 1 or -1); hasChanges = true
-    elseif cmd == "select" and (items[selected].kind == "bool" or items[selected].kind == "choice") then
-        change(items[selected], 1); hasChanges = true
+    if cmd == "down" then moveVertical(1)
+    elseif cmd == "up" then moveVertical(-1)
+    elseif cmd == "left" or cmd == "right" then changeSelected(cmd == "right" and 1 or -1, false)
+    elseif cmd == "select" then activate()
+    elseif cmd == "back" then back()
+    elseif cmd == "tabnext" then switchTab(1)
+    elseif cmd == "tabprev" then switchTab(-1)
+    elseif cmd == "master" then toggleMaster()
     end
-    dirty = true
+    if dirty then refresh() end
 end
 
 function M.reset()

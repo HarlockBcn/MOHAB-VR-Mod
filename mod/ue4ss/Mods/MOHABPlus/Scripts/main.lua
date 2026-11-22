@@ -35,7 +35,7 @@ local hooks = {
                 local t = os.clock()
                 local dt = lastTickInput and math.min(t - lastTickInput, 0.1) or 0.016
                 lastTickInput = t
-                Sprint.afterTickInput(ctrl, pawn, dt)
+                if C.enabled then Sprint.afterTickInput(ctrl, pawn, dt) end
             end)
             if not ok then U.dlog("TickInput hook error: %s", tostring(err)) end
         end,
@@ -215,6 +215,7 @@ local function findPlayer(now)
     return nil, nil
 end
 
+local modWasOn = true      -- master switch state seen by the last tick
 local moduleErrors = {}
 local function guarded(name, fn, ...)
     local ok, err = pcall(fn, ...)
@@ -246,17 +247,36 @@ local function tick()
 
     local menuOpen = Menu.tick(pawn, pc, now)
     if menuOpen and Slide.active then Slide.stop(pawn, "menu") end
+
+    -- Master switch (in-game menu): with the mod off, config.get answers "feature off" for every option, so the
+    -- modules below that keep ticking restore what they changed (crouch offset, syringe sizes, grab distances...);
+    -- the ones without an off option are stopped here and skipped.
+    local on = C.enabled
+    if on ~= modWasOn then
+        modWasOn = on
+        if not on then
+            guarded("disable", function()
+                Slide.stop(pawn, "mod off")
+                Sprint.disable(pc)
+                WeaponGrip.disable()
+                Jump.reset()
+                Cutscene.reset(pawn)
+            end)
+        end
+        U.log("all mod changes %s", on and "ON" or "OFF (original game)")
+    end
+
     -- Each feature runs isolated: an error in one must not stop the others.
     guarded("cutscene", Cutscene.tick, pawn, pc, now, menuOpen, function(ok)
         -- short confirmation buzz (two pulses if something was skipped)
         Haptics.pulse(pc, now, ok and 0.6 or 0.25, ok and 0.6 or 0.25, ok and 0.15 or 0.08)
     end)
-    guarded("sprint", Sprint.updateGesture, pawn, now)
+    if on then guarded("sprint", Sprint.updateGesture, pawn, now) end
     if Dev then guarded("devtools", Dev.afterTick) end
-    guarded("jump", Jump.tick, pawn, now)
+    if on then guarded("jump", Jump.tick, pawn, now) end
     guarded("crouch", Crouch.tick, pawn, menuOpen, now)
     guarded("syringe", Syringe.tick, pawn, now)
-    guarded("weapongrip", WeaponGrip.tick, pawn, now)
+    if on then guarded("weapongrip", WeaponGrip.tick, pawn, now) end
     guarded("holster", Holster.tick, pawn)
     guarded("haptics", Haptics.tick, pawn, pc, now)
 end

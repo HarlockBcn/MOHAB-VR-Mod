@@ -123,7 +123,40 @@ function M.save()
     end
 end
 
-function M.get(k) return M.values[k] end
+-- Master switch (in-game menu only, never saved): false = every feature behaves as in the original game, to compare
+-- with and without the mod. The settings themselves are kept; M.get just answers with the "feature off" value of each
+-- option that changes the game, so every module takes its own switched-off path (and restores what it changed).
+-- Modules without an off option (sprint speed/direction rules, two-handed grip) are skipped by main.lua.
+M.enabled = true
+M.vanilla = {
+    syringe_require_trigger = false,
+    syringe_small_holstered = false,
+    syringe_grab_distance = 1.0,
+    holster_below_eyes = false,
+    weapon_empty_click = false,
+    haptics_damage = false,
+    haptics_weapons = false,
+    haptics_empty = false,
+    haptics_no_ammo = false,
+    crouch_stick = false,
+    jump_enabled = false,
+    jump_guard = false,
+    sprint_mode = "stick",
+    sprint_speed_multiplier = 1.0,
+    sprint_turn_slowdown = 0,
+    slide_enabled = false,
+    skip_cutscenes = false,
+}
+
+function M.get(k)
+    if not M.enabled then
+        local v = M.vanilla[k]
+        if v ~= nil then return v end
+    end
+    return M.values[k]
+end
+-- The configured value, whatever the master switch says (menu display / editing).
+function M.raw(k) return M.values[k] end
 function M.set(k, v) M.values[k] = v end
 
 return M

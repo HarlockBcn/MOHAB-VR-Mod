@@ -585,6 +585,22 @@ function M.onSetHalfHeight(ctx, halfHeight)
     if not ok and not setFailed then setFailed = true; U.log("grab capsule size override failed: %s", tostring(err)) end
 end
 
+-- Master switch turned off: give back everything the module changed (overlap events of gated grips and of things
+-- blocked near the grip, the free hand's grab capsule).
+function M.disable()
+    pcall(unblockAll)
+    for _, st in pairs(gated) do
+        if U.valid(st.actor) then
+            for _, comp in ipairs(st.comps) do
+                if U.valid(comp) then U.call(comp, "SetGenerateOverlapEvents", true) end
+            end
+        end
+    end
+    gated = {}
+    caps, shrinking = {}, false
+    grabForced, lastFreeHeld = nil, nil
+end
+
 function M.reset()
     pcall(unblockAll)
     blocked = {}

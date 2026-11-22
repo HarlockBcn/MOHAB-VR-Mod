@@ -3,7 +3,8 @@
 -- Lets the features be exercised without wearing the headset.
 --
 --   status                 dump the state of every feature
---   menu                   open / close the menu;  up | down | left | right | select  navigate it
+--   menu                   open / close the menu;  up | down | left | right | select | back | tabnext | tabprev
+--                          navigate it;  master   all mod changes on / off
 --   crouch | stand         virtual crouch on / off
 --   haptic                 test vibration;   damage   remove 40 health
 --   simwalk | simgesture   pretend the movement stick is pushed / the arms are swinging
@@ -130,7 +131,8 @@ function M.process()
         status(pawn, pc)
     elseif cmd == "menu" then
         if Menu.open then Menu.closeMenu(pawn, pc) else Menu.openMenu(pawn, pc) end
-    elseif cmd == "up" or cmd == "down" or cmd == "left" or cmd == "right" or cmd == "select" then
+    elseif cmd == "up" or cmd == "down" or cmd == "left" or cmd == "right" or cmd == "select" or cmd == "back"
+        or cmd == "tabnext" or cmd == "tabprev" or cmd == "master" then
         Menu.debugInput(cmd)
     elseif cmd == "crouch" or cmd == "stand" then
         Crouch.setCrouched(pawn, cmd == "crouch")
