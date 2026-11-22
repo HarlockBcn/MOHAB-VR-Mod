@@ -32,7 +32,7 @@ local items = {
     { key = "haptics_weapons", label = "Vibrate when reloading", kind = "bool" },
     { header = "MOVEMENT" },
     { key = "crouch_stick", label = "Crouch with turn stick", kind = "bool" },
-    { key = "jump_enabled", label = "Jump (turn stick up)", kind = "bool" },
+    { key = "jump_enabled", label = "Jump (experimental)", kind = "bool" },
     { key = "jump_height", label = "Jump height", kind = "num", min = 20, max = 80, step = 5, digits = 0, suffix = " cm" },
     { key = "jump_sound", label = "Jump sounds", kind = "choice",
       choices = { "all", "cloth", "off" },

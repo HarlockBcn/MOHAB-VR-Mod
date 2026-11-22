@@ -36,10 +36,10 @@ internal sealed class ModConfig
         new("crouch_stick", "Crouch with turn stick (down / up)", OptionKind.Bool, "true", Section: "Crouch"),
         new("crouch_stick_threshold", "Crouch: stick threshold", OptionKind.Float, "0.7", 0.3, 0.95, 0.05, Section: "Crouch"),
 
-        new("jump_enabled", "Jump with turn stick up (while standing)", OptionKind.Bool, "false", Section: "Jump"),
-        new("jump_height", "Jump: height (cm)", OptionKind.Float, "40", 20, 80, 5, Section: "Jump"),
-        new("jump_sound", "Jump: sounds", OptionKind.Choice, "all", Choices: new[] { "all", "cloth", "off" }, Section: "Jump"),
-        new("jump_guard", "Jump: stay inside the level (furniture can still be climbed)", OptionKind.Bool, "true", Section: "Jump"),
+        new("jump_enabled", "Jump with turn stick up (while standing)", OptionKind.Bool, "false", Section: "Jump (experimental)"),
+        new("jump_height", "Jump: height (cm)", OptionKind.Float, "40", 20, 80, 5, Section: "Jump (experimental)"),
+        new("jump_sound", "Jump: sounds", OptionKind.Choice, "all", Choices: new[] { "all", "cloth", "off" }, Section: "Jump (experimental)"),
+        new("jump_guard", "Jump: stay inside the level (furniture can still be climbed)", OptionKind.Bool, "true", Section: "Jump (experimental)"),
 
         new("sprint_mode", "Sprint mode", OptionKind.Choice, "both", Choices: new[] { "stick", "arms", "both" }, Section: "Sprint"),
         new("sprint_arm_sensitivity", "Sprint: arm swing sensitivity", OptionKind.Float, "1.0", 0.3, 2.0, 0.1, Section: "Sprint"),

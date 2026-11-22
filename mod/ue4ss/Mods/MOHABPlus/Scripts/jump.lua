@@ -1,4 +1,4 @@
--- Jump: push the turn stick up while standing (pushing it up while crouched still stands you up, see crouch.lua).
+-- Jump (EXPERIMENTAL: the game was not designed for jumping): push the turn stick up while standing (pushing it up while crouched still stands you up, see crouch.lua).
 --
 -- The player pawn is an ACharacter, so we use the engine's own LaunchCharacter with a vertical speed computed from
 -- the configured height (v = sqrt(2 * g * h)). Horizontal speed is kept, so a running jump goes further. The game
