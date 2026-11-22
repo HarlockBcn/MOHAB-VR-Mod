@@ -43,6 +43,7 @@ local items = {
       names = { stick = "Stick click", arms = "Arm swing", both = "Click + arms" } },
     { key = "sprint_arm_sensitivity", label = "Arm swing sensitivity", kind = "num", min = 0.3, max = 2.0, step = 0.1, digits = 1 },
     { key = "sprint_speed_multiplier", label = "Sprint speed", kind = "num", min = 1.0, max = 1.5, step = 0.05, digits = 2, suffix = "x" },
+    { key = "sprint_turn_slowdown", label = "Slow down on sharp turns", kind = "num", min = 0.0, max = 1.0, step = 0.1, digits = 1 },
     { key = "slide_enabled", label = "Slide (sprint + crouch)", kind = "bool" },
     { key = "slide_strength", label = "Slide length", kind = "num", min = 0.5, max = 2.0, step = 0.1, digits = 1, suffix = "x" },
     { key = "slide_sound", label = "Slide sound", kind = "choice",

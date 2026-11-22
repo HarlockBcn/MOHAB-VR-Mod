@@ -92,16 +92,64 @@ local smoothSpeed = nil
 
 -- Moves the speed towards the target with limited acceleration plus easing, so it never jumps.
 local ACCEL, DECEL = 260, 380      -- cm/s^2
-function M.glide(cur, target, dt)
+local TURN_DECEL = 1200            -- cm/s^2 when a sharp turn cuts the speed
+function M.glide(cur, target, dt, decel)
     dt = dt or 0.016
     local a = 1 - math.exp(-dt / 0.3)
     local want = cur + (target - cur) * a
-    local maxUp, maxDown = ACCEL * dt, DECEL * dt
+    local maxUp, maxDown = ACCEL * dt, (decel or DECEL) * dt
     if want > cur + maxUp then want = cur + maxUp end
     if want < cur - maxDown then want = cur - maxDown end
     return want
 end
 local lastSeen = nil      -- pawn seen last frame (detects respawn / new pawn)
+
+-- Realistic turns: a sharp change of direction while sprinting costs speed, which then comes back gradually.
+-- The turn is the angle between where the player is going (velocity) and where the input pushes (the movement
+-- component's acceleration, which follows the stick and the head/hand direction). Below TURN_FREE degrees it is
+-- free; from there to 180 degrees the severity goes 0 -> 1. The penalty keeps the highest recent severity and
+-- recovers over TURN_RECOVER seconds; it scales the part of the speed above walking:
+--   speed = walk + (sprint - walk) * (1 - strength * penalty)
+-- so a 90 degree turn at full strength sprints at about half the extra speed, and a U-turn drops to walking.
+local TURN_FREE = 30
+local TURN_RECOVER = 1.2          -- seconds from full penalty back to none
+local TURN_MIN_SPEED = 150        -- cm/s: slower than this there is no direction to compare
+local COS_FREE = math.cos(math.rad(TURN_FREE))
+local penalty = 0
+local lastTurnLog = -100
+
+local function updateTurnPenalty(pawn, cmc, dt)
+    local strength = U.clamp(tonumber(C.get("sprint_turn_slowdown")) or 0, 0, 1)
+    if strength <= 0 then penalty = 0; return 0 end
+    local sev, angle = 0, 0
+    local okV, v = U.call(pawn, "GetVelocity")
+    local okA, a = U.call(cmc, "GetCurrentAcceleration")
+    if okV and okA and v and a then
+        local vx, vy, ax, ay = v.X, v.Y, a.X, a.Y
+        local vs, as = math.sqrt(vx * vx + vy * vy), math.sqrt(ax * ax + ay * ay)
+        if vs > TURN_MIN_SPEED and as > 1 then
+            local cos = (vx * ax + vy * ay) / (vs * as)
+            sev = U.clamp((COS_FREE - cos) / (COS_FREE + 1), 0, 1)
+            angle = math.deg(math.acos(U.clamp(cos, -1, 1)))
+        end
+    end
+    penalty = math.max(sev, penalty - (dt or 0.016) / TURN_RECOVER)
+    if sev > 0.3 and U.now(pawn) - lastTurnLog > 0.5 then
+        lastTurnLog = U.now(pawn)
+        U.dlog("sprint: sharp turn %.0f deg -> speed x%.2f of the extra", angle, 1 - strength * penalty)
+    end
+    return strength * penalty
+end
+
+-- Backwards: sprinting straight back reaches at most BACK_FACTOR of the sprint speed (never below walking);
+-- sideways-back directions in between. The stick input is relative to where the player faces.
+local BACK_FACTOR = 0.5
+local function backFactor(ctrl)
+    local fwd, right = U.get(ctrl, "InputForward") or 0, U.get(ctrl, "InputRight") or 0
+    local len = math.sqrt(fwd * fwd + right * right)
+    if len < 0.05 or fwd >= 0 then return 1 end
+    return 1 - (1 - BACK_FACTOR) * (-fwd / len)
+end
 
 -- Post-hook of BP_R6PlayerController_C:TickInput (runs every frame right after the game set MaxWalkSpeed).
 function M.afterTickInput(ctrl, pawn, dt)
@@ -128,7 +176,7 @@ function M.afterTickInput(ctrl, pawn, dt)
         M.reset()
         if dead then return end
     end
-    if not moving then startedByUs = false; smoothSpeed = nil end
+    if not moving then startedByUs = false; smoothSpeed = nil; penalty = 0 end
 
     if mode == "arms" or mode == "both" then
         local disabled = U.get(ctrl, "DisableSprinting") == true
@@ -146,12 +194,15 @@ function M.afterTickInput(ctrl, pawn, dt)
             end
             startedByUs = true
             -- Progressive: the swing rhythm sets the top speed; the speed glides towards it (no jumps per swing).
-            local target = (walk + (sprint * mult - walk) * M.intensity) * stick
+            local cut = updateTurnPenalty(pawn, cmc, dt)
+            local target = (walk + (sprint * mult - walk) * M.intensity * (1 - cut)) * stick
+            local back = backFactor(ctrl)
+            target = math.max(walk * stick, target * back)
             if not smoothSpeed then
                 local cur = U.get(cmc, "MaxWalkSpeed")
                 smoothSpeed = (type(cur) == "number" and cur > 0) and cur or walk * stick
             end
-            smoothSpeed = M.glide(smoothSpeed, target, dt)
+            smoothSpeed = M.glide(smoothSpeed, target, dt, (cut > 0.05 or back < 0.99) and TURN_DECEL or nil)
             pcall(function() cmc.MaxWalkSpeed = smoothSpeed end)
             M.lastSpeed = smoothSpeed
             return
@@ -173,11 +224,21 @@ function M.afterTickInput(ctrl, pawn, dt)
     end
 
     -- Stick-click sprint (game behaviour) with the speed multiplier.
-    if isSprinting and mult > 1.001 and U.get(pawn, "IsCurrentlyCrouched") ~= true then
+    if isSprinting and U.get(pawn, "IsCurrentlyCrouched") ~= true then
+        local cut = updateTurnPenalty(pawn, cmc, dt)
         local speed = U.get(cmc, "MaxWalkSpeed")
-        if type(speed) == "number" and speed > 0 then
-            pcall(function() cmc.MaxWalkSpeed = speed * mult end)
+        local back = backFactor(ctrl)
+        if (mult > 1.001 or cut > 0 or back < 1) and type(speed) == "number" and speed > 0 then
+            local walk = gameSpeeds(ctrl, pawn)
+            local fast = speed * mult
+            if type(walk) == "number" and fast > walk then
+                fast = walk + (fast - walk) * (1 - cut)
+                fast = math.max(walk, fast * back)
+            end
+            pcall(function() cmc.MaxWalkSpeed = fast end)
         end
+    else
+        penalty = 0
     end
 end
 

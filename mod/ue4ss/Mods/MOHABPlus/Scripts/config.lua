@@ -28,6 +28,7 @@ M.defaults = {
     sprint_mode = "both",           -- "stick" | "arms" | "both"
     sprint_arm_sensitivity = 1.0,
     sprint_speed_multiplier = 1.5,
+    sprint_turn_slowdown = 1.0,     -- 0..1: speed lost on sharp turns while sprinting (0 = off)
 
     slide_enabled = true,
     slide_strength = 1.5,
@@ -48,7 +49,7 @@ M.order = {
     { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons" } },
     { "Crouch", { "crouch_stick", "crouch_stick_threshold" } },
     { "Jump", { "jump_enabled", "jump_height", "jump_sound", "jump_guard" } },
-    { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier" } },
+    { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier", "sprint_turn_slowdown" } },
     { "Slide", { "slide_enabled", "slide_strength", "slide_sound" } },
     { "Cutscenes", { "skip_cutscenes", "skip_hold_time", "skip_speed" } },
     { "Menu", { "menu_hold_time" } },

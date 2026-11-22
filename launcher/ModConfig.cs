@@ -44,6 +44,7 @@ internal sealed class ModConfig
         new("sprint_mode", "Sprint mode", OptionKind.Choice, "both", Choices: new[] { "stick", "arms", "both" }, Section: "Sprint"),
         new("sprint_arm_sensitivity", "Sprint: arm swing sensitivity", OptionKind.Float, "1.0", 0.3, 2.0, 0.1, Section: "Sprint"),
         new("sprint_speed_multiplier", "Sprint: max speed multiplier", OptionKind.Float, "1.5", 1.0, 1.5, 0.05, Section: "Sprint"),
+        new("sprint_turn_slowdown", "Sprint: slow down on sharp turns (0 = off)", OptionKind.Float, "1.0", 0.0, 1.0, 0.1, Section: "Sprint"),
 
         new("slide_enabled", "Slide when crouching while sprinting", OptionKind.Bool, "true", Section: "Slide"),
         new("slide_strength", "Slide: length", OptionKind.Float, "1.5", 0.5, 2.0, 0.1, Section: "Slide"),

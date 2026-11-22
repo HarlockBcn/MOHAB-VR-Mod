@@ -23,6 +23,7 @@
 - **Crouch with the turn stick** - Push the turn stick down to crouch and up to stand.
 - **Arm-swing sprint** - Swing your arms like a runner to sprint; the faster you swing, the faster you run. Stick-click sprint still works.
 - **Faster sprint** - Raise the maximum sprint speed up to x1.5.
+- **Realistic turns** - Turning sharply while sprinting costs speed, which comes back over a second; a full U-turn drops you to walking pace (strength adjustable, 0 turns it off). Sprinting backwards is at most half as fast.
 - **Slide** - Crouch while sprinting (with the stick or for real) to slide, with a scraping sound.
 - **Jump** - Push the turn stick up while standing to jump, with an effort grunt and cloth sounds. You can climb onto and walk around on tables, rocks and crates, but jumps can't take you over the level's invisible barriers (off by default; height and sounds can be adjusted).
 
