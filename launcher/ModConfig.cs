@@ -25,6 +25,7 @@ internal sealed class ModConfig
         new("body_grab_distance", "Grabbing: distance to take grenades, objects and syringes you carry (cm)", OptionKind.Float, "10", 5, 30, 1, Section: "Grabbing"),
         new("holster_grab_distance", "Grabbing: distance to take a weapon from a holster, back weapons excluded (cm)", OptionKind.Float, "25", 5, 30, 1, Section: "Grabbing"),
         new("weapon_grip_reach", "Grabbing: second hand distance to a weapon's front grip (cm)", OptionKind.Float, "15", 5, 40, 1, Section: "Grabbing"),
+        new("cocking", "Grabbing: cocking - manual (work the bolt / slide yourself) or auto (the game does it, original)", OptionKind.Choice, "manual", Choices: new[] { "manual", "auto" }, Section: "Grabbing"),
         new("holster_below_eyes", "Grabbing: no holster grab with the hand above the eyes", OptionKind.Bool, "true", Section: "Grabbing"),
 
         new("haptics_damage", "Haptics on damage", OptionKind.Bool, "true", Section: "Haptics"),

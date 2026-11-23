@@ -17,6 +17,7 @@ local Jump = require("jump")
 local Cutscene = require("cutscene")
 local FallDamage = require("falldamage")
 local BodyGrab = require("bodygrab")
+local Cocking = require("cocking")
 
 C.init(modDir)
 U.debug = C.get("debug_log") == true
@@ -119,6 +120,31 @@ for _, e in ipairs({
     }
 end
 
+-- Manual cocking diagnostics: bolt / slide taken, bolt / slide counted as pulled (BP functions: post-hooks).
+for _, p in ipairs({
+    "/Game/R6/Weapons/BP_Weapon_Rifle_Bolt.BP_Weapon_Rifle_Bolt_C:OnGrab",
+    "/Game/R6/Weapons/BP_Weapon_Pistol_Slide.BP_Weapon_Pistol_Slide_C:OnGrab",
+    "/Game/R6/Weapons/M1903_SniperRifle/BP_M1903_SniperRifle_Bolt.BP_M1903_SniperRifle_Bolt_C:OnGrab",
+}) do
+    hooks[#hooks + 1] = {
+        path = p,
+        fn = function(ctx, hand)
+            pcall(function() Cocking.onPieceGrab(ctx:get(), hand:get()) end)
+        end,
+    }
+end
+for _, p in ipairs({
+    "/Game/R6/Weapons/BP_Weapon_Rifle_MagazineLoaded.BP_Weapon_Rifle_MagazineLoaded_C:PlayerPulledBolt",
+    "/Game/R6/Weapons/BP_Weapon_Pistol_MagazineLoaded.BP_Weapon_Pistol_MagazineLoaded_C:PlayerSetsSlideIn",
+}) do
+    hooks[#hooks + 1] = {
+        path = p,
+        fn = function(ctx)
+            pcall(function() Cocking.onBoltPulled(ctx:get()) end)
+        end,
+    }
+end
+
 -- Developer tools (cmd.txt test channel), only with debug_log=true at start-up.
 local Dev = nil
 if C.get("debug_log") == true then
@@ -217,6 +243,7 @@ local function findPlayer(now)
                         WeaponGrip.reset()
                         Cutscene.reset(pawn)
                         FallDamage.reset()
+                        Cocking.reset()
                         return pawn, pc
                     end
                 end
@@ -289,6 +316,7 @@ local function tick()
     guarded("falldamage", FallDamage.tick, pawn)
     guarded("syringe", Syringe.tick, pawn, now)
     if on then guarded("weapongrip", WeaponGrip.tick, pawn, now) end
+    guarded("cocking", Cocking.tick, pawn)
     guarded("holster", Holster.tick, pawn)
     guarded("bodygrab", BodyGrab.tick, pawn, now)
     if not menuOpen then guarded("grabzones", BodyGrab.handTick, pawn, now) end
