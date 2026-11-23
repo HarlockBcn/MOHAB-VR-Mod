@@ -259,30 +259,45 @@ local function scan()
     end
 end
 
+-- Gives back the overlap events we took from a grip's colliders. GripCap is also the game's own switch for the front
+-- grip (Enable/DisableGripGrabbing toggle its overlap events and the grip's DisablePickup), e.g. while a weapon waits
+-- to be cocked: then it must stay off, or the half-disabled grip swallows the grab and the game no longer cocks the
+-- weapon when the second hand takes the grip.
+local function restoreComps(grip, comps)
+    local disabled = U.get(grip, "DisablePickup") == true
+    for _, comp in ipairs(comps) do
+        if U.valid(comp) then
+            local isCap = false
+            pcall(function() isCap = comp:GetFName():ToString() == "GripCap" end)
+            if not (isCap and disabled) then U.call(comp, "SetGenerateOverlapEvents", true) end
+        end
+    end
+end
+
 local function setGated(grip, want, dist)
     local addr = grip:GetAddress()
     local st = gated[addr]
     if want then
-        if st then return end
-        st = { actor = grip, comps = {} }
+        local fresh = not st
+        if fresh then st = { actor = grip, comps = {}, known = {} } end
+        -- Every frame: the game may switch a collider back on while the grip is out of reach (EnableGripGrabbing).
         for _, name in ipairs(COMP_NAMES) do
             local comp = U.get(grip, name)
-            if U.valid(comp) then
-                local orig = U.get(comp, "bGenerateOverlapEvents")
-                if orig ~= false then
-                    U.call(comp, "SetGenerateOverlapEvents", false)
+            if U.valid(comp) and U.get(comp, "bGenerateOverlapEvents") ~= false then
+                U.call(comp, "SetGenerateOverlapEvents", false)
+                local a = comp:GetAddress()
+                if not st.known[a] then
+                    st.known[a] = true
                     st.comps[#st.comps + 1] = comp
                 end
             end
         end
         gated[addr] = st
-        U.dlog("weapon grip %s out of reach (%.0f cm)", grip:GetFName():ToString(), dist or -1)
+        if fresh then U.dlog("weapon grip %s out of reach (%.0f cm)", grip:GetFName():ToString(), dist or -1) end
     elseif st then
         gated[addr] = nil
         if U.valid(grip) then
-            for _, comp in ipairs(st.comps) do
-                if U.valid(comp) then U.call(comp, "SetGenerateOverlapEvents", true) end
-            end
+            restoreComps(grip, st.comps)
             U.dlog("weapon grip %s in reach (%s cm)", grip:GetFName():ToString(), dist and string.format("%.0f", dist) or "-")
         end
     end
@@ -465,11 +480,7 @@ end
 function M.disable()
     pcall(unblockAll)
     for _, st in pairs(gated) do
-        if U.valid(st.actor) then
-            for _, comp in ipairs(st.comps) do
-                if U.valid(comp) then U.call(comp, "SetGenerateOverlapEvents", true) end
-            end
-        end
+        if U.valid(st.actor) then restoreComps(st.actor, st.comps) end
     end
     gated = {}
     caps, shrinking = {}, false
