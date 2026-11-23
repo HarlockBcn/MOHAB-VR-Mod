@@ -131,32 +131,6 @@ local function isOnPlayer(syr, pawn)
     return false
 end
 
--- Sleeve grab distance. BP_VRPlayerCharacter:GetNearestHolsterSlot lets a hand take an item from a holster slot
--- when its squared distance is <= SlotToDistanceSquaredLeewayMap[slot]. Slots 6 and 7 are the sleeves (the
--- CuffGrabPoint of the other hand). We scale those entries by factor^2 and keep the originals.
-local SLEEVE_SLOTS = { 6, 7 }
-local leewayPawn, leewayOrig = nil, {}
-local function applyGrabDistance(pawn)
-    local map = U.get(pawn, "SlotToDistanceSquaredLeewayMap")
-    if not map then return end
-    local addr = pawn:GetAddress()
-    if addr ~= leewayPawn then leewayPawn, leewayOrig = addr, {} end
-    local f = U.clamp(C.get("syringe_grab_distance"), 0.1, 1.0)
-    for _, slot in ipairs(SLEEVE_SLOTS) do
-        pcall(function()
-            if not map:Contains(slot) then return end
-            local cur = map:Find(slot):get()
-            if leewayOrig[slot] == nil then leewayOrig[slot] = cur end
-            local want = leewayOrig[slot] * f * f
-            if math.abs(cur - want) > 0.01 then
-                map:Add(slot, want)
-                U.dlog("sleeve slot %d grab leeway %.0f -> %.0f (distance x%.2f)", slot, cur, want, f)
-            end
-        end)
-    end
-end
-M.applyGrabDistance = applyGrabDistance
-
 -- Post-hook of SyringeOverlapOn (the BP just enabled the overlap box).
 function M.onOverlapOn(syr)
     if not C.get("syringe_require_trigger") then return end
@@ -181,7 +155,6 @@ function M.tick(pawn, now)
     if now - lastScan > 0.5 or now < lastScan then
         lastScan = now
         scanList = FindAllOf(SYRINGE_CLASS) or {}
-        applyGrabDistance(pawn)
     end
     local requireTrigger = C.get("syringe_require_trigger")
     local thr = C.get("syringe_trigger_threshold")

@@ -29,10 +29,12 @@ local tabs = {
           help = "Syringes on the sleeve are drawn smaller (full size in the hand)" },
         { key = "syringe_holster_scale", label = "Sleeve scale", kind = "num", min = 0.25, max = 1.0, step = 0.05,
           help = "Size of the syringes on the sleeve" },
-        { key = "syringe_grab_distance", label = "Sleeve grab distance", kind = "num", min = 0.25, max = 1.0, step = 0.05, suffix = "x",
-          help = "How close the hand must be to take a syringe from the sleeve (1x = original)" },
     } },
-    { name = "Weapons", items = {
+    { name = "Grabbing", items = {
+        { key = "body_grab_distance", label = "Inventory grab distance", kind = "num", min = 5, max = 30, step = 1, digits = 0, suffix = " cm",
+          help = "How close the hand must be to take grenades, objects or syringes you carry" },
+        { key = "holster_grab_distance", label = "Holster grab distance", kind = "num", min = 5, max = 30, step = 1, digits = 0, suffix = " cm",
+          help = "How close the hand must be to take a weapon from a holster (not back weapons)" },
         { key = "weapon_grip_reach", label = "Second hand reach", kind = "num", min = 5, max = 40, step = 1, digits = 0, suffix = " cm",
           help = "How close the second hand must be to grab a weapon's front grip" },
         { key = "holster_below_eyes", label = "No holster grab above eyes", kind = "bool",
@@ -51,6 +53,8 @@ local tabs = {
           help = "Magazines, shells and opening / closing the sawed-off" },
         { key = "haptics_no_ammo", label = "Vibrate when out of ammo", kind = "bool",
           help = "Two taps when you reach for the magazine pouch with no ammo left" },
+        { key = "haptics_holster_zone", label = "Vibrate at grab zones", kind = "bool",
+          help = "Light tap when your empty hand can take a weapon or item you carry" },
     } },
     { name = "Movement", items = {
         { key = "crouch_stick", label = "Crouch with turn stick", kind = "bool",

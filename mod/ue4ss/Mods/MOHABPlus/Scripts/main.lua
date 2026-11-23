@@ -16,6 +16,7 @@ local Slide = require("slide")
 local Jump = require("jump")
 local Cutscene = require("cutscene")
 local FallDamage = require("falldamage")
+local BodyGrab = require("bodygrab")
 
 C.init(modDir)
 U.debug = C.get("debug_log") == true
@@ -289,6 +290,8 @@ local function tick()
     guarded("syringe", Syringe.tick, pawn, now)
     if on then guarded("weapongrip", WeaponGrip.tick, pawn, now) end
     guarded("holster", Holster.tick, pawn)
+    guarded("bodygrab", BodyGrab.tick, pawn, now)
+    if not menuOpen then guarded("grabzones", BodyGrab.handTick, pawn, now) end
     guarded("haptics", Haptics.tick, pawn, pc, now)
 end
 

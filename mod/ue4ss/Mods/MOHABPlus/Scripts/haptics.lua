@@ -51,6 +51,12 @@ function M.noAmmoBuzz(now, hand)
     queue[#queue + 1] = { t = now + 0.18, hand = hand, amp = 0.7 * k, dur = 0.05 }
 end
 
+-- A hand with nothing in it entered the grab zone of something you carry: one light tap.
+function M.zoneTap(now, hand)
+    local k = U.clamp(C.get("haptics_intensity"), 0, 1)
+    queue[#queue + 1] = { t = now, hand = hand, amp = 0.3 * k, dur = 0.04 }
+end
+
 function M.tick(pawn, pc, now)
     -- Start queued pulses
     for i = #queue, 1, -1 do

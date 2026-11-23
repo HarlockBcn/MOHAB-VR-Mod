@@ -4,19 +4,18 @@
 -- [index]. The back/shoulder holsters reach over the top of the head, so reaching for a hat or helmet grabbed a
 -- weapon instead. Taking a weapon from the back or a shoulder is done with the hand behind the shoulder, below the
 -- eyes; so while a hand is above eye level we set the leeway of holsters 0-5 to 0 and it grabs what it touches (the
--- hat). The sleeves (6-7) are handled by syringe.lua.
+-- hat). The leeway map itself is written by bodygrab.lua (which also sets the body grab distance).
 --
 -- Eye level is taken with the head upright, from a neck pivot (below and behind the eyes): nodding the head down to
 -- reach a shoulder holster moves the eyes forward and down, but the neck pivot barely moves, so the limit stays put.
 local U = require("util")
 local C = require("config")
+local BodyGrab = require("bodygrab")
 
 local M = {}
 
-local INDICES = { 0, 1, 2, 3, 4, 5 }
-local orig = {}            -- index -> original leeway (for the current pawn)
-local origPawn = nil
 local blocked = false
+local blockedPawn = nil
 
 local NECK_BACK, NECK_DOWN = 9, 12   -- cm from the eyes to the neck pivot, along the head's own forward / up axes
 
@@ -55,16 +54,8 @@ local function handAboveEyes(ctrl, f)
     return l ~= nil and l.Z > f.eyeZ
 end
 
-local function setLeeway(pawn, block)
-    local map = U.get(pawn, "SlotToDistanceSquaredLeewayMap")
-    if not map then return end
-    for _, i in ipairs(INDICES) do
-        pcall(function()
-            if not map:Contains(i) then return end
-            if orig[i] == nil then orig[i] = map:Find(i):get() end
-            map:Add(i, block and 0 or orig[i])
-        end)
-    end
+local function setLeeway(block)
+    BodyGrab.setHeadBlock(block)
     blocked = block
     U.dlog("holsters %s (hand above the eyes)", block and "blocked" or "restored")
 end
@@ -116,14 +107,14 @@ end
 
 function M.tick(pawn)
     local addr = pawn:GetAddress()
-    if addr ~= origPawn then origPawn, orig, blocked = addr, {}, false end
+    if addr ~= blockedPawn then blockedPawn = addr; setLeeway(false) end
 
     local f = headFrame(pawn)
     local want = false
     if f and C.get("holster_below_eyes") then
         want = handAboveEyes(U.get(pawn, "LeftController"), f) or handAboveEyes(U.get(pawn, "RightController"), f)
     end
-    if want ~= blocked then setLeeway(pawn, want) end
+    if want ~= blocked then setLeeway(want) end
 
     if f then
         for _, side in ipairs({ "Left", "Right" }) do

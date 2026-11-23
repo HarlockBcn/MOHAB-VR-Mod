@@ -6,10 +6,11 @@ M.defaults = {
     syringe_trigger_threshold = 0.5,
     syringe_small_holstered = true,
     syringe_holster_scale = 0.5,
-    syringe_grab_distance = 0.25,
 
     holster_below_eyes = true,    -- no holster grabs with the hand above the eyes (hats/helmets)
     weapon_grip_reach = 15,       -- cm from the free hand to a weapon's off-hand grip
+    body_grab_distance = 10,      -- cm: taking things you carry (grenades, objects, syringes on the sleeves)
+    holster_grab_distance = 15,   -- cm: taking a weapon from a holster (not back / shoulder weapons: game's distance)
 
     haptics_damage = true,
     haptics_intensity = 1.0,
@@ -17,6 +18,7 @@ M.defaults = {
     haptics_directional = true,
     haptics_weapons = true,
     haptics_no_ammo = true,       -- two taps when pressing grip at the magazine pouch with no ammo left
+    haptics_holster_zone = true,  -- light tap when an empty hand can take something you carry
 
     crouch_stick = true,
     crouch_stick_threshold = 0.95,
@@ -52,9 +54,9 @@ M.defaults = {
 
 -- Order + sections used when writing the file (keep in sync with the launcher).
 M.order = {
-    { "Syringes", { "syringe_require_trigger", "syringe_trigger_threshold", "syringe_small_holstered", "syringe_holster_scale", "syringe_grab_distance" } },
-    { "Weapons", { "weapon_grip_reach", "holster_below_eyes" } },
-    { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons", "haptics_no_ammo" } },
+    { "Syringes", { "syringe_require_trigger", "syringe_trigger_threshold", "syringe_small_holstered", "syringe_holster_scale" } },
+    { "Grabbing", { "body_grab_distance", "holster_grab_distance", "weapon_grip_reach", "holster_below_eyes" } },
+    { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons", "haptics_no_ammo", "haptics_holster_zone" } },
     { "Crouch", { "crouch_stick", "crouch_stick_threshold", "crouch_speed" } },
     { "Jump (experimental)", { "jump_enabled", "jump_height", "jump_sound", "jump_guard" } },
     { "Fall damage", { "fall_damage_custom", "fall_safe_height", "fall_fatal_height", "fall_damage_progressive", "fall_damage_scale" } },
@@ -137,11 +139,13 @@ M.enabled = true
 M.vanilla = {
     syringe_require_trigger = false,
     syringe_small_holstered = false,
-    syringe_grab_distance = 1.0,
+    body_grab_distance = -1,        -- -1 = the game's distances
+    holster_grab_distance = -1,
     holster_below_eyes = false,
     haptics_damage = false,
     haptics_weapons = false,
     haptics_no_ammo = false,
+    haptics_holster_zone = false,
     crouch_stick = false,
     crouch_speed = 0,               -- 0 = the game's own crouch speed
     jump_enabled = false,

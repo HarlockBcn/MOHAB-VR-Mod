@@ -12,9 +12,9 @@
 ### Syringes
 - **Trigger to inject** - A syringe only injects when you bring it to your chest *and* pull the trigger of the hand holding it.
 - **Smaller syringes on the sleeve** - Stored syringes look smaller on your sleeve and get their normal size back when you grab them.
-- **Shorter sleeve grab distance** - Your hand has to be closer to the sleeve to take a syringe, so you don't grab them by accident.
 
 ### Weapons
+- **Grab distances** - Choose how close your hand must be to take what you carry, so you don't grab things by accident: one distance for your inventory (grenades, mission objects on your chest, syringes on your sleeve; 10 cm by default) and another for weapons in holsters (15 cm by default). Weapons on your back and shoulders and the magazine pouch of the weapon in your hands keep the game's distance.
 - **Precise two-handed grip** - Your free hand only grabs the front grip of a weapon when it is really close to it.
 - **Second grip first** - With your free hand at your weapon's front grip, nearby weapons and ammo boxes are ignored, so you always grab your own weapon.
 - **Helmet-safe back holsters** - With your hand above your eyes (touching your helmet or hat) no weapon is pulled from a holster; take them from behind your shoulders, also with your head bent down.
@@ -33,6 +33,7 @@
 ### Haptics
 - **Damage vibration** - The controllers vibrate when you get hurt, stronger for big hits and on the side of the impact.
 - **Weapon handling vibration** - Feel magazines, clips, shells and bullets going in, and break-action shotguns opening and closing.
+- **Grab zone vibration** - A light tap tells you when your empty hand is close enough to take a holstered weapon or something you carry (grenades, objects, syringes).
 - **Out of ammo vibration** - Pressing grip at your magazine pouch when you have no ammo left gives two taps on that hand.
 
 ### Cutscenes
@@ -54,7 +55,7 @@
 - **Weapons pulled instead of your helmet** - Grabbing near your head took a weapon from the back holster first.
 
 ### Syringes
-- **Accidental sleeve grabs** - Syringes were easy to grab by mistake when your hands passed near your sleeve.
+- **Accidental grabs from your body** - Syringes, grenades and other things you carry were easy to grab by mistake when your hands passed near them.
 - **Accidental injections** - Syringes no longer inject just because they touch your chest while you move them around.
 
 ### Cutscenes

@@ -32,11 +32,12 @@ Short, player-facing list: [FEATURES.md](FEATURES.md) (also shown in the launche
 |---|---|---|
 | Trigger-activated syringes | A syringe is only injected if, besides bringing it to your chest, you pull the **trigger of the hand holding it** (configurable threshold). | On |
 | Smaller syringes on the sleeve | Every syringe stored on the sleeve is drawn at 0.5 scale (configurable). They get their real size back when grabbed, before reaching your hand. | On |
-| Sleeve grab distance | Reduces how far the other hand can grab a syringe (or other item) from the sleeve, so you don't grab them by accident. Factor over the game's original distance (30 cm). | x0.25 |
+| Grab distances | How close a hand must be to take something you carry. **Inventory** (grenades, mission objects on your chest, syringes on your sleeve) and **holstered weapons** have their own distance (5-30 cm; the game uses 30 cm on the sleeve). Within 3 cm the game always lets you grab. Weapons on the back / shoulders and the magazine pouch of the weapon in your hands keep the game's distance. | Inventory 10 cm, weapons 15 cm |
 | Two-handed weapon grip reach | The free hand only grabs the second grip of a two-handed weapon when it is really close to it (the game stretches the grab area up to 2 m forward). | 15 cm |
 | No holster grabs over the head | While a hand is over your head (e.g. grabbing a helmet or hat), it does not grab the weapons holstered on your back. Hands at shoulder level still grab them. | 30 cm |
 | Haptics on damage | Both controllers vibrate when you lose health. Intensity and duration grow with the damage. Optionally, the controller on the side of the hit vibrates harder. | On |
 | Haptics on weapon handling | Vibration when inserting magazines, clips, shells or bullets, and when opening/closing break-action shotguns. | On |
+| Haptics at grab zones | A light tap when an empty hand gets within reach of a holstered weapon or something you carry (it asks the game what the hand would take, the same check the game makes when you press grip). | On |
 | Crouch with the turn stick | Turn stick **down** = crouch; **up** = stand up (or jump, if you are already standing). The stick has to be pushed almost all the way (threshold 0.95). You move crouched at 60% of your walking speed (adjustable, also when you crouch for real; the original game does not slow you down). Sprinting stands you up. | On |
 | Jump (experimental) | Turn stick **up** while standing. Effort grunt and cloth sounds. You can climb onto tables, crates and rocks, but not over the level's invisible barriers, under a low ceiling, while swimming or while skiing. The levels were not designed for jumping, so a few spots may still let you reach places you should not. | On, 100 cm |
 | Fall damage | The original game ignores how far you fall: from about 3.3 m up it always takes the same amount of health, from about 10 m you die. The mod lets you choose the height that starts hurting and the fatal height, makes the damage grow with the height (10% of the game's damage just above the safe height, 100% just below the fatal one) and scales it. Heights count from where the fall starts (the top of a jump). Off = the game's rules. | On, 4 m / 10 m, grows with height, x1.0 |
@@ -111,8 +112,6 @@ Without an internet connection the launcher works as usual. You can also update 
   0.4 s after releasing it. Also, since the Blueprint only injects if the *last* overlap event was with `Mesh_Chest` (and
   when the box is enabled while touching several body parts the order is random), while you pull the trigger the mod
   checks `Box.IsOverlappingComponent(Mesh_Chest)` itself and calls the game's injection (`SyringeUsed`).
-  The sleeve grab distance is the player's `SlotToDistanceSquaredLeewayMap[6/7]` (squared distance, 900 = 30 cm), which
-  the mod multiplies by the factor².
   The game hides spare syringes with scale 0, so the mod only undoes the scale it applied itself.
   A syringe is "on the sleeve" if it is attached (directly or indirectly) to the cuffs, the hands or the player.
   They are scaled with `SetActorScale3D`. When grabbed, the game (`BP_MotionController:AttachObjectToHand`) reads its scale
@@ -122,6 +121,15 @@ Without an internet connection the launcher works as usual. You can also update 
   While the other hand holds a weapon, the mod pre-hooks the capsule's `K2_SetRelativeLocation`/`SetCapsuleHalfHeight` near
   that weapon and disables the overlap events of the grip colliders while the free hand is farther than the configured
   reach. If a second grip comes loose from its weapon, the mod reattaches it.
+* **Body grab distance**: `BP_VRPlayerCharacter:GetNearestHolsterSlot` measures the hand's distance to 8 points
+  (indices 0-5 = holster slots 3, 0, 5, 2, 4, 1; 6-7 = sleeves) and takes the nearest one if its squared distance is
+  within `SlotToDistanceSquaredLeewayMap[index]` (900 = 30 cm) or under 3 cm. The mod writes the weapon distance² into
+  slots holding a weapon (weapons owned by the player's `HolstersComponent` and not gripped, grenades excluded) or where a held weapon goes back
+  (`AppropriateHolsterSlot`), the inventory distance² into the rest, and leaves `PrimaryBackHolsterSlot` /
+  `SecondaryBackHolsterSlot` and the held weapon's `MagazineHolsterSlot` with the game's value.
+  Note: the game only checks the **nearest** point that holds something; if it is out of its distance nothing is
+  taken, even when a farther item is within its own. Grip presses that take nothing near the body are logged
+  (`grab missed`).
 * **Holsters over the head**: `GetNearestHolsterSlot` uses `SlotToDistanceSquaredLeewayMap` (indices 0-5 = holsters,
   6-7 = sleeves). While a hand is over the head and near its axis, the mod zeroes the holster leeways.
 * **Haptics**: the mod watches the health of `VRPlayerCharacterHealthAndDamageComponent` and uses
@@ -172,7 +180,7 @@ Without an internet connection the launcher works as usual. You can also update 
 launcher/                 Launcher/injector/updater (.NET 8 WinForms)
   Resources/              Banner, logo and icon (game artwork)
 mod/ue4ss/                Content shipped next to UE4SS.dll (settings, mods.txt, Lua mods)
-  Mods/MOHABPlus/Scripts  main, config, util, syringe, weapongrip, holster, haptics, crouch, sprint, slide, jump, jumpguard, falldamage, cutscene, menu, devtools
+  Mods/MOHABPlus/Scripts  main, config, util, syringe, weapongrip, holster, haptics, crouch, sprint, slide, jump, jumpguard, falldamage, bodygrab, cutscene, menu, devtools
   Mods/MOHABDump          Class dump (only with build -Dev)
 third_party/UE4SS         Official UE4SS v4.0.0 release (unmodified)
 tools/                    release.ps1, get-ue4ss.ps1, pak_list.py, pak_extract.py, uasset_info.py, kismet_dis.py (Blueprint disassembler)

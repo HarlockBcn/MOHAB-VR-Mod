@@ -22,10 +22,10 @@ internal sealed class ModConfig
         new("syringe_small_holstered", "Syringe: smaller when on the sleeve", OptionKind.Bool, "true", Section: "Syringes"),
         new("syringe_holster_scale", "Syringe: sleeve scale", OptionKind.Float, "0.5", 0.25, 1.0, 0.05, Section: "Syringes"),
 
-        new("syringe_grab_distance", "Syringe: sleeve grab distance", OptionKind.Float, "0.25", 0.25, 1.0, 0.05, Section: "Syringes"),
-
-        new("weapon_grip_reach", "Weapons: second hand grab distance (cm)", OptionKind.Float, "15", 5, 40, 1, Section: "Weapons"),
-        new("holster_below_eyes", "Weapons: no holster grab with the hand above the eyes", OptionKind.Bool, "true", Section: "Weapons"),
+        new("body_grab_distance", "Grabbing: distance to take grenades, objects and syringes you carry (cm)", OptionKind.Float, "10", 5, 30, 1, Section: "Grabbing"),
+        new("holster_grab_distance", "Grabbing: distance to take a weapon from a holster, back weapons excluded (cm)", OptionKind.Float, "15", 5, 30, 1, Section: "Grabbing"),
+        new("weapon_grip_reach", "Grabbing: second hand distance to a weapon's front grip (cm)", OptionKind.Float, "15", 5, 40, 1, Section: "Grabbing"),
+        new("holster_below_eyes", "Grabbing: no holster grab with the hand above the eyes", OptionKind.Bool, "true", Section: "Grabbing"),
 
         new("haptics_damage", "Haptics on damage", OptionKind.Bool, "true", Section: "Haptics"),
         new("haptics_intensity", "Haptics: intensity", OptionKind.Float, "1.0", 0.1, 1.0, 0.1, Section: "Haptics"),
@@ -33,6 +33,7 @@ internal sealed class ModConfig
         new("haptics_directional", "Haptics: stronger on the side of the hit", OptionKind.Bool, "true", Section: "Haptics"),
         new("haptics_weapons", "Haptics when reloading / opening weapons", OptionKind.Bool, "true", Section: "Haptics"),
         new("haptics_no_ammo", "Haptics when pressing grip at the magazine pouch with no ammo left", OptionKind.Bool, "true", Section: "Haptics"),
+        new("haptics_holster_zone", "Haptics: light tap when an empty hand can take a weapon or item you carry", OptionKind.Bool, "true", Section: "Haptics"),
 
         new("crouch_stick", "Crouch with turn stick (down / up)", OptionKind.Bool, "true", Section: "Crouch"),
         new("crouch_stick_threshold", "Crouch: stick threshold", OptionKind.Float, "0.95", 0.3, 0.95, 0.05, Section: "Crouch"),
