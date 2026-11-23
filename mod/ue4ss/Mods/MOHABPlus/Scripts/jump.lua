@@ -96,7 +96,7 @@ function M.tryJump(pawn, ctrl, now)
 
     local okZ, g = U.call(cmc, "GetGravityZ")
     if not okZ or type(g) ~= "number" or g >= 0 then g = -980 end
-    local h = U.clamp(C.get("jump_height"), 10, 100)
+    local h = U.clamp(C.get("jump_height"), 10, 120)
     -- No jump when the head would hit a ceiling / something above.
     if not Guard.headClear(pawn, h) then return false end
     local vz = math.sqrt(2 * -g * h)

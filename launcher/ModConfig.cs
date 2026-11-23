@@ -39,9 +39,15 @@ internal sealed class ModConfig
         new("crouch_speed", "Crouch: walking speed while crouched (x normal)", OptionKind.Float, "0.6", 0.3, 1.0, 0.05, Section: "Crouch"),
 
         new("jump_enabled", "Jump with turn stick up (while standing)", OptionKind.Bool, "true", Section: "Jump (experimental)"),
-        new("jump_height", "Jump: height (cm)", OptionKind.Float, "75", 20, 80, 5, Section: "Jump (experimental)"),
+        new("jump_height", "Jump: height (cm)", OptionKind.Float, "100", 20, 120, 5, Section: "Jump (experimental)"),
         new("jump_sound", "Jump: sounds", OptionKind.Choice, "all", Choices: new[] { "all", "cloth", "off" }, Section: "Jump (experimental)"),
         new("jump_guard", "Jump: stay inside the level (furniture can still be climbed)", OptionKind.Bool, "true", Section: "Jump (experimental)"),
+
+        new("fall_damage_custom", "Custom fall damage (off = the game's rules)", OptionKind.Bool, "true", Section: "Fall damage"),
+        new("fall_safe_height", "Fall damage: safe height (m)", OptionKind.Float, "4", 1, 10, 0.5, Section: "Fall damage"),
+        new("fall_fatal_height", "Fall damage: fatal height (m)", OptionKind.Float, "10", 4, 30, 1, Section: "Fall damage"),
+        new("fall_damage_progressive", "Fall damage: grows with the height of the fall", OptionKind.Bool, "true", Section: "Fall damage"),
+        new("fall_damage_scale", "Fall damage: amount (x the game's)", OptionKind.Float, "1.0", 0.0, 2.0, 0.1, Section: "Fall damage"),
 
         new("sprint_mode", "Sprint mode", OptionKind.Choice, "both", Choices: new[] { "stick", "arms", "both" }, Section: "Sprint"),
         new("sprint_arm_sensitivity", "Sprint: arm swing sensitivity", OptionKind.Float, "1.3", 0.3, 2.0, 0.1, Section: "Sprint"),

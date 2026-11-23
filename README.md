@@ -38,7 +38,8 @@ Short, player-facing list: [FEATURES.md](FEATURES.md) (also shown in the launche
 | Haptics on damage | Both controllers vibrate when you lose health. Intensity and duration grow with the damage. Optionally, the controller on the side of the hit vibrates harder. | On |
 | Haptics on weapon handling | Vibration when inserting magazines, clips, shells or bullets, and when opening/closing break-action shotguns. | On |
 | Crouch with the turn stick | Turn stick **down** = crouch; **up** = stand up (or jump, if you are already standing). The stick has to be pushed almost all the way (threshold 0.95). You move crouched at 60% of your walking speed (adjustable, also when you crouch for real; the original game does not slow you down). Sprinting stands you up. | On |
-| Jump (experimental) | Turn stick **up** while standing. Effort grunt and cloth sounds. You can climb onto tables, crates and rocks, but not over the level's invisible barriers, under a low ceiling, while swimming or while skiing. The levels were not designed for jumping, so a few spots may still let you reach places you should not. | On, 75 cm |
+| Jump (experimental) | Turn stick **up** while standing. Effort grunt and cloth sounds. You can climb onto tables, crates and rocks, but not over the level's invisible barriers, under a low ceiling, while swimming or while skiing. The levels were not designed for jumping, so a few spots may still let you reach places you should not. | On, 100 cm |
+| Fall damage | The original game ignores how far you fall: from about 3.3 m up it always takes the same amount of health, from about 10 m you die. The mod lets you choose the height that starts hurting and the fatal height, makes the damage grow with the height (10% of the game's damage just above the safe height, 100% just below the fatal one) and scales it. Heights count from where the fall starts (the top of a jump). Off = the game's rules. | On, 4 m / 10 m, grows with height, x1.0 |
 | Arm-swing sprint | `arms` mode: you run by moving the stick **and** swinging your arms like when running, without clicking the stick. It is **progressive**: the faster you swing, the faster you run (from walking speed up to maximum sprint). Stop swinging and you walk again immediately. `both` mode: both ways work. `stick` mode: like the original game. | `both`, sensitivity 1.3 |
 | Sprint speed | Multiplier of the game's maximum sprint speed, from x1.0 to x1.5. Also applies to stick-click sprint. | x1.4 |
 | Slide | Crouching while sprinting (with the turn stick or physically) makes you slide in the direction you were running. It starts a bit faster than your speed and slows down to crouch speed, so it is longer the faster you were running. You end up crouched. A scraping sound plays (`body`, `wood`, `metal` or `off`). | On, length x1.5, sound `body` |
@@ -142,6 +143,11 @@ Without an internet connection the launcher works as usual. You can also update 
   event: the mod loads its bank (`RequiredBank`) with `AkGameplayStatics.LoadBanks` and plays it with `PostEventAttached`;
   looping sounds are stopped with their `Stop_` event. Afterwards, the arm swing has to stop once before you can stand up
   again.
+* **Fall damage**: the player's `Comp_FallDamage` only looks at the vertical speed of the last frame before landing
+  (`LastVelocity.Z`): from `NonFatalFallVelocity` (800 cm/s) it applies a flat `NonFatalDamage`, from `FatalFallVelocity`
+  (1400 cm/s) a fatal hit. The mod writes both thresholds from the chosen heights (v = √(2·g·h)) and sets
+  `NonFatalDamage` from `LastVelocity` every frame and in a post-hook of `StopFalling`, which runs right before
+  `ApplyFallDamage`. The original values are put back when the option or the mod is off.
 * **Skip cutscenes**: the game already has a skip for some scenes (`BP_R6GameModeBase.bInSkippableScene`,
   `TimerExpired_SceneSkip` → `CutsceneSkipped` in the level). Outside those, and only while the player is locked
   (`bFootlocked`/`bGamelocked`), it calls `GoToEndAndStop` on the `LevelSequencePlayer`s that are playing and not looping.
@@ -166,7 +172,7 @@ Without an internet connection the launcher works as usual. You can also update 
 launcher/                 Launcher/injector/updater (.NET 8 WinForms)
   Resources/              Banner, logo and icon (game artwork)
 mod/ue4ss/                Content shipped next to UE4SS.dll (settings, mods.txt, Lua mods)
-  Mods/MOHABPlus/Scripts  main, config, util, syringe, weapongrip, holster, haptics, crouch, sprint, slide, cutscene, menu, devtools
+  Mods/MOHABPlus/Scripts  main, config, util, syringe, weapongrip, holster, haptics, crouch, sprint, slide, jump, jumpguard, falldamage, cutscene, menu, devtools
   Mods/MOHABDump          Class dump (only with build -Dev)
 third_party/UE4SS         Official UE4SS v4.0.0 release (unmodified)
 tools/                    release.ps1, get-ue4ss.ps1, pak_list.py, pak_extract.py, uasset_info.py, kismet_dis.py (Blueprint disassembler)

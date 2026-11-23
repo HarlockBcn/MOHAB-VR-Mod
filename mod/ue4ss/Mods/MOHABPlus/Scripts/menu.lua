@@ -79,7 +79,7 @@ local tabs = {
     { name = "Jump", items = {
         { key = "jump_enabled", label = "Jump (experimental)", kind = "bool",
           help = "Turn stick up while standing to jump" },
-        { key = "jump_height", label = "Jump height", kind = "num", min = 20, max = 80, step = 5, digits = 0, suffix = " cm",
+        { key = "jump_height", label = "Jump height", kind = "num", min = 20, max = 120, step = 5, digits = 0, suffix = " cm",
           help = "How high you jump" },
         { key = "jump_sound", label = "Jump sounds", kind = "choice",
           choices = { "all", "cloth", "off" },
@@ -87,6 +87,18 @@ local tabs = {
           help = "Effort voice and cloth rustle when jumping" },
         { key = "jump_guard", label = "Stay inside the level", kind = "bool",
           help = "Jumps can't take you over the level's invisible barriers" },
+    } },
+    { name = "Fall damage", items = {
+        { key = "fall_damage_custom", label = "Custom fall damage", kind = "bool",
+          help = "OFF: the game's rules (hurts from about 3.3 m, kills from 10 m)" },
+        { key = "fall_safe_height", label = "Safe height", kind = "num", min = 1.0, max = 10.0, step = 0.5, digits = 1, suffix = " m",
+          help = "Shorter falls don't hurt (counted from the top of a jump)" },
+        { key = "fall_fatal_height", label = "Fatal height", kind = "num", min = 4, max = 30, step = 1, digits = 0, suffix = " m",
+          help = "Longer falls kill you" },
+        { key = "fall_damage_progressive", label = "Damage grows with height", kind = "bool",
+          help = "Small drops hurt a little, big ones a lot (game: always the same)" },
+        { key = "fall_damage_scale", label = "Damage amount", kind = "num", min = 0.0, max = 2.0, step = 0.1, digits = 1, suffix = "x",
+          help = "Damage of a non-fatal fall (1x = the game's)" },
     } },
     { name = "Cutscenes", items = {
         { key = "skip_cutscenes", label = "Skip cutscenes", kind = "bool",

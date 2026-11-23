@@ -23,9 +23,15 @@ M.defaults = {
     crouch_speed = 0.6,             -- walking speed while crouched (x normal walking); the game has its own multiplier
 
     jump_enabled = true,            -- EXPERIMENTAL: turn stick up while standing
-    jump_height = 75,               -- cm
+    jump_height = 100,              -- cm
     jump_sound = "all",             -- "all" (voice + cloth) | "cloth" | "off"
     jump_guard = true,              -- invisible level barriers become infinitely tall (anything visible can be climbed)
+
+    fall_damage_custom = true,      -- false = the game's rules (flat damage from ~3.3 m, death from ~10 m)
+    fall_safe_height = 4.0,         -- m: shorter drops don't hurt
+    fall_fatal_height = 10,         -- m: longer drops kill
+    fall_damage_progressive = true, -- damage grows with the height instead of the game's flat amount
+    fall_damage_scale = 1.0,        -- x the game's damage
 
     sprint_mode = "both",           -- "stick" | "arms" | "both"
     sprint_arm_sensitivity = 1.3,
@@ -51,6 +57,7 @@ M.order = {
     { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons", "haptics_no_ammo" } },
     { "Crouch", { "crouch_stick", "crouch_stick_threshold", "crouch_speed" } },
     { "Jump (experimental)", { "jump_enabled", "jump_height", "jump_sound", "jump_guard" } },
+    { "Fall damage", { "fall_damage_custom", "fall_safe_height", "fall_fatal_height", "fall_damage_progressive", "fall_damage_scale" } },
     { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier", "sprint_turn_slowdown" } },
     { "Slide", { "slide_enabled", "slide_strength", "slide_sound" } },
     { "Cutscenes", { "skip_cutscenes", "skip_hold_time", "skip_speed" } },
@@ -139,6 +146,7 @@ M.vanilla = {
     crouch_speed = 0,               -- 0 = the game's own crouch speed
     jump_enabled = false,
     jump_guard = false,
+    fall_damage_custom = false,
     sprint_mode = "stick",
     sprint_speed_multiplier = 1.0,
     sprint_turn_slowdown = 0,

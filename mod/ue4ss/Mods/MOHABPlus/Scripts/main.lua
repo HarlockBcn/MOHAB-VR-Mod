@@ -15,6 +15,7 @@ local Menu = require("menu")
 local Slide = require("slide")
 local Jump = require("jump")
 local Cutscene = require("cutscene")
+local FallDamage = require("falldamage")
 
 C.init(modDir)
 U.debug = C.get("debug_log") == true
@@ -84,6 +85,14 @@ local hooks = {
             pcall(function() Syringe.onBeforeGrab(ctx:get()) end)
         end,
     },
+}
+
+-- Fall damage: StopFalling runs right before ApplyFallDamage (BP function, post-hook).
+hooks[#hooks + 1] = {
+    path = "/Game/R6/Core/Components/Comp_FallDamage.Comp_FallDamage_C:StopFalling",
+    fn = function(ctx)
+        pcall(function() FallDamage.onStopFalling(ctx:get()) end)
+    end,
 }
 
 -- Weapon reload / break-action haptics (BP functions: post-hooks; each override in a subclass is its own UFunction).
@@ -206,6 +215,7 @@ local function findPlayer(now)
                         Syringe.reset()
                         WeaponGrip.reset()
                         Cutscene.reset(pawn)
+                        FallDamage.reset()
                         return pawn, pc
                     end
                 end
@@ -275,6 +285,7 @@ local function tick()
     if Dev then guarded("devtools", Dev.afterTick) end
     if on then guarded("jump", Jump.tick, pawn, now) end
     guarded("crouch", Crouch.tick, pawn, menuOpen, now)
+    guarded("falldamage", FallDamage.tick, pawn)
     guarded("syringe", Syringe.tick, pawn, now)
     if on then guarded("weapongrip", WeaponGrip.tick, pawn, now) end
     guarded("holster", Holster.tick, pawn)
