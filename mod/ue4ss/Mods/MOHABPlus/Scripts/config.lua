@@ -10,7 +10,7 @@ M.defaults = {
     holster_below_eyes = true,    -- no holster grabs with the hand above the eyes (hats/helmets)
     weapon_grip_reach = 15,       -- cm from the free hand to a weapon's off-hand grip
     body_grab_distance = 10,      -- cm: taking things you carry (grenades, objects, syringes on the sleeves)
-    holster_grab_distance = 15,   -- cm: taking a weapon from a holster (not back / shoulder weapons: game's distance)
+    holster_grab_distance = 25,   -- cm: taking a weapon from a holster (not back / shoulder weapons: game's distance)
 
     haptics_damage = true,
     haptics_intensity = 1.0,

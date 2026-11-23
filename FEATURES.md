@@ -14,7 +14,7 @@
 - **Smaller syringes on the sleeve** - Stored syringes look smaller on your sleeve and get their normal size back when you grab them.
 
 ### Weapons
-- **Grab distances** - Choose how close your hand must be to take what you carry, so you don't grab things by accident: one distance for your inventory (grenades, mission objects on your chest, syringes on your sleeve; 10 cm by default) and another for weapons in holsters (15 cm by default). Weapons on your back and shoulders and the magazine pouch of the weapon in your hands keep the game's distance.
+- **Grab distances** - Choose how close your hand must be to take what you carry, so you don't grab things by accident: one distance for your inventory (grenades, mission objects on your chest, syringes on your sleeve; 10 cm by default) and another for weapons in holsters (25 cm by default). Weapons on your back and shoulders and the magazine pouch of the weapon in your hands keep the game's distance.
 - **Precise two-handed grip** - Your free hand only grabs the front grip of a weapon when it is really close to it.
 - **Second grip first** - With your free hand at your weapon's front grip, nearby weapons and ammo boxes are ignored, so you always grab your own weapon.
 - **Helmet-safe back holsters** - With your hand above your eyes (touching your helmet or hat) no weapon is pulled from a holster; take them from behind your shoulders, also with your head bent down.
