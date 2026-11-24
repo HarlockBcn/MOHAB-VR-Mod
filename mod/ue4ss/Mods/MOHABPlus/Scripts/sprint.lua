@@ -2,7 +2,7 @@
 --  * "arms" mode: sprint while moving with the stick AND swinging the arms like running (no stick click).
 --  * "both": stick click works as usual, arm swinging also sprints.
 --  * "always": sprinting whenever the stick is pushed (no click, no arm swing); walking speed only while a hand
---    holding a gun is raised or fires it. How far the stick is pushed still sets the speed (half way = close to walking).
+--    holding a gun, a grenade or another explosive is raised, or fires a gun. How far the stick is pushed still sets the speed (half way = close to walking).
 --  * arm-swing sprint is progressive: walking speed -> game sprint speed x multiplier, by arm swing speed.
 --  * the stick-click and "always" sprints are progressive too: they start at walking speed and reach the top speed over
 --    RAMP_TIME; stopping, sliding, crouching or shooting starts them over.
@@ -191,7 +191,7 @@ local function isFiring(pawn, gunsOnly)
 end
 local lastFireCancelLog = -100
 
--- "Always" mode: is a gun raised? The hand that counts is the one holding the gun by its main grip (the off hand holds
+-- "Always" and stick-click sprints: is a gun (or a grenade / explosive to throw) raised? The hand that counts is the one holding the gun by its main grip (the off hand holds
 -- the front grip, another actor), so a rifle carried across the chest while running is not "raised". Compared with the
 -- eyes, so it works for any height: raised from RAISE_ON cm below the eyes up, lowered from RAISE_OFF down. It has to
 -- stay that way for a moment, so hands that swing up while running or move while reloading don't change the pace.
@@ -202,6 +202,7 @@ local RAISE_DECEL = 900                         -- cm/s^2: quick but not instant
 local grenadeClass = nil
 local raised, raisedSince = false, nil
 local lastFireT = -100
+local coast = nil         -- speed left after raising a weapon cancelled the stick-click sprint (slows down gradually)
 
 isGun = function(obj)
     if not U.valid(obj) then return false end
@@ -218,12 +219,29 @@ isGun = function(obj)
     return ok and gun == true
 end
 
+-- Weapons (grenades and C4 included) and the explosives that are mission objects, which have no common class (they
+-- share it with ashtrays, bottles...) and are told apart by name. Grenade pins / caps held by the other hand don't count.
+local EXPLOSIVES = { "Dynamite", "Grenade", "TimedExplosive", "ThrowMine", "MakeshiftBomb", "BombHolster", "ChargeBlock",
+    "ChemicalCharge" }
+local function countsWhenRaised(obj)
+    if not U.valid(obj) then return false end
+    if isGun(obj) then return true end
+    local okG, grenade = pcall(function() return U.valid(grenadeClass) and obj:IsA(grenadeClass) end)
+    if okG and grenade then return true end
+    local okN, name = pcall(function() return obj:GetClass():GetFName():ToString() end)
+    if not okN or type(name) ~= "string" or name:find("_Pin") or name:find("_Cap") then return false end
+    for _, s in ipairs(EXPLOSIVES) do
+        if name:find(s, 1, true) then return true end
+    end
+    return false
+end
+
 local function updateRaised(pawn, now)
     local okC, cam = U.call(U.get(pawn, "VRReplicatedCamera"), "K2_GetComponentLocation")
-    local best = nil        -- cm below the eyes of the highest hand holding a gun
+    local best = nil        -- cm below the eyes of the highest hand holding a gun or explosive
     if okC and cam then
         for _, side in ipairs({ "Left", "Right" }) do
-            if isGun(U.get(U.get(pawn, side .. "Controller"), "AttachedObject")) then
+            if countsWhenRaised(U.get(U.get(pawn, side .. "Controller"), "AttachedObject")) then
                 local ok, l = U.call(U.get(pawn, side .. "MotionController"), "K2_GetComponentLocation")
                 if ok and l then
                     local below = cam.Z - l.Z
@@ -237,11 +255,11 @@ local function updateRaised(pawn, now)
         raisedSince = nil
     else
         if not raisedSince or now < raisedSince then raisedSince = now end
-        -- Gun let go: nothing to aim any more, no need to wait.
+        -- Let go / thrown: nothing to aim any more, no need to wait.
         if best == nil or now - raisedSince >= (want and RAISE_DELAY or LOWER_DELAY) then
             raised, raisedSince = want, nil
-            U.dlog("sprint: gun %s (%s cm below the eyes)", want and "raised" or "lowered",
-                best and string.format("%.0f", best) or "no gun,")
+            U.dlog("sprint: weapon %s (%s cm below the eyes)", want and "raised" or "lowered",
+                best and string.format("%.0f", best) or "let go,")
         end
     end
     return raised
@@ -250,7 +268,7 @@ end
 -- "Always" mode, every frame after TickInput. Returns false when the game's own rules apply (crouched, sprint disabled).
 local function alwaysSprint(ctrl, pawn, cmc, dt, mult, isSprinting, moving)
     local now = U.now(pawn)
-    local gunUp = updateRaised(pawn, now)
+    local gunUp = raised
     if isFiring(pawn, true) then lastFireT = now end
     if now < lastFireT then lastFireT = -100 end
     local firing = now - lastFireT < FIRE_HOLD
@@ -349,7 +367,7 @@ end
 afterTickInput = function(ctrl, pawn, dt)
     -- A slide in progress drives the movement itself.
     if Slide.update(ctrl, pawn, U.now(pawn)) then
-        startedByUs, smoothSpeed = false, nil
+        startedByUs, smoothSpeed, coast = false, nil, nil
         resetRamp()
         return
     end
@@ -370,9 +388,11 @@ afterTickInput = function(ctrl, pawn, dt)
         M.reset()
         if dead then return end
     end
-    if not moving then startedByUs = false; smoothSpeed = nil; penalty = 0; resetRamp() end
+    if not moving then startedByUs = false; smoothSpeed = nil; penalty = 0; coast = nil; resetRamp() end
+    if mode ~= "arms" then updateRaised(pawn, U.now(pawn)) end
 
     if mode == "always" then
+        coast = nil
         if alwaysSprint(ctrl, pawn, cmc, dt, mult, isSprinting, moving) then return end
         isSprinting = U.get(ctrl, "IsSprinting") == true
     elseif mode == "arms" or mode == "both" then
@@ -396,10 +416,11 @@ afterTickInput = function(ctrl, pawn, dt)
             local back = directionFactor(ctrl)
             target = math.max(walk * stick, target * back)
             if not smoothSpeed then
-                local cur = rampSpeed or U.get(cmc, "MaxWalkSpeed")
+                local cur = rampSpeed or coast or U.get(cmc, "MaxWalkSpeed")
                 smoothSpeed = (type(cur) == "number" and cur > 0) and cur or walk * stick
             end
             resetRamp()
+            coast = nil
             smoothSpeed = M.glide(smoothSpeed, target, dt, (cut > 0.05 or back < 0.99) and TURN_DECEL or nil)
             pcall(function() cmc.MaxWalkSpeed = smoothSpeed end)
             M.lastSpeed = smoothSpeed
@@ -429,13 +450,34 @@ afterTickInput = function(ctrl, pawn, dt)
         local fwd, right = U.get(ctrl, "InputForward") or 0, U.get(ctrl, "InputRight") or 0
         local stick = U.clamp(math.sqrt(fwd * fwd + right * right), 0, 1)
         pcall(function() cmc.MaxWalkSpeed = walk * stick end)
-        penalty = 0
+        penalty, coast = 0, nil
         resetRamp()
         if U.now(pawn) - lastFireCancelLog > 1.0 then
             lastFireCancelLog = U.now(pawn)
             U.dlog("sprint: stick sprint cancelled (firing)")
         end
         return
+    end
+    local crouched = Crouch.virtualCrouched or U.get(pawn, "IsCurrentlyCrouched") == true
+    -- Nor while a weapon is raised (not "arms": no stick click there). Crouched, the click stands the player up first.
+    if isSprinting and raised and not crouched then
+        pcall(function() ctrl.IsSprinting = false end)
+        isSprinting = false
+        coast = rampSpeed or coast or 0     -- 0: not running yet, straight to walking (the game computed a sprint speed)
+        U.dlog("sprint: stick sprint cancelled (weapon raised)")
+    end
+    if coast then
+        local walk = gameSpeeds(ctrl, pawn)
+        local fwd, right = U.get(ctrl, "InputForward") or 0, U.get(ctrl, "InputRight") or 0
+        local slow = walk * U.clamp(math.sqrt(fwd * fwd + right * right), 0, 1)
+        coast = math.max(slow, M.glide(coast, slow, dt, RAISE_DECEL))
+        if isFiring(pawn) then coast = slow end
+        if isSprinting or crouched then
+            coast = nil
+        else
+            pcall(function() cmc.MaxWalkSpeed = coast end)
+            if coast <= slow + 5 then coast = nil end
+        end
     end
     if isSprinting and U.get(pawn, "IsCurrentlyCrouched") ~= true then
         local cut = updateTurnPenalty(pawn, cmc, dt)
@@ -468,7 +510,7 @@ end
 
 function M.reset()
     prev, energy, active, startedByUs = nil, 0, false, false
-    raised, raisedSince = false, nil
+    raised, raisedSince, coast = false, nil, nil
     resetRamp()
     M.gestureActive, M.intensity, M.energy = false, 0, 0
 end

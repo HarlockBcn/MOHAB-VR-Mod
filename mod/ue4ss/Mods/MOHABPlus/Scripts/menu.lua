@@ -70,7 +70,7 @@ local tabs = {
         { key = "sprint_mode", label = "Sprint", kind = "choice",
           choices = { "stick", "arms", "both", "always" },
           names = { stick = "Stick click", arms = "Arm swing", both = "Stick + arms", always = "Always sprint" },
-          help = "Always sprint: you only walk while you hold a gun up or shoot" },
+          help = "Always sprint: you only walk while you hold a weapon up or shoot" },
         { key = "sprint_arm_sensitivity", label = "Arm swing sensitivity", kind = "num", min = 0.3, max = 2.0, step = 0.1, digits = 1,
           help = "Higher: less arm swinging needed to sprint" },
         { key = "sprint_speed_multiplier", label = "Sprint speed", kind = "num", min = 1.0, max = 1.5, step = 0.05, digits = 2, suffix = "x",
