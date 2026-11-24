@@ -24,7 +24,7 @@ internal sealed class ModConfig
 
         new("body_grab_distance", "Grabbing: distance to take grenades, objects and syringes you carry (cm)", OptionKind.Float, "10", 5, 30, 1, Section: "Grabbing"),
         new("holster_grab_distance", "Grabbing: distance to take a weapon from a holster, back weapons excluded (cm)", OptionKind.Float, "25", 5, 30, 1, Section: "Grabbing"),
-        new("weapon_grip_reach", "Grabbing: second hand distance to a weapon's front grip (cm)", OptionKind.Float, "15", 5, 40, 1, Section: "Grabbing"),
+        new("weapon_grip_reach", "Grabbing: second hand distance to a weapon's front grip (cm)", OptionKind.Float, "10", 5, 40, 1, Section: "Grabbing"),
         new("teeth_pin_distance", "Grabbing: how close a held grenade must get to your mouth to pull its pin with your teeth (cm; game 10, 0 = never)", OptionKind.Float, "5", 0, 15, 1, Section: "Grabbing"),
         new("cocking", "Grabbing: cocking - manual (work the bolt / slide yourself) or auto (the game does it, original)", OptionKind.Choice, "manual", Choices: new[] { "manual", "auto" }, Section: "Grabbing"),
         new("holster_below_eyes", "Grabbing: no holster grab with the hand above the eyes", OptionKind.Bool, "true", Section: "Grabbing"),
@@ -49,7 +49,7 @@ internal sealed class ModConfig
         new("land_crouch_height", "Hard landings: from a fall of (m)", OptionKind.Float, "2", 1, 6, 0.5, Section: "Jump (experimental)"),
 
         new("fall_damage_custom", "Custom fall damage (off = the game's rules)", OptionKind.Bool, "true", Section: "Fall damage"),
-        new("fall_safe_height", "Fall damage: safe height (m)", OptionKind.Float, "4", 1, 10, 0.5, Section: "Fall damage"),
+        new("fall_safe_height", "Fall damage: safe height (m)", OptionKind.Float, "3.5", 1, 10, 0.5, Section: "Fall damage"),
         new("fall_fatal_height", "Fall damage: fatal height (m)", OptionKind.Float, "10", 4, 30, 1, Section: "Fall damage"),
         new("fall_damage_progressive", "Fall damage: grows with the height of the fall", OptionKind.Bool, "true", Section: "Fall damage"),
         new("fall_damage_scale", "Fall damage: amount (x the game's)", OptionKind.Float, "1.0", 0.0, 2.0, 0.1, Section: "Fall damage"),

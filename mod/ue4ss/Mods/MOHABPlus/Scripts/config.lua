@@ -8,7 +8,7 @@ M.defaults = {
     syringe_holster_scale = 0.5,
 
     holster_below_eyes = true,    -- no holster grabs with the hand above the eyes (hats/helmets)
-    weapon_grip_reach = 15,       -- cm from the free hand to a weapon's off-hand grip
+    weapon_grip_reach = 10,       -- cm from the free hand to a weapon's off-hand grip
     body_grab_distance = 10,      -- cm: taking things you carry (grenades, objects, syringes on the sleeves)
     holster_grab_distance = 25,   -- cm: taking a weapon from a holster (not back / shoulder weapons: game's distance)
     teeth_pin_distance = 5,       -- cm: a held grenade this close to the mouth loses its pin (game: 10; 0 = never)
@@ -34,7 +34,7 @@ M.defaults = {
     land_crouch_height = 2.0,       -- m: falls from at least this high (from the top of a jump) are hard landings
 
     fall_damage_custom = true,      -- false = the game's rules (flat damage from ~3.3 m, death from ~10 m)
-    fall_safe_height = 4.0,         -- m: shorter drops don't hurt
+    fall_safe_height = 3.5,         -- m: shorter drops don't hurt
     fall_fatal_height = 10,         -- m: longer drops kill
     fall_damage_progressive = true, -- damage grows with the height instead of the game's flat amount
     fall_damage_scale = 1.0,        -- x the game's damage
