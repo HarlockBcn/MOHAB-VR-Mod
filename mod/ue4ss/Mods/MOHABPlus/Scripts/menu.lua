@@ -68,6 +68,8 @@ local tabs = {
     { name = "Movement", items = {
         { key = "crouch_stick", label = "Crouch with turn stick", kind = "bool",
           help = "Turn stick down: crouch.  Up: stand up" },
+        { key = "crouch_stick_threshold", label = "Crouch stick threshold", kind = "num", min = 0.3, max = 0.95, step = 0.05,
+          help = "How far the turn stick must be pushed to crouch or stand up" },
         { key = "crouch_speed", label = "Crouched speed", kind = "num", min = 0.3, max = 1.0, step = 0.05, digits = 2, suffix = "x",
           help = "Walking speed while crouched, for real or with the stick (1x = normal walking)" },
         { key = "sprint_mode", label = "Sprint", kind = "choice",
@@ -92,6 +94,8 @@ local tabs = {
     { name = "Jump", items = {
         { key = "jump_enabled", label = "Jump (experimental)", kind = "bool",
           help = "Turn stick up while standing to jump" },
+        { key = "jump_stick_threshold", label = "Jump stick threshold", kind = "num", min = 0.3, max = 0.95, step = 0.05,
+          help = "How far the turn stick must be pushed up to jump" },
         { key = "jump_height", label = "Jump height", kind = "num", min = 20, max = 120, step = 5, digits = 0, suffix = " cm",
           help = "How high you jump" },
         { key = "jump_sound", label = "Jump sounds", kind = "choice",
@@ -137,7 +141,9 @@ local MASTER_INFO = {
     "hold a thumbstick click.",
 }
 
-local ROWS = 9      -- option rows in the right column (and rows of the left column)
+-- Rows of both columns: enough for the longest category and for the left column (master switch, gap, categories).
+local ROWS = #tabs + 2
+for _, t in ipairs(tabs) do ROWS = math.max(ROWS, #t.items) end
 
 local function valueText(it, v)
     if v == nil then v = C.raw(it.key) end

@@ -259,19 +259,18 @@ function M.tick(pawn, menuOpen, now)
         if type(y) ~= "number" then y = U.axis("OculusTouch_Right_Thumbstick_Y") end
         local x = U.get(pawn, "FlickTurningStick_XAxis")
         if type(x) ~= "number" then x = U.axis("OculusTouch_Right_Thumbstick_X") end
-        local thr = C.get("crouch_stick_threshold")
+        local crouchThr, jumpThr = C.get("crouch_stick_threshold"), C.get("jump_stick_threshold")
         -- Direction, not just the vertical part: a push slightly to the side still counts (the vertical part of
         -- a stick pushed fully at 20 degrees is only 0.94), while snap turns (mostly sideways) never do.
         local mag = math.sqrt(x * x + y * y)
         local inCone = math.abs(x) <= STICK_CONE * math.abs(y)
         if math.abs(y) < 0.3 then
             if armed and stickPeak >= 0.6 and jumpOn then
-                U.log("jump stick: pushed up to %.2f only (needs %.2f)", stickPeak, thr)
+                U.log("jump stick: pushed up to %.2f only (needs %.2f)", stickPeak, jumpThr)
             end
             armed, stickPeak = true, 0
         elseif armed then
-            if y > 0 and inCone and mag > stickPeak then stickPeak = mag end
-            if y < 0 and inCone and mag >= thr and crouchOn then
+            if y < 0 and inCone and mag >= crouchThr and crouchOn then
                 armed, stickPeak = false, 0
                 -- Crouching while sprinting starts a slide (ends crouched).
                 if U.pc and U.get(U.pc, "IsSprinting") == true and U.get(pawn, "IsStandingMode") ~= false then
@@ -284,14 +283,18 @@ function M.tick(pawn, menuOpen, now)
                     pcall(function() U.pc.IsSprinting = false end)
                 end
                 M.setCrouched(pawn, true)
-            elseif y > 0 and inCone and mag >= thr then
-                armed, stickPeak = false, 0
-                -- Up: stand up if crouched with the stick, otherwise jump.
+            elseif y > 0 and inCone then
+                -- Up: stand up if crouched with the stick, otherwise jump (each with its own threshold).
                 local seatedCrouch = U.get(pawn, "IsStandingMode") == false and U.get(pawn, "IsCurrentlyCrouched") == true
-                if (crouchOn and (M.virtualCrouched or seatedCrouch)) or not jumpOn then
-                    M.setCrouched(pawn, false)
-                elseif U.pc then
-                    Jump.request(pawn, U.pc, now)
+                local standUp = (crouchOn and (M.virtualCrouched or seatedCrouch)) or not jumpOn
+                if not standUp and mag > stickPeak then stickPeak = mag end
+                if mag >= (standUp and crouchThr or jumpThr) then
+                    armed, stickPeak = false, 0
+                    if standUp then
+                        M.setCrouched(pawn, false)
+                    elseif U.pc then
+                        Jump.request(pawn, U.pc, now)
+                    end
                 end
             end
         end

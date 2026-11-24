@@ -22,7 +22,7 @@
 - **Helmet-safe back holsters** - With your hand above your eyes (touching your helmet or hat) no weapon is pulled from a holster; take them from behind your shoulders, also with your head bent down.
 
 ### Movement
-- **Crouch with the turn stick** - Push the turn stick down to crouch and up to stand.
+- **Crouch with the turn stick** - Push the turn stick down to crouch and up to stand (how far you must push it is adjustable).
 - **Slower when crouched** - Crouched, for real or with the stick, you walk at 60% of your normal speed (adjustable; the original game does not slow you down).
 - **Arm-swing sprint** - Swing your arms like a runner to sprint; the faster you swing, the faster you run. Stick-click sprint still works.
 - **Always sprint** - Optional sprint mode: you run just by pushing the stick, without clicking it or swinging your arms, and only walk while you hold a gun, a grenade or another explosive up (about chest height or higher) or shoot. Push the stick gently to walk without raising anything. Choose between stick click, arm swing, stick + arms and always sprint.
@@ -31,7 +31,7 @@
 - **Faster sprint** - Raise the maximum sprint speed up to x1.5.
 - **Realistic turns** - Turning sharply while sprinting costs speed, which comes back over a second; a full U-turn drops you to walking pace (strength adjustable, 0 turns it off). Sprinting sideways or backwards is at most half as fast.
 - **Slide** - Crouch while sprinting (with the stick or for real) to slide, with a scraping sound.
-- **Jump (experimental)** - Push the turn stick up while standing to jump, with an effort grunt and cloth sounds. You can climb onto and walk around on tables, rocks and crates, but jumps can't take you over the level's invisible barriers; no jumping under a low ceiling, while swimming or skiing (on by default; it can be turned off, and height (up to 1.2 m) and sounds adjusted). The stick only needs to point roughly up (a push slightly to the side still jumps), and a jump pressed a moment too early (just after landing, or on a step) still happens instead of being lost.
+- **Jump (experimental)** - Push the turn stick up while standing to jump, with an effort grunt and cloth sounds. You can climb onto and walk around on tables, rocks and crates, but jumps can't take you over the level's invisible barriers; no jumping under a low ceiling, while swimming or skiing (on by default; it can be turned off, and height (up to 1.2 m), sounds and how far you must push the stick adjusted). The stick only needs to point roughly up (a push slightly to the side still jumps), and a jump pressed a moment too early (just after landing, or on a step) still happens instead of being lost.
 - **Hard landings** - After a big fall (2 m or more by default, jumped or not) you bend down on landing and come back up, with a bigger effort grunt and a jolt in both controllers; the bigger the fall, the deeper and longer. If the fall hurts, the game's own pain reaction plays instead. Can be turned off, and the height adjusted, in the Jump options. Experimental: the levels were not designed for jumping, so some spots may still let you reach places you should not.
 - **Fairer fall damage** - The original game takes the same big chunk of health for any fall from about 3.3 m up, however high. With the mod, falls under 3.5 m don't hurt and the damage grows with the height (from a scratch to a heavy hit just below the fatal 10 m). Safe height, fatal height and amount are adjustable, or switch back to the game's rules.
 

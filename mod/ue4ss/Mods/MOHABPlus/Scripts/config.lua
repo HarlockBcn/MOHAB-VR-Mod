@@ -23,10 +23,11 @@ M.defaults = {
     haptics_holster_zone = true,  -- light tap when an empty hand can take something you carry
 
     crouch_stick = true,
-    crouch_stick_threshold = 0.95,
+    crouch_stick_threshold = 0.7,   -- 0..1: how far the stick must be pushed to crouch / stand up
     crouch_speed = 0.6,             -- walking speed while crouched (x normal walking); the game has its own multiplier
 
     jump_enabled = true,            -- EXPERIMENTAL: turn stick up while standing
+    jump_stick_threshold = 0.7,     -- 0..1: how far the stick must be pushed up to jump
     jump_height = 100,              -- cm
     jump_sound = "all",             -- "all" (voice + cloth) | "cloth" | "off"
     jump_guard = true,              -- invisible level barriers become infinitely tall (anything visible can be climbed)
@@ -62,7 +63,7 @@ M.order = {
     { "Grabbing", { "body_grab_distance", "holster_grab_distance", "weapon_grip_reach", "teeth_pin_distance", "cocking", "holster_below_eyes" } },
     { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons", "haptics_no_ammo", "haptics_holster_zone" } },
     { "Crouch", { "crouch_stick", "crouch_stick_threshold", "crouch_speed" } },
-    { "Jump (experimental)", { "jump_enabled", "jump_height", "jump_sound", "jump_guard", "land_crouch", "land_crouch_height" } },
+    { "Jump (experimental)", { "jump_enabled", "jump_stick_threshold", "jump_height", "jump_sound", "jump_guard", "land_crouch", "land_crouch_height" } },
     { "Fall damage", { "fall_damage_custom", "fall_safe_height", "fall_fatal_height", "fall_damage_progressive", "fall_damage_scale" } },
     { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier", "sprint_turn_slowdown" } },
     { "Slide", { "slide_enabled", "slide_strength", "slide_sound" } },

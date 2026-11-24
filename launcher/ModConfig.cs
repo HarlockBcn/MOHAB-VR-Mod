@@ -39,10 +39,11 @@ internal sealed class ModConfig
         new("haptics_holster_zone", "Haptics: light tap when an empty hand can take a weapon or item you carry", OptionKind.Bool, "true", Section: "Haptics"),
 
         new("crouch_stick", "Crouch with turn stick (down / up)", OptionKind.Bool, "true", Section: "Crouch"),
-        new("crouch_stick_threshold", "Crouch: stick threshold", OptionKind.Float, "0.95", 0.3, 0.95, 0.05, Section: "Crouch"),
+        new("crouch_stick_threshold", "Crouch: how far the stick must be pushed to crouch / stand up", OptionKind.Float, "0.7", 0.3, 0.95, 0.05, Section: "Crouch"),
         new("crouch_speed", "Crouch: walking speed while crouched (x normal)", OptionKind.Float, "0.6", 0.3, 1.0, 0.05, Section: "Crouch"),
 
         new("jump_enabled", "Jump with turn stick up (while standing)", OptionKind.Bool, "true", Section: "Jump (experimental)"),
+        new("jump_stick_threshold", "Jump: how far the stick must be pushed up", OptionKind.Float, "0.7", 0.3, 0.95, 0.05, Section: "Jump (experimental)"),
         new("jump_height", "Jump: height (cm)", OptionKind.Float, "100", 20, 120, 5, Section: "Jump (experimental)"),
         new("jump_sound", "Jump: sounds", OptionKind.Choice, "all", Choices: new[] { "all", "cloth", "off" }, Section: "Jump (experimental)"),
         new("jump_guard", "Jump: stay inside the level (furniture can still be climbed)", OptionKind.Bool, "true", Section: "Jump (experimental)"),
