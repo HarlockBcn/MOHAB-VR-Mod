@@ -59,7 +59,7 @@ internal sealed class ModConfig
             Choices: new[] { "stick", "arms", "both", "always" }, Section: "Sprint",
             ChoiceLabels: new[] { "Stick click", "Arm swing", "Stick + arms", "Always sprint" }),
         new("sprint_arm_sensitivity", "Sprint: arm swing sensitivity", OptionKind.Float, "1.3", 0.3, 2.0, 0.1, Section: "Sprint"),
-        new("sprint_speed_multiplier", "Sprint: max speed multiplier", OptionKind.Float, "1.4", 1.0, 1.5, 0.05, Section: "Sprint"),
+        new("sprint_speed_multiplier", "Sprint: max speed multiplier", OptionKind.Float, "1.3", 1.0, 1.5, 0.05, Section: "Sprint"),
         new("sprint_turn_slowdown", "Sprint: slow down on sharp turns (0 = off)", OptionKind.Float, "1.0", 0.0, 1.0, 0.1, Section: "Sprint"),
 
         new("slide_enabled", "Slide when crouching while sprinting", OptionKind.Bool, "true", Section: "Slide"),

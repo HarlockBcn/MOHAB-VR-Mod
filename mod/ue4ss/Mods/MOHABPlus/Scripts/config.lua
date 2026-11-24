@@ -41,7 +41,7 @@ M.defaults = {
 
     sprint_mode = "both",           -- "stick" | "arms" | "both" (stick + arms) | "always"
     sprint_arm_sensitivity = 1.3,
-    sprint_speed_multiplier = 1.4,
+    sprint_speed_multiplier = 1.3,
     sprint_turn_slowdown = 1.0,     -- 0..1: speed lost on sharp turns while sprinting (0 = off)
 
     slide_enabled = true,
