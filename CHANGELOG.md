@@ -2,6 +2,25 @@
 
 All notable changes to MOHAB Plus. Versions follow MAJOR.MINOR.PATCH.
 
+## v1.3.0 - 2026-11-24
+
+### New
+- **Fall damage**: choose the height that starts hurting (3.5 m by default) and the fatal height (10 m). Damage grows with the height instead of the game's flat amount, and can be scaled. Turn it off to get the game's rules back (flat damage from about 3.3 m, death from about 10 m). New "Fall damage" section in the menu and the launcher.
+- **Hard landings**: after a big fall (2 m or more by default) you bend down and come back up, with a grunt and a jolt in the controllers.
+- **Higher jumps**: jump height now goes up to 120 cm and defaults to 100 cm. Crouching and jumping with the turn stick are also more reliable when the stick is not pushed perfectly straight.
+- **Grab distances**: choose how close your hand must be to take what you carry: one distance for your inventory (grenades, mission objects, syringes on your sleeve; 10 cm) and another for holstered weapons (25 cm). Weapons on your back and shoulders and the magazine pouch of the weapon in your hands keep the game's distance. The "Weapons" tab is now called "Grabbing".
+- **Grab zone vibration**: a light tap tells you when your empty hand is close enough to take a holstered weapon or something you carry.
+- **Manual or automatic cocking**: with "Manual" (default) you work the weapon yourself. After a reload, grabbing the front grip no longer cocks it (pull the bolt or slide), and on bolt-action rifles letting go of the bolt halfway no longer finishes the cycle for you. "Automatic" keeps the game's behaviour.
+- **Pulling the pin with your teeth**: choose how close a grenade in your hand must get to your mouth to pull its pin with your teeth (5 cm by default, 10 cm in the game, 0 = never), so the pin no longer comes out by accident when you take a grenade from your chest.
+
+### Changes
+- New default: the second hand grabs a weapon's front grip from 10 cm (was 15 cm).
+
+### Fixes
+- With the precise two-handed grip, grabbing the front grip of a weapon waiting to be cocked did nothing, and the weapon was not cocked as in the original game (even with the mod switched off from the menu).
+
+**Updating:** if you have an earlier version, the launcher offers this update by itself (click "Update to v1.3.0" at the top). Your settings are kept. New options start at their defaults.
+
 ## v1.2.0 - 2026-11-23
 
 ### New
