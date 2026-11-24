@@ -278,6 +278,11 @@ function M.tick(pawn, menuOpen, now)
                     local walk = U.gameSpeeds(U.pc, pawn)
                     Slide.tryStart(pawn, U.pc, now, walk)
                 end
+                -- Always sprinting: without this the rule below (sprinting stands the player up) would undo a crouch
+                -- that did not become a slide.
+                if C.get("sprint_mode") == "always" and U.pc then
+                    pcall(function() U.pc.IsSprinting = false end)
+                end
                 M.setCrouched(pawn, true)
             elseif y > 0 and inCone and mag >= thr then
                 armed, stickPeak = false, 0

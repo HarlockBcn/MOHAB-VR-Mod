@@ -449,7 +449,7 @@ internal sealed class MainForm : Form
                     BackColor = Theme.Surface2, ForeColor = Theme.Text,
                 },
             };
-            if (c is ComboBox cb && o.Choices != null) cb.Items.AddRange(o.Choices);
+            if (c is ComboBox cb && o.Choices != null) cb.Items.AddRange(o.ChoiceLabels ?? o.Choices);
             c.Anchor = AnchorStyles.Left;
             c.Margin = new Padding(0, Theme.S(3), 0, Theme.S(3));
             _optionControls[o.Key] = c;
@@ -498,8 +498,8 @@ internal sealed class MainForm : Form
                 case NumericUpDown n:
                     n.Value = Math.Clamp((decimal)_config.GetFloat(o.Key), n.Minimum, n.Maximum); break;
                 case ComboBox combo:
-                    combo.SelectedItem = _config.Values[o.Key];
-                    if (combo.SelectedIndex < 0) combo.SelectedItem = o.Default;
+                    combo.SelectedIndex = Array.IndexOf(o.Choices!, _config.Values[o.Key]);
+                    if (combo.SelectedIndex < 0) combo.SelectedIndex = Array.IndexOf(o.Choices!, o.Default);
                     break;
             }
         }
@@ -513,7 +513,7 @@ internal sealed class MainForm : Form
             {
                 case CheckBox cb: _config.Set(o.Key, cb.Checked); break;
                 case NumericUpDown n: _config.Set(o.Key, (double)n.Value); break;
-                case ComboBox combo: _config.Set(o.Key, combo.SelectedItem?.ToString() ?? o.Default); break;
+                case ComboBox combo: _config.Set(o.Key, combo.SelectedIndex >= 0 ? o.Choices![combo.SelectedIndex] : o.Default); break;
             }
         }
     }

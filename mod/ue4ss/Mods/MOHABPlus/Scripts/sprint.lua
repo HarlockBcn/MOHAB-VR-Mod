@@ -1,6 +1,8 @@
 -- Sprint:
 --  * "arms" mode: sprint while moving with the stick AND swinging the arms like running (no stick click).
 --  * "both": stick click works as usual, arm swinging also sprints.
+--  * "always": sprinting whenever the stick is pushed (no click, no arm swing); walking speed only while a hand
+--    holding a gun is raised. How far the stick is pushed still sets the speed (half way = close to walking).
 --  * arm-swing sprint is progressive: walking speed -> game sprint speed x multiplier, by arm swing speed.
 --  * speed multiplier (1.0 - 1.5) on top of the game's sprint speed (also used by the stick-click sprint).
 --
@@ -172,6 +174,97 @@ local function isFiring(pawn)
 end
 local lastFireCancelLog = -100
 
+-- "Always" mode: is a gun raised? The hand that counts is the one holding the gun by its main grip (the off hand holds
+-- the front grip, another actor), so a rifle carried across the chest while running is not "raised". Compared with the
+-- eyes, so it works for any height: raised from RAISE_ON cm below the eyes up, lowered from RAISE_OFF down. It has to
+-- stay that way for a moment, so hands that swing up while running or move while reloading don't change the pace.
+local RAISE_ON, RAISE_OFF = 35, 42
+local RAISE_DELAY, LOWER_DELAY = 0.12, 0.25     -- s
+local RAISE_DECEL = 900                         -- cm/s^2: quick but not instant slow down to aim
+local grenadeClass = nil
+local raised, raisedSince = false, nil
+
+local function isGun(obj)
+    if not U.valid(obj) then return false end
+    if not U.valid(weaponClass) then
+        weaponClass = StaticFindObject("/Game/R6/Core/Weapons/BP_WeaponBase.BP_WeaponBase_C")
+    end
+    if not U.valid(grenadeClass) then
+        grenadeClass = StaticFindObject("/Game/R6/Core/Weapons/BP_GrenadeBase.BP_GrenadeBase_C")
+    end
+    if not U.valid(weaponClass) then return false end
+    local ok, gun = pcall(function()
+        return obj:IsA(weaponClass) and not (U.valid(grenadeClass) and obj:IsA(grenadeClass))
+    end)
+    return ok and gun == true
+end
+
+local function updateRaised(pawn, now)
+    local okC, cam = U.call(U.get(pawn, "VRReplicatedCamera"), "K2_GetComponentLocation")
+    local best = nil        -- cm below the eyes of the highest hand holding a gun
+    if okC and cam then
+        for _, side in ipairs({ "Left", "Right" }) do
+            if isGun(U.get(U.get(pawn, side .. "Controller"), "AttachedObject")) then
+                local ok, l = U.call(U.get(pawn, side .. "MotionController"), "K2_GetComponentLocation")
+                if ok and l then
+                    local below = cam.Z - l.Z
+                    if not best or below < best then best = below end
+                end
+            end
+        end
+    end
+    local want = best ~= nil and best <= (raised and RAISE_OFF or RAISE_ON)
+    if want == raised then
+        raisedSince = nil
+    else
+        if not raisedSince or now < raisedSince then raisedSince = now end
+        -- Gun let go: nothing to aim any more, no need to wait.
+        if best == nil or now - raisedSince >= (want and RAISE_DELAY or LOWER_DELAY) then
+            raised, raisedSince = want, nil
+            U.dlog("sprint: gun %s (%s cm below the eyes)", want and "raised" or "lowered",
+                best and string.format("%.0f", best) or "no gun,")
+        end
+    end
+    return raised
+end
+
+-- "Always" mode, every frame after TickInput. Returns false when the game's own rules apply (crouched, sprint disabled).
+local function alwaysSprint(ctrl, pawn, cmc, dt, mult, isSprinting, moving)
+    local gunUp = updateRaised(pawn, U.now(pawn))
+    if not moving then return true end
+    if U.get(ctrl, "DisableSprinting") == true or Crouch.virtualCrouched
+        or U.get(pawn, "IsCurrentlyCrouched") == true then
+        -- Crouched: our sprint ends; one the player starts with a stick click stands them up as usual.
+        if startedByUs then pcall(function() ctrl.IsSprinting = false end) end
+        startedByUs, smoothSpeed, penalty = false, nil, 0
+        return false
+    end
+    local walk, sprint = gameSpeeds(ctrl, pawn)
+    local fwd, right = U.get(ctrl, "InputForward") or 0, U.get(ctrl, "InputRight") or 0
+    local stick = U.clamp(math.sqrt(fwd * fwd + right * right), 0, 1)
+    local slow = walk * stick
+    local target, decel, run = slow, RAISE_DECEL, false
+    if gunUp then
+        penalty = 0
+    else
+        local cut = updateTurnPenalty(pawn, cmc, dt)
+        local back = directionFactor(ctrl)
+        local full = math.max(walk, (walk + (sprint * mult - walk) * (1 - cut)) * back)
+        -- Squared: small pushes stay close to walking, so there is still fine control without raising a gun.
+        target = slow + (full - walk) * stick * stick
+        if cut > 0.05 or back < 0.99 then decel = TURN_DECEL end
+        run = target > walk * (isSprinting and 1.0 or 1.15)
+    end
+    if run ~= isSprinting then
+        if run then U.call(ctrl, "StartSprinting") else pcall(function() ctrl.IsSprinting = false end) end
+    end
+    startedByUs = run
+    smoothSpeed = math.max(slow, M.glide(smoothSpeed or slow, target, dt, decel))
+    pcall(function() cmc.MaxWalkSpeed = smoothSpeed end)
+    M.lastSpeed = smoothSpeed
+    return true
+end
+
 -- Speed guard: MaxWalkSpeed must never go above the configured top sprint speed (game sprint speed x multiplier).
 -- The game's own sprint speed is Lerp(StartSprintSpeed, MaxSprintSpeed, alpha) with an unclamped alpha, so it can
 -- overshoot; anything above the cap is clamped and logged with the values involved (to find the cause).
@@ -245,7 +338,10 @@ afterTickInput = function(ctrl, pawn, dt)
     end
     if not moving then startedByUs = false; smoothSpeed = nil; penalty = 0 end
 
-    if mode == "arms" or mode == "both" then
+    if mode == "always" then
+        if alwaysSprint(ctrl, pawn, cmc, dt, mult, isSprinting, moving) then return end
+        isSprinting = U.get(ctrl, "IsSprinting") == true
+    elseif mode == "arms" or mode == "both" then
         local disabled = U.get(ctrl, "DisableSprinting") == true
         -- Swinging the arms while crouched (stick crouch or the game's own) does nothing: no sprint, no standing up.
         local crouched = Crouch.virtualCrouched or U.get(pawn, "IsCurrentlyCrouched") == true
@@ -332,6 +428,7 @@ end
 
 function M.reset()
     prev, energy, active, startedByUs = nil, 0, false, false
+    raised, raisedSince = false, nil
     M.gestureActive, M.intensity, M.energy = false, 0, 0
 end
 

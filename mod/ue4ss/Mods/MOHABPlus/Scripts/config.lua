@@ -39,7 +39,7 @@ M.defaults = {
     fall_damage_progressive = true, -- damage grows with the height instead of the game's flat amount
     fall_damage_scale = 1.0,        -- x the game's damage
 
-    sprint_mode = "both",           -- "stick" | "arms" | "both"
+    sprint_mode = "both",           -- "stick" | "arms" | "both" (stick + arms) | "always"
     sprint_arm_sensitivity = 1.3,
     sprint_speed_multiplier = 1.4,
     sprint_turn_slowdown = 1.0,     -- 0..1: speed lost on sharp turns while sprinting (0 = off)
