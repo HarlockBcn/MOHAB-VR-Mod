@@ -19,6 +19,7 @@ local FallDamage = require("falldamage")
 local BodyGrab = require("bodygrab")
 local Cocking = require("cocking")
 local TeethPin = require("teethpin")
+local Respawn = require("respawn")
 
 C.init(modDir)
 U.debug = C.get("debug_log") == true
@@ -95,6 +96,34 @@ hooks[#hooks + 1] = {
     path = "/Game/R6/Core/Components/Comp_FallDamage.Comp_FallDamage_C:StopFalling",
     fn = function(ctx)
         pcall(function() FallDamage.onStopFalling(ctx:get()) end)
+    end,
+}
+
+-- Respawn at a checkpoint (see respawn.lua).
+hooks[#hooks + 1] = {
+    path = "/Game/R6/Core/GameModes/BP_R6CampaignGameMode.BP_R6CampaignGameMode_C:CheckpointLoad",
+    fn = function()
+        pcall(Respawn.onCheckpointLoad)
+    end,
+}
+hooks[#hooks + 1] = {
+    path = "/Script/Mohab.R6PlayerCharacter:TeleportPlayer",
+    fn = function(ctx, _, newRot)
+        pcall(function() Respawn.onTeleport(ctx:get(), newRot:get()) end)
+    end,
+}
+hooks[#hooks + 1] = {
+    path = "/Game/R6/Core/VR/BP_VRPlayerCharacter.BP_VRPlayerCharacter_C:BndEvt__VRNotifications_K2Node_ComponentBoundEvent_1_VRNotificationsDelegate__DelegateSignature",
+    fn = function(ctx)
+        pcall(function() Respawn.onRecentered(ctx:get()) end)
+    end,
+}
+
+hooks[#hooks + 1] = {
+    path = "/Script/HeadMountedDisplay.HeadMountedDisplayFunctionLibrary:ResetOrientationAndPosition",
+    fn = function(_, _, options)
+        local ok, err = pcall(Respawn.onResetHMD, options)
+        if not ok then U.log("recenter hook error: %s", tostring(err)) end
     end,
 }
 
@@ -255,6 +284,7 @@ local function findPlayer(now)
                         Cutscene.reset(pawn)
                         FallDamage.reset()
                         Cocking.reset()
+                        Respawn.reset()
                         return pawn, pc
                     end
                 end
@@ -310,6 +340,7 @@ local function tick()
                 WeaponGrip.disable()
                 Jump.reset()
                 Cutscene.reset(pawn)
+                Respawn.reset()
             end)
         end
         U.log("all mod changes %s", on and "ON" or "OFF (original game)")
@@ -323,6 +354,13 @@ local function tick()
     if on then guarded("sprint", Sprint.updateGesture, pawn, now) end
     if Dev then guarded("devtools", Dev.afterTick) end
     if on then guarded("jump", Jump.tick, pawn, now) end
+    if on then
+        guarded("respawn", Respawn.tick, pawn, pc, now, function()
+            Slide.stop(pawn, "respawn")
+            Jump.reset()
+            Crouch.standUp(pawn)
+        end)
+    end
     guarded("crouch", Crouch.tick, pawn, menuOpen, now)
     guarded("falldamage", FallDamage.tick, pawn)
     guarded("syringe", Syringe.tick, pawn, now)

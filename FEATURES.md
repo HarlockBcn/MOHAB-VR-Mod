@@ -62,5 +62,9 @@
 - **Accidental grabs from your body** - Syringes, grenades and other things you carry were easy to grab by mistake when your hands passed near them.
 - **Accidental injections** - Syringes no longer inject just because they touch your chest while you move them around.
 
+### Respawning
+- **Wrong direction after respawning** - If you were physically turned when you died, the game could respawn you looking the wrong way. Now you always face the checkpoint's direction.
+- **View turning after respawning** - A second or two after respawning at a checkpoint, the game turned your view back to the direction you had when respawning. Now you keep looking where you are.
+
 ### Cutscenes
 - **Unskippable scenes** - Many scenes and dialogues the game did not let you skip can now be skipped or sped up.

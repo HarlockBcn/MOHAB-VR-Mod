@@ -104,6 +104,23 @@ function M.toggle(pawn)
     M.setCrouched(pawn, not M.virtualCrouched)
 end
 
+-- Respawn: the game keeps the same pawn when it reloads a checkpoint, so a stick crouch from before dying would go on.
+-- The screen is still black: the view goes up at once.
+function M.standUp(pawn)
+    if U.get(pawn, "IsStandingMode") == false then
+        M.setCrouched(pawn, false)
+        return
+    end
+    local was = M.virtualCrouched or applied ~= 0
+    M.virtualCrouched, M.physSlide, M.land, M.fixedTarget = false, nil, nil, nil
+    armed, stickPeak, lastStandH, lastStandT = false, 0, nil, nil
+    if was and applyOffset(pawn, 0) then
+        applied, baseApplied = 0, 0
+        U.call(pawn, "AdjustCapsuleHeightForCrouch")
+        U.log("respawn: standing up")
+    end
+end
+
 local function smooth(x) x = U.clamp(x, 0, 1); return x * x * (3 - 2 * x) end
 
 -- k = 0..1: how hard the landing was. Depth goes from 45% of the stick crouch to all of it.
