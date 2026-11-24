@@ -136,6 +136,12 @@ Without an internet connection the launcher works as usual. You can also update 
   Note: the game only checks the **nearest** point that holds something; if it is out of its distance nothing is
   taken, even when a farther item is within its own. Grip presses that take nothing near the body are logged
   (`grab missed`).
+* **Manual holsters** (`manualholster.lua`): a released weapon (`IsGripped` and `HoldingWeaponWithOffhand` both false since the
+  last tick) is already flying back (`HolsterLerp` timelines). The mod stops the timelines and either ends them at once
+  (`SetWeaponToHolsterSlot` if the slot changes, then `MoveWeaponToHolster__FinishedFunc`) or drops the weapon
+  (`ThrowHolsteredWeaponInFrontOfOwner` without relocation; it zeroes `Ammo`, which is restored). `HolstersComponent.Actors` holds
+  proxies (`BP_WeaponBaseProxy.WeaponRef`). Floor weapons with no free holster get the free chest slot (1) so picking
+  them up swaps nothing (the two-handed grip needs a registered slot).
 * **Holsters over the head**: `GetNearestHolsterSlot` uses `SlotToDistanceSquaredLeewayMap` (indices 0-5 = holsters,
   6-7 = sleeves). While a hand is over the head and near its axis, the mod zeroes the holster leeways.
 * **Haptics**: the mod watches the health of `VRPlayerCharacterHealthAndDamageComponent` and uses

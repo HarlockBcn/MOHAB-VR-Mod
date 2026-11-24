@@ -14,6 +14,7 @@
 - **Smaller syringes on the sleeve** - Stored syringes look smaller on your sleeve and get their normal size back when you grab them.
 
 ### Weapons
+- **Manual holsters** - Letting go of a weapon drops it to the floor, with the ammo it had. To put it away, take it to its holster and let go: pistols at the hip, rifles, shotguns and other long weapons at either shoulder, grenades and explosives on the chest, if that holster is free. It goes in at once, without flying back, and a light tap tells you when letting go would put it away. With your holsters full you can still use a weapon from the floor without losing yours. Mission objects always come back to you. Distance adjustable, or turn it off for the game's automatic holsters.
 - **Grab distances** - Choose how close your hand must be to take what you carry, so you don't grab things by accident: one distance for your inventory (grenades, mission objects on your chest, syringes on your sleeve; 10 cm by default) and another for weapons in holsters (25 cm by default). Weapons on your back and shoulders and the magazine pouch of the weapon in your hands keep the game's distance.
 - **Pulling the pin with your teeth** - Choose how close a grenade in your hand must get to your mouth to pull its pin with your teeth (5 cm by default, 10 cm in the game, 0 = never), so it doesn't come out by accident when you take a grenade from your chest.
 - **Precise two-handed grip** - Your free hand only grabs the front grip of a weapon when it is really close to it.

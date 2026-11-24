@@ -34,6 +34,10 @@ local tabs = {
           help = "Size of the syringes on the sleeve" },
     } },
     { name = "Grabbing", items = {
+        { key = "manual_holster", label = "Manual holsters", kind = "bool",
+          help = "Letting go drops the weapon; take it to a free holster to put it away" },
+        { key = "holster_store_distance", label = "Put away distance", kind = "num", min = 10, max = 50, step = 1, digits = 0, suffix = " cm",
+          help = "Manual holsters: how close to the holster the hand must be to put a weapon away" },
         { key = "body_grab_distance", label = "Inventory grab distance", kind = "num", min = 5, max = 30, step = 1, digits = 0, suffix = " cm",
           help = "How close the hand must be to take grenades, objects or syringes you carry" },
         { key = "holster_grab_distance", label = "Holster grab distance", kind = "num", min = 5, max = 30, step = 1, digits = 0, suffix = " cm",
