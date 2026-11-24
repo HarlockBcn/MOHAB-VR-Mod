@@ -37,6 +37,8 @@ local tabs = {
           help = "How close the hand must be to take a weapon from a holster (not back weapons)" },
         { key = "weapon_grip_reach", label = "Second hand reach", kind = "num", min = 5, max = 40, step = 1, digits = 0, suffix = " cm",
           help = "How close the second hand must be to grab a weapon's front grip" },
+        { key = "teeth_pin_distance", label = "Pull pin with teeth", kind = "num", min = 0, max = 15, step = 1, digits = 0, suffix = " cm",
+          help = "How close a grenade must get to your mouth to pull its pin (game: 10, 0 = never)" },
         { key = "cocking", label = "Cocking", kind = "choice",
           choices = { "manual", "auto" },
           names = { manual = "Manual", auto = "Automatic" },

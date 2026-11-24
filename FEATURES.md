@@ -15,6 +15,7 @@
 
 ### Weapons
 - **Grab distances** - Choose how close your hand must be to take what you carry, so you don't grab things by accident: one distance for your inventory (grenades, mission objects on your chest, syringes on your sleeve; 10 cm by default) and another for weapons in holsters (25 cm by default). Weapons on your back and shoulders and the magazine pouch of the weapon in your hands keep the game's distance.
+- **Pulling the pin with your teeth** - Choose how close a grenade in your hand must get to your mouth to pull its pin with your teeth (5 cm by default, 10 cm in the game, 0 = never), so it doesn't come out by accident when you take a grenade from your chest.
 - **Precise two-handed grip** - Your free hand only grabs the front grip of a weapon when it is really close to it.
 - **Manual or automatic cocking** - Choose "Manual" and you work the weapon yourself: after a reload, grabbing the front grip no longer cocks it (put your hand on the bolt or slide and pull it), and on bolt-action rifles letting go of the bolt halfway no longer finishes the cycle for you (grab it again to finish). "Automatic" keeps the game's behaviour.
 - **Second grip first** - With your free hand at your weapon's front grip, nearby weapons and ammo boxes are ignored, so you always grab your own weapon.

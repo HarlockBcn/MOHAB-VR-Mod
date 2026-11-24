@@ -18,6 +18,7 @@ local Cutscene = require("cutscene")
 local FallDamage = require("falldamage")
 local BodyGrab = require("bodygrab")
 local Cocking = require("cocking")
+local TeethPin = require("teethpin")
 
 C.init(modDir)
 U.debug = C.get("debug_log") == true
@@ -141,6 +142,16 @@ for _, p in ipairs({
         path = p,
         fn = function(ctx)
             pcall(function() Cocking.onBoltPulled(ctx:get()) end)
+        end,
+    }
+end
+
+for _, h in ipairs({ { "z_OnPinPulledWithTeeth", true }, { "z_OnPinPulled", false } }) do
+    hooks[#hooks + 1] = {
+        path = "/Game/R6/Core/Weapons/BP_GrenadeBase.BP_GrenadeBase_C:" .. h[1],
+        fn = function(ctx)
+            local ok, err = pcall(function() TeethPin.onPinPulled(ctx:get(), h[2]) end)
+            if not ok then U.log("pin pulled hook error: %s", tostring(err)) end
         end,
     }
 end
@@ -319,6 +330,7 @@ local function tick()
     guarded("cocking", Cocking.tick, pawn)
     guarded("holster", Holster.tick, pawn)
     guarded("bodygrab", BodyGrab.tick, pawn, now)
+    guarded("teethpin", TeethPin.tick, pawn, now)
     if not menuOpen then guarded("grabzones", BodyGrab.handTick, pawn, now) end
     guarded("haptics", Haptics.tick, pawn, pc, now)
 end

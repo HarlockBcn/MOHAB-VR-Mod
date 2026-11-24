@@ -11,6 +11,7 @@ M.defaults = {
     weapon_grip_reach = 15,       -- cm from the free hand to a weapon's off-hand grip
     body_grab_distance = 10,      -- cm: taking things you carry (grenades, objects, syringes on the sleeves)
     holster_grab_distance = 25,   -- cm: taking a weapon from a holster (not back / shoulder weapons: game's distance)
+    teeth_pin_distance = 5,       -- cm: a held grenade this close to the mouth loses its pin (game: 10; 0 = never)
     cocking = "manual",           -- "manual": pull the bolt / slide yourself | "auto": the game finishes it for you
 
     haptics_damage = true,
@@ -58,7 +59,7 @@ M.defaults = {
 -- Order + sections used when writing the file (keep in sync with the launcher).
 M.order = {
     { "Syringes", { "syringe_require_trigger", "syringe_trigger_threshold", "syringe_small_holstered", "syringe_holster_scale" } },
-    { "Grabbing", { "body_grab_distance", "holster_grab_distance", "weapon_grip_reach", "cocking", "holster_below_eyes" } },
+    { "Grabbing", { "body_grab_distance", "holster_grab_distance", "weapon_grip_reach", "teeth_pin_distance", "cocking", "holster_below_eyes" } },
     { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons", "haptics_no_ammo", "haptics_holster_zone" } },
     { "Crouch", { "crouch_stick", "crouch_stick_threshold", "crouch_speed" } },
     { "Jump (experimental)", { "jump_enabled", "jump_height", "jump_sound", "jump_guard", "land_crouch", "land_crouch_height" } },
@@ -144,6 +145,7 @@ M.vanilla = {
     syringe_small_holstered = false,
     body_grab_distance = -1,        -- -1 = the game's distances
     holster_grab_distance = -1,
+    teeth_pin_distance = -1,        -- -1 = the game's distance
     holster_below_eyes = false,
     cocking = "auto",
     haptics_damage = false,
