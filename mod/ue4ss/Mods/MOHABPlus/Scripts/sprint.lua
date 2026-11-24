@@ -4,6 +4,8 @@
 --  * "always": sprinting whenever the stick is pushed (no click, no arm swing); walking speed only while a hand
 --    holding a gun is raised or fires it. How far the stick is pushed still sets the speed (half way = close to walking).
 --  * arm-swing sprint is progressive: walking speed -> game sprint speed x multiplier, by arm swing speed.
+--  * the stick-click and "always" sprints are progressive too: they start at walking speed and reach the top speed over
+--    RAMP_TIME; stopping, sliding, crouching or shooting starts them over.
 --  * speed multiplier (1.0 - 1.5) on top of the game's sprint speed (also used by the stick-click sprint).
 --
 -- The game (BP_R6PlayerController.TickInput, every frame) sets CharacterMovement.MaxWalkSpeed:
@@ -95,15 +97,27 @@ local smoothSpeed = nil
 -- Moves the speed towards the target with limited acceleration plus easing, so it never jumps.
 local ACCEL, DECEL = 260, 380      -- cm/s^2
 local TURN_DECEL = 1200            -- cm/s^2 when a sharp turn cuts the speed
-function M.glide(cur, target, dt, decel)
+function M.glide(cur, target, dt, decel, accel, tauUp)
     dt = dt or 0.016
-    local a = 1 - math.exp(-dt / 0.3)
+    local a = 1 - math.exp(-dt / (target > cur and tauUp or 0.3))
     local want = cur + (target - cur) * a
-    local maxUp, maxDown = ACCEL * dt, (decel or DECEL) * dt
+    local maxUp, maxDown = (accel or ACCEL) * dt, (decel or DECEL) * dt
     if want > cur + maxUp then want = cur + maxUp end
     if want < cur - maxDown then want = cur - maxDown end
     return want
 end
+
+-- Progressive start of the stick-click and "always" sprints: 0 (walking speed) -> 1 (full sprint) over RAMP_TIME, with
+-- a soft start and end. Back to 0 whenever the sprint ends.
+local RAMP_TIME = 1.5
+local ramp = 0
+local rampSpeed = nil     -- speed of the stick-click sprint last frame (the arm swing takes over from it)
+local function resetRamp() ramp, rampSpeed = 0, nil end
+local function advanceRamp(dt)
+    ramp = math.min(1, ramp + (dt or 0.016) / RAMP_TIME)
+    return ramp * ramp * (3 - 2 * ramp)
+end
+
 local lastSeen = nil      -- pawn seen last frame (detects respawn / new pawn)
 
 -- Realistic turns: a sharp change of direction while sprinting costs speed, which then comes back gradually.
@@ -246,23 +260,31 @@ local function alwaysSprint(ctrl, pawn, cmc, dt, mult, isSprinting, moving)
         -- Crouched: our sprint ends; one the player starts with a stick click stands them up as usual.
         if startedByUs then pcall(function() ctrl.IsSprinting = false end) end
         startedByUs, smoothSpeed, penalty = false, nil, 0
+        resetRamp()
         return false
     end
     local walk, sprint = gameSpeeds(ctrl, pawn)
     local fwd, right = U.get(ctrl, "InputForward") or 0, U.get(ctrl, "InputRight") or 0
     local stick = U.clamp(math.sqrt(fwd * fwd + right * right), 0, 1)
     local slow = walk * stick
-    local target, decel, run = slow, RAISE_DECEL, false
+    local target, decel, accel, run = slow, RAISE_DECEL, nil, false
     if gunUp or firing then
         penalty = 0
         -- No shooting at sprint speed: down to walking at once (raising a gun slows down gradually).
-        if firing then smoothSpeed = slow end
+        if firing then
+            smoothSpeed = slow
+            resetRamp()
+        else
+            -- A gun raised only for a moment does not start over from walking: follows the slow down.
+            ramp = math.max(0, ramp - (dt or 0.016))
+        end
     else
         local cut = updateTurnPenalty(pawn, cmc, dt)
         local back = directionFactor(ctrl)
         local full = math.max(walk, (walk + (sprint * mult - walk) * (1 - cut)) * back)
         -- Squared: small pushes stay close to walking, so there is still fine control without raising a gun.
-        target = slow + (full - walk) * stick * stick
+        target = slow + (full - walk) * stick * stick * advanceRamp(dt)
+        accel = 1.5 * (sprint * mult - walk) / RAMP_TIME      -- steepest point of the ramp: the glide must not slow it down
         if cut > 0.05 or back < 0.99 then decel = TURN_DECEL end
         run = target > walk * (isSprinting and 1.0 or 1.15)
     end
@@ -270,7 +292,7 @@ local function alwaysSprint(ctrl, pawn, cmc, dt, mult, isSprinting, moving)
         if run then U.call(ctrl, "StartSprinting") else pcall(function() ctrl.IsSprinting = false end) end
     end
     startedByUs = run
-    smoothSpeed = math.max(slow, M.glide(smoothSpeed or slow, target, dt, decel))
+    smoothSpeed = math.max(slow, M.glide(smoothSpeed or slow, target, dt, decel, accel, 0.08))
     pcall(function() cmc.MaxWalkSpeed = smoothSpeed end)
     M.lastSpeed = smoothSpeed
     return true
@@ -328,6 +350,7 @@ afterTickInput = function(ctrl, pawn, dt)
     -- A slide in progress drives the movement itself.
     if Slide.update(ctrl, pawn, U.now(pawn)) then
         startedByUs, smoothSpeed = false, nil
+        resetRamp()
         return
     end
     if not M.gestureActive then Slide.gestureReleased() end
@@ -347,7 +370,7 @@ afterTickInput = function(ctrl, pawn, dt)
         M.reset()
         if dead then return end
     end
-    if not moving then startedByUs = false; smoothSpeed = nil; penalty = 0 end
+    if not moving then startedByUs = false; smoothSpeed = nil; penalty = 0; resetRamp() end
 
     if mode == "always" then
         if alwaysSprint(ctrl, pawn, cmc, dt, mult, isSprinting, moving) then return end
@@ -373,9 +396,10 @@ afterTickInput = function(ctrl, pawn, dt)
             local back = directionFactor(ctrl)
             target = math.max(walk * stick, target * back)
             if not smoothSpeed then
-                local cur = U.get(cmc, "MaxWalkSpeed")
+                local cur = rampSpeed or U.get(cmc, "MaxWalkSpeed")
                 smoothSpeed = (type(cur) == "number" and cur > 0) and cur or walk * stick
             end
+            resetRamp()
             smoothSpeed = M.glide(smoothSpeed, target, dt, (cut > 0.05 or back < 0.99) and TURN_DECEL or nil)
             pcall(function() cmc.MaxWalkSpeed = smoothSpeed end)
             M.lastSpeed = smoothSpeed
@@ -406,6 +430,7 @@ afterTickInput = function(ctrl, pawn, dt)
         local stick = U.clamp(math.sqrt(fwd * fwd + right * right), 0, 1)
         pcall(function() cmc.MaxWalkSpeed = walk * stick end)
         penalty = 0
+        resetRamp()
         if U.now(pawn) - lastFireCancelLog > 1.0 then
             lastFireCancelLog = U.now(pawn)
             U.dlog("sprint: stick sprint cancelled (firing)")
@@ -416,17 +441,21 @@ afterTickInput = function(ctrl, pawn, dt)
         local cut = updateTurnPenalty(pawn, cmc, dt)
         local speed = U.get(cmc, "MaxWalkSpeed")
         local back = directionFactor(ctrl)
-        if (mult > 1.001 or cut > 0 or back < 1) and type(speed) == "number" and speed > 0 then
+        local k = advanceRamp(dt)
+        if type(speed) == "number" and speed > 0 then
             local walk = gameSpeeds(ctrl, pawn)
             local fast = speed * mult
             if type(walk) == "number" and fast > walk then
                 fast = walk + (fast - walk) * (1 - cut)
                 fast = math.max(walk, fast * back)
+                fast = walk + (fast - walk) * k
             end
             pcall(function() cmc.MaxWalkSpeed = fast end)
+            rampSpeed = fast
         end
     else
         penalty = 0
+        resetRamp()
     end
 end
 
@@ -440,6 +469,7 @@ end
 function M.reset()
     prev, energy, active, startedByUs = nil, 0, false, false
     raised, raisedSince = false, nil
+    resetRamp()
     M.gestureActive, M.intensity, M.energy = false, 0, 0
 end
 
