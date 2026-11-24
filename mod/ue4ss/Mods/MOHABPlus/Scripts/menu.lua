@@ -4,8 +4,11 @@
 --   and a help line for the selected option at the bottom.
 --   Left column:  stick up/down = choose, A / trigger / stick right = open the category (or flip the master switch),
 --                 B = close the menu.
---   Right column: stick up/down = choose, stick left/right = change, A / trigger = toggle, B = back to the categories.
---   Anywhere:     grips = previous / next category, stick click = master switch (all mod changes on / off).
+--   Right column: stick up/down = choose, A / trigger = switch an ON/OFF option or start editing any other one,
+--                 B / stick left = back to the categories. The stick alone never changes a value.
+--   Editing:      stick left/right = change (applied live), A / trigger = confirm, B = cancel. Nothing else works;
+--                 closing the menu cancels too.
+--   Not editing:  grips = previous / next category, holding a stick click = master switch (all mod changes on / off).
 -- While the menu is open the pawn's input is disabled (no walking/turning/shooting).
 local U = require("util")
 local C = require("config")
@@ -131,13 +134,13 @@ local MASTER_INFO = {
     "saved: the mod is on every time you start.",
     "",
     "Shortcut anywhere in this menu:",
-    "click a thumbstick.",
+    "hold a thumbstick click.",
 }
 
 local ROWS = 9      -- option rows in the right column (and rows of the left column)
 
-local function valueText(it)
-    local v = C.raw(it.key)
+local function valueText(it, v)
+    if v == nil then v = C.raw(it.key) end
     if it.kind == "bool" then return v and "ON" or "OFF" end
     if it.kind == "num" then return fmtNum(v, it.digits) .. (it.suffix or "") end
     if it.kind == "choice" then return (it.names and it.names[v]) or tostring(v) end
@@ -165,6 +168,7 @@ local focus = "left"    -- "left" (categories) | "right" (options)
 local leftSel = 1       -- 0 = master switch, 1..#tabs = category
 local sel = 1           -- option in the open category
 local lastTab = 1       -- category shown on the right while the master switch is selected
+local editing = nil     -- option being edited: { item, old = value before editing }
 
 local function currentTab() return tabs[leftSel] or tabs[lastTab] end
 
@@ -179,6 +183,7 @@ local COLOR_TITLE = { R = 255, G = 200, B = 60, A = 255 }
 local COLOR_HEADER = { R = 140, G = 170, B = 255, A = 255 }
 local COLOR_NORMAL = { R = 230, G = 230, B = 230, A = 255 }
 local COLOR_SELECTED = { R = 255, G = 230, B = 0, A = 255 }
+local COLOR_EDIT = { R = 255, G = 130, B = 30, A = 255 }       -- option being edited
 local COLOR_CURRENT = { R = 150, G = 200, B = 255, A = 255 }   -- open category while the options have the focus
 local COLOR_DIM = { R = 120, G = 120, B = 120, A = 255 }
 local COLOR_ON = { R = 110, G = 230, B = 110, A = 255 }
@@ -212,8 +217,9 @@ addSlot("help", 0, 3 + ROWS + 0.6, ALIGN_CENTER, 0.85)
 addSlot("footer", 0, 3 + ROWS + 1.6, ALIGN_CENTER, 0.75)
 local TOTAL_LINES = 3 + ROWS + 1.6
 
-local FOOTER_LEFT = "Stick: choose   A: open   B: close   Grips: category   Stick click: mod on/off"
-local FOOTER_RIGHT = "Stick: choose / change   A: toggle   B: back   Grips: category   Stick click: mod on/off"
+local FOOTER_LEFT = "Stick: choose   A: open   B: close   Grips: category   Hold stick click: mod on/off"
+local FOOTER_RIGHT = "Stick: choose   A: change   B: back   Grips: category   Hold stick click: mod on/off"
+local FOOTER_EDIT = "EDITING (was %s)   Stick left/right: change   A: confirm   B: cancel"
 
 -- Text and colour of every slot for the current state.
 local function content()
@@ -256,11 +262,14 @@ local function content()
                 local vc = COLOR_NORMAL
                 if it.kind == "bool" then vc = C.raw(it.key) and COLOR_ON or COLOR_OFF end
                 if not on then vc = COLOR_DIM end
-                if s then
+                local lc = on and COLOR_NORMAL or COLOR_DIM
+                if s and editing then
                     v = "<  " .. v .. "  >"
-                    vc = COLOR_SELECTED
+                    vc, lc = COLOR_EDIT, COLOR_EDIT
+                elseif s then
+                    vc, lc = COLOR_SELECTED, COLOR_SELECTED
                 end
-                out["R" .. r] = { (s and "> " or "") .. it.label, s and COLOR_SELECTED or (on and COLOR_NORMAL or COLOR_DIM) }
+                out["R" .. r] = { (s and "> " or "") .. it.label, lc }
                 out["V" .. r] = { v, vc }
             else
                 out["R" .. r] = { "", COLOR_NORMAL }
@@ -274,7 +283,11 @@ local function content()
             out.help = { "A or stick right: open " .. tab.name, COLOR_HELP }
         end
     end
-    out.footer = { focus == "left" and FOOTER_LEFT or FOOTER_RIGHT, COLOR_FOOTER }
+    if editing then
+        out.footer = { string.format(FOOTER_EDIT, valueText(editing.item, editing.old)), COLOR_EDIT }
+    else
+        out.footer = { focus == "left" and FOOTER_LEFT or FOOTER_RIGHT, COLOR_FOOTER }
+    end
     return out
 end
 
@@ -389,10 +402,31 @@ function M.debugInfo()
 end
 
 -- Navigation ---------------------------------------------------------------------------------
+local WAIT = "wait"
+local stickDir = WAIT       -- nil (centred) | "up" | "down" | "left" | "right" | WAIT (ignored until centred)
+
 local function toggleMaster()
     C.enabled = not C.enabled
     U.log("menu: all mod changes %s", C.enabled and "ON" or "OFF")
     dirty = true
+end
+
+local function startEdit(it)
+    editing = { item = it, old = C.raw(it.key) }
+    stickDir, dirty = WAIT, true
+end
+
+local function confirmEdit()
+    if C.raw(editing.item.key) ~= editing.old then hasChanges = true end
+    editing = nil
+    stickDir, dirty = WAIT, true
+end
+
+local function cancelEdit()
+    if not editing then return end
+    C.set(editing.item.key, editing.old)
+    editing = nil
+    stickDir, dirty = WAIT, true
 end
 
 local function moveVertical(dir)
@@ -411,14 +445,19 @@ local function enter()
         toggleMaster()
     else
         focus, sel = "right", 1
-        dirty = true
+        stickDir, dirty = WAIT, true
     end
 end
 
+-- B: cancel the edit, or go back to the categories. False when there is nothing to go back from (close the menu).
 local function back()
+    if editing then
+        cancelEdit()
+        return true
+    end
     if focus == "right" then
         focus = "left"
-        dirty = true
+        stickDir, dirty = WAIT, true
         return true
     end
     return false
@@ -426,6 +465,7 @@ end
 
 -- Previous / next category (skips the master switch).
 local function switchTab(dir)
+    if editing then return end
     local i = leftSel
     if i == 0 then i = dir > 0 and 0 or #tabs + 1 end
     i = ((i - 1 + dir) % #tabs) + 1
@@ -433,54 +473,97 @@ local function switchTab(dir)
     dirty = true
 end
 
-local function changeSelected(dir, repeating)
-    if focus ~= "right" then
-        if dir > 0 and not repeating then enter() end
+local function activate()
+    if editing then
+        confirmEdit()
         return
     end
-    local it = currentTab().items[sel]
-    if not it or (repeating and it.kind ~= "num") then return end
-    change(it, dir)
-    hasChanges, dirty = true, true
-end
-
-local function activate()
     if focus == "left" then
         enter()
         return
     end
     local it = currentTab().items[sel]
-    if it and (it.kind == "bool" or it.kind == "choice") then
+    if not it then return end
+    if it.kind == "bool" then
         change(it, 1)
         hasChanges, dirty = true, true
+    else
+        startEdit(it)
+    end
+end
+
+-- One step of the stick (repeating = held down).
+local function stickStep(dir, repeating)
+    if editing then
+        if dir ~= "left" and dir ~= "right" then return end
+        if repeating and editing.item.kind ~= "num" then return end
+        change(editing.item, dir == "right" and 1 or -1)
+        dirty = true
+    elseif dir == "up" or dir == "down" then
+        moveVertical(dir == "up" and -1 or 1)
+    elseif not repeating then
+        if dir == "right" and focus == "left" and leftSel > 0 then enter()
+        elseif dir == "left" and focus == "right" then back() end
     end
 end
 
 -- Input handling ------------------------------------------------------------------------------
+local STICK_ON, STICK_OFF = 0.6, 0.35   -- deflection that counts as a push / as released
+local STICK_DOMINANCE = 1.5             -- a push must be this much stronger on its axis than on the other (no diagonals)
+local CLICK_HOLD = 0.5                  -- seconds of stick click for the master switch
+local OPPOSITE = { up = "down", down = "up", left = "right", right = "left" }
+
 local holdStart = nil
 local holdConsumed = false
-local navRepeatAt = 0
-local navDirY, navDirX = 0, 0
+local stickRepeatAt = 0
+local clickStart = nil
 local prev = {}         -- button name -> was down last frame
 
-local function stickY()
-    local r = U.axis("OculusTouch_Right_Thumbstick_Y")
-    local l = U.axis("OculusTouch_Left_Thumbstick_Y")
-    return math.abs(r) >= math.abs(l) and r or l
+-- Deflection of the stick that is pushed the most.
+local function stick()
+    local rx, ry = U.axis("OculusTouch_Right_Thumbstick_X"), U.axis("OculusTouch_Right_Thumbstick_Y")
+    local lx, ly = U.axis("OculusTouch_Left_Thumbstick_X"), U.axis("OculusTouch_Left_Thumbstick_Y")
+    if math.max(math.abs(rx), math.abs(ry)) >= math.max(math.abs(lx), math.abs(ly)) then return rx, ry end
+    return lx, ly
 end
-local function stickX()
-    local r = U.axis("OculusTouch_Right_Thumbstick_X")
-    local l = U.axis("OculusTouch_Left_Thumbstick_X")
-    return math.abs(r) >= math.abs(l) and r or l
+
+-- Direction of a clear push, nil if centred or diagonal.
+local function pushDirection(x, y)
+    local ax, ay = math.abs(x), math.abs(y)
+    if ay > STICK_ON and ay >= ax * STICK_DOMINANCE then return y > 0 and "up" or "down" end
+    if ax > STICK_ON and ax >= ay * STICK_DOMINANCE then return x > 0 and "right" or "left" end
+    return nil
+end
+
+-- Stick navigation with auto-repeat. A push keeps its direction until the stick is centred (or flicked to the opposite
+-- side), so a wandering thumb can't turn it into another one.
+local function stickTick(now)
+    local x, y = stick()
+    if math.max(math.abs(x), math.abs(y)) < STICK_OFF then
+        stickDir = nil
+        return
+    end
+    if stickDir == WAIT then return end
+    local dir = pushDirection(x, y)
+    if dir and (stickDir == nil or dir == OPPOSITE[stickDir]) then
+        stickDir = dir
+        stickRepeatAt = now + 0.4
+        stickStep(dir, false)
+    elseif dir and dir == stickDir and now >= stickRepeatAt then
+        stickRepeatAt = now + 0.15
+        stickStep(dir, true)
+    end
 end
 
 local function buttons()
+    -- Analog buttons: released well below the point where they are pressed, so they can't flicker.
+    local function pull(v, was) return v > (was and 0.4 or 0.7) end
     return {
         a = U.down("OculusTouch_Right_A_Click") or U.down("OculusTouch_Left_X_Click"),
-        trig = math.max(U.trigger("Right"), U.trigger("Left")) > 0.7,
+        trig = pull(math.max(U.trigger("Right"), U.trigger("Left")), prev.trig),
         b = U.down("OculusTouch_Right_B_Click"),
-        gripL = U.axis("OculusTouch_Left_Grip_Axis") > 0.7,
-        gripR = U.axis("OculusTouch_Right_Grip_Axis") > 0.7,
+        gripL = pull(U.axis("OculusTouch_Left_Grip_Axis"), prev.gripL),
+        gripR = pull(U.axis("OculusTouch_Right_Grip_Axis"), prev.gripR),
         click = U.down("OculusTouch_Left_Thumbstick_Click") or U.down("OculusTouch_Right_Thumbstick_Click"),
     }
 end
@@ -508,12 +591,13 @@ function M.openMenu(pawn, pc)
     hasChanges = false
     setPawnInput(pawn, pc, false)
     prev = buttons()            -- ignore buttons already held
-    navDirX, navDirY = 0, 0
+    stickDir, clickStart = WAIT, nil
     U.log("menu opened")
 end
 
 function M.closeMenu(pawn, pc)
     if not M.open then return end
+    cancelEdit()
     M.open = false
     destroyActors()
     if U.valid(pawn) and U.valid(pc) then setPawnInput(pawn, pc, true) end
@@ -538,33 +622,26 @@ function M.tick(pawn, pc, now)
 
     -- Menu actors can be destroyed by a level change.
     if not U.valid(actors.title) then
+        cancelEdit()
         M.open = false
         actors, shown = {}, {}
         setPawnInput(pawn, pc, true)
         return false
     end
 
-    -- Stick navigation with auto-repeat
-    local sy, sx = stickY(), stickX()
-    local dy = (sy > 0.6 and 1) or (sy < -0.6 and -1) or 0
-    local dx = (sx > 0.6 and 1) or (sx < -0.6 and -1) or 0
-    if dy ~= navDirY or dx ~= navDirX then
-        navDirY, navDirX = dy, dx
-        navRepeatAt = now + 0.4
-        if dy ~= 0 then moveVertical(-dy) end
-        if dx ~= 0 then changeSelected(dx, false) end
-    elseif (dy ~= 0 or dx ~= 0) and now >= navRepeatAt then
-        navRepeatAt = now + 0.15
-        if dy ~= 0 then moveVertical(-dy) end
-        if dx ~= 0 then changeSelected(dx, true) end
-    end
+    stickTick(now)
 
     local cur = buttons()
     local function pressed(k) return cur[k] and not prev[k] end
     if pressed("a") or pressed("trig") then activate() end
     if pressed("gripL") then switchTab(-1) end
     if pressed("gripR") then switchTab(1) end
-    if pressed("click") then toggleMaster() end
+    if pressed("click") then clickStart = now end
+    if editing or not cur.click then clickStart = nil end
+    if clickStart and now - clickStart >= CLICK_HOLD then
+        clickStart = nil
+        toggleMaster()
+    end
     if pressed("b") and not back() then
         prev = cur
         M.closeMenu(pawn, pc)
@@ -579,19 +656,18 @@ end
 -- Test helper (cmd.txt): simulate navigation without controllers.
 function M.debugInput(cmd)
     if not M.open then return end
-    if cmd == "down" then moveVertical(1)
-    elseif cmd == "up" then moveVertical(-1)
-    elseif cmd == "left" or cmd == "right" then changeSelected(cmd == "right" and 1 or -1, false)
+    if OPPOSITE[cmd] then stickStep(cmd, false)
     elseif cmd == "select" then activate()
     elseif cmd == "back" then back()
     elseif cmd == "tabnext" then switchTab(1)
     elseif cmd == "tabprev" then switchTab(-1)
-    elseif cmd == "master" then toggleMaster()
+    elseif cmd == "master" and not editing then toggleMaster()
     end
     if dirty then refresh() end
 end
 
 function M.reset()
+    cancelEdit()
     destroyActors()
     M.open = false
     holdStart = nil

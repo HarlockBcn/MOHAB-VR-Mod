@@ -100,9 +100,12 @@ Without an internet connection the launcher works as usual. You can also update 
 * Left column: the **MOD ON/OFF** switch and the categories. Right column: the options of the chosen category, with a
   short explanation of the selected one at the bottom.
 * **Stick up/down**: choose. **A**, **trigger** or **stick right**: open the category. **B**: close.
-* Inside a category: **stick left/right** changes the value, **A** or **trigger** toggles it, **B** goes back.
-* **Grips**: previous / next category from anywhere.
-* **MOD ON/OFF** (or **click a thumbstick** anywhere in the menu) turns every change of the mod off and on again, to
+* Inside a category, the stick only moves (**left** or **B** goes back). **A** or **trigger** switches an ON/OFF option, or
+  starts **editing** any other one (shown in orange).
+* While editing: **stick left/right** changes the value, **A** or **trigger** confirms it, **B** cancels and brings the
+  previous value back. Closing the menu also cancels. Nothing else works until you confirm or cancel.
+* **Grips**: previous / next category.
+* **MOD ON/OFF** (or **holding a thumbstick click** for half a second in the menu) turns every change of the mod off and on again, to
   compare with the original game. Your settings are kept, and the mod is always on when the game starts.
 * Changes are saved to `ue4ss\Mods\MOHABPlus\config.ini` when the menu closes.
 
