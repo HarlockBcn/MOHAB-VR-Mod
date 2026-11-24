@@ -25,8 +25,8 @@
 - **Crouch with the turn stick** - Push the turn stick down to crouch and up to stand.
 - **Slower when crouched** - Crouched, for real or with the stick, you walk at 60% of your normal speed (adjustable; the original game does not slow you down).
 - **Arm-swing sprint** - Swing your arms like a runner to sprint; the faster you swing, the faster you run. Stick-click sprint still works.
-- **Always sprint** - Optional sprint mode: you run just by pushing the stick, without clicking it or swinging your arms, and only walk while you hold a gun up (about chest height or higher). Push the stick gently to walk without raising a gun. Choose between stick click, arm swing, stick + arms and always sprint.
-- **No stick sprint while shooting** - Pulling the trigger of a weapon cancels the stick-click sprint; arm-swing sprinting still lets you shoot.
+- **Always sprint** - Optional sprint mode: you run just by pushing the stick, without clicking it or swinging your arms, and only walk while you hold a gun up (about chest height or higher) or shoot. Push the stick gently to walk without raising a gun. Choose between stick click, arm swing, stick + arms and always sprint.
+- **No sprinting while shooting** - Pulling the trigger of a weapon cancels the stick-click sprint and puts you at walking pace in the always sprint mode; arm-swing sprinting still lets you shoot.
 - **Faster sprint** - Raise the maximum sprint speed up to x1.5.
 - **Realistic turns** - Turning sharply while sprinting costs speed, which comes back over a second; a full U-turn drops you to walking pace (strength adjustable, 0 turns it off). Sprinting sideways or backwards is at most half as fast.
 - **Slide** - Crouch while sprinting (with the stick or for real) to slide, with a scraping sound.

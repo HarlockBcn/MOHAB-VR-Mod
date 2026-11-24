@@ -55,7 +55,7 @@ internal sealed class ModConfig
         new("fall_damage_progressive", "Fall damage: grows with the height of the fall", OptionKind.Bool, "true", Section: "Fall damage"),
         new("fall_damage_scale", "Fall damage: amount (x the game's)", OptionKind.Float, "1.0", 0.0, 2.0, 0.1, Section: "Fall damage"),
 
-        new("sprint_mode", "Sprint mode (always sprint: you only walk while you hold a gun up)", OptionKind.Choice, "both",
+        new("sprint_mode", "Sprint mode (always sprint: you only walk while you hold a gun up or shoot)", OptionKind.Choice, "both",
             Choices: new[] { "stick", "arms", "both", "always" }, Section: "Sprint",
             ChoiceLabels: new[] { "Stick click", "Arm swing", "Stick + arms", "Always sprint" }),
         new("sprint_arm_sensitivity", "Sprint: arm swing sensitivity", OptionKind.Float, "1.3", 0.3, 2.0, 0.1, Section: "Sprint"),

@@ -2,7 +2,7 @@
 --  * "arms" mode: sprint while moving with the stick AND swinging the arms like running (no stick click).
 --  * "both": stick click works as usual, arm swinging also sprints.
 --  * "always": sprinting whenever the stick is pushed (no click, no arm swing); walking speed only while a hand
---    holding a gun is raised. How far the stick is pushed still sets the speed (half way = close to walking).
+--    holding a gun is raised or fires it. How far the stick is pushed still sets the speed (half way = close to walking).
 --  * arm-swing sprint is progressive: walking speed -> game sprint speed x multiplier, by arm swing speed.
 --  * speed multiplier (1.0 - 1.5) on top of the game's sprint speed (also used by the stick-click sprint).
 --
@@ -156,9 +156,11 @@ local function directionFactor(ctrl)
 end
 
 -- Firing: the trigger of a hand holding a weapon is pulled (or the weapon is firing). Stick-click sprint is cancelled
--- while firing; the arm-swing sprint is not (swinging the arms and shooting is the player's choice).
+-- while firing, and so is the "always" sprint (guns only, not grenades); the arm-swing sprint is not (swinging the arms
+-- and shooting is the player's choice).
 local weaponClass = nil
-local function isFiring(pawn)
+local isGun
+local function isFiring(pawn, gunsOnly)
     if not U.valid(weaponClass) then
         weaponClass = StaticFindObject("/Game/R6/Core/Weapons/BP_WeaponBase.BP_WeaponBase_C")
         if not U.valid(weaponClass) then return false end
@@ -166,8 +168,9 @@ local function isFiring(pawn)
     for _, side in ipairs({ "Left", "Right" }) do
         local obj = U.get(U.get(pawn, side .. "Controller"), "AttachedObject")
         if U.valid(obj) then
-            local ok, isGun = pcall(function() return obj:IsA(weaponClass) end)
-            if ok and isGun and (U.trigger(side) > 0.5 or U.get(obj, "IsWeaponFiring_0") == true) then return true end
+            local ok, weapon = pcall(function() return obj:IsA(weaponClass) end)
+            if ok and weapon and (not gunsOnly or isGun(obj))
+                and (U.trigger(side) > 0.5 or U.get(obj, "IsWeaponFiring_0") == true) then return true end
         end
     end
     return false
@@ -180,11 +183,13 @@ local lastFireCancelLog = -100
 -- stay that way for a moment, so hands that swing up while running or move while reloading don't change the pace.
 local RAISE_ON, RAISE_OFF = 35, 42
 local RAISE_DELAY, LOWER_DELAY = 0.12, 0.25     -- s
+local FIRE_HOLD = 0.6                           -- s walking after the last shot (no sprint burst between shots)
 local RAISE_DECEL = 900                         -- cm/s^2: quick but not instant slow down to aim
 local grenadeClass = nil
 local raised, raisedSince = false, nil
+local lastFireT = -100
 
-local function isGun(obj)
+isGun = function(obj)
     if not U.valid(obj) then return false end
     if not U.valid(weaponClass) then
         weaponClass = StaticFindObject("/Game/R6/Core/Weapons/BP_WeaponBase.BP_WeaponBase_C")
@@ -230,7 +235,11 @@ end
 
 -- "Always" mode, every frame after TickInput. Returns false when the game's own rules apply (crouched, sprint disabled).
 local function alwaysSprint(ctrl, pawn, cmc, dt, mult, isSprinting, moving)
-    local gunUp = updateRaised(pawn, U.now(pawn))
+    local now = U.now(pawn)
+    local gunUp = updateRaised(pawn, now)
+    if isFiring(pawn, true) then lastFireT = now end
+    if now < lastFireT then lastFireT = -100 end
+    local firing = now - lastFireT < FIRE_HOLD
     if not moving then return true end
     if U.get(ctrl, "DisableSprinting") == true or Crouch.virtualCrouched
         or U.get(pawn, "IsCurrentlyCrouched") == true then
@@ -244,8 +253,10 @@ local function alwaysSprint(ctrl, pawn, cmc, dt, mult, isSprinting, moving)
     local stick = U.clamp(math.sqrt(fwd * fwd + right * right), 0, 1)
     local slow = walk * stick
     local target, decel, run = slow, RAISE_DECEL, false
-    if gunUp then
+    if gunUp or firing then
         penalty = 0
+        -- No shooting at sprint speed: down to walking at once (raising a gun slows down gradually).
+        if firing then smoothSpeed = slow end
     else
         local cut = updateTurnPenalty(pawn, cmc, dt)
         local back = directionFactor(ctrl)
