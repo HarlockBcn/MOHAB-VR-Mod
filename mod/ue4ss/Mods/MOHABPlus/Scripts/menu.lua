@@ -95,6 +95,10 @@ local tabs = {
           help = "Effort voice and cloth rustle when jumping" },
         { key = "jump_guard", label = "Stay inside the level", kind = "bool",
           help = "Jumps can't take you over the level's invisible barriers" },
+        { key = "land_crouch", label = "Hard landings", kind = "bool",
+          help = "Big falls make you bend down on landing, with a grunt and a jolt" },
+        { key = "land_crouch_height", label = "Hard landing from", kind = "num", min = 1.0, max = 6.0, step = 0.5, digits = 1, suffix = " m",
+          help = "Falls from this high or more (from the top of a jump)" },
     } },
     { name = "Fall damage", items = {
         { key = "fall_damage_custom", label = "Custom fall damage", kind = "bool",

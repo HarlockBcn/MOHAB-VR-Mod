@@ -23,6 +23,7 @@ local st = nil               -- state while guarding (nil = inactive)
 local helper, helperCap = nil, nil
 local helperPawnAddr = nil
 local invisibleCache = {}    -- actor address -> { name =, invisible = }
+local headIgnore = {}        -- the player's own actors, ignored by the head traces (reset with the helper)
 local primClass, pawnClass = nil, nil
 
 local function vec(x, y, z) return { X = x, Y = y, Z = z } end
@@ -276,7 +277,6 @@ end
 -- ---------------------------------------------------------------------------------------------
 local HEAD_RADIUS = 12
 local kismet = nil
-local headIgnore = {}
 local head = nil             -- per jump: { loc = actor location, cam = head location } of the last valid frame
 
 local function headLoc(pawn)
@@ -367,7 +367,7 @@ function M.headClear(pawn, height)
             U.call(helperCap, "IgnoreActorWhenMoving", actor, true)
         else
             clear = false
-            U.dlog("jump refused: ceiling %.0f cm above the head (%s)", p.Z - loc.Z, name(actor))
+            U.log("jump refused: ceiling %.0f cm above the head (%s)", p.Z - loc.Z, name(actor))
             break
         end
     end
@@ -379,7 +379,7 @@ function M.headClear(pawn, height)
             local blocker = sightBlocked(pawn, cam, vec(cam.X, cam.Y, cam.Z + height + 5))
             if blocker ~= nil then
                 clear = false
-                U.dlog("jump refused: something visible above the head (%s)", name(blocker or nil))
+                U.log("jump refused: something visible above the head (%s)", name(blocker or nil))
             else
                 U.dlog("jump: nothing above the head for %.0f cm (head at %.0f)", height + 5, cam.Z)
             end

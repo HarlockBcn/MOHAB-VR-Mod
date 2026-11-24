@@ -17,6 +17,7 @@ local M = {}
 M.virtualCrouched = false
 local armed = true          -- the stick must return to the centre before the next action
 local applied = 0           -- offset currently applied to VROrigin (cm, positive = down)
+local baseApplied = 0       -- part of it from the crouch / slide (applied also includes the landing dip)
 local lastPawnAddr = nil
 local lastNow = nil
 local SPEED = 260           -- cm/s transition speed
@@ -31,6 +32,11 @@ local PHYS_DROP = 22        -- cm below the standing height that counts as a phy
 -- whatever the real head does; afterwards it goes back to the real height.
 M.physSlide = nil
 M.minHeadHeight = 70        -- never push the camera below this height above the floor (cm)
+-- Hard landing (see jump.lua): the view bends down and comes back up by itself.
+-- { t0 =, depth = cm, down =, hold =, up = s }
+M.land = nil
+local STICK_CONE = 0.7      -- stick crouch / jump: |x| <= 0.7 |y|, i.e. within 35 degrees of straight up / down
+local stickPeak = 0         -- strongest up push since the stick left the centre (for the "too weak" log)
 
 -- In standing mode the game keeps VROrigin at Z = 0 (ConfigureCharacterHeight / ResetOrientation), so the
 -- crouch offset is written as an absolute Z = -offset.
@@ -98,6 +104,33 @@ function M.toggle(pawn)
     M.setCrouched(pawn, not M.virtualCrouched)
 end
 
+local function smooth(x) x = U.clamp(x, 0, 1); return x * x * (3 - 2 * x) end
+
+-- k = 0..1: how hard the landing was. Depth goes from 45% of the stick crouch to all of it.
+local function startLand(pawn, k, now)
+    if U.get(pawn, "IsStandingMode") == false then return end
+    local h = headHeight(pawn)
+    if not h then return end
+    local raw = h + applied                         -- real head height without our offset
+    local depth = crouchDepth(pawn, raw) * (0.45 + 0.55 * k)
+    depth = math.min(depth, raw - M.minHeadHeight)
+    if depth <= 1 then return end
+    M.land = { t0 = now, depth = depth, down = 0.1, hold = 0.12 + 0.3 * k, up = 0.45 + 0.4 * k }
+    U.dlog("hard landing: view down %.0f cm (head %.0f)", depth, raw)
+end
+
+local function landDip(now)
+    local L = M.land
+    if not L then return 0 end
+    local t = now - L.t0
+    local f
+    if t < L.down then f = smooth(t / L.down)
+    elseif t < L.down + L.hold then f = 1
+    elseif t < L.down + L.hold + L.up then f = 1 - smooth((t - L.down - L.hold) / L.up)
+    else M.land = nil; return 0 end
+    return L.depth * f
+end
+
 local function updateOffset(pawn, now)
     -- (now is also used by the physical-slide ease)
     local dt = 0
@@ -111,7 +144,7 @@ local function updateOffset(pawn, now)
         local ok, sitting = pcall(function() return seat.bSitting end)
         if ok and sitting then blocked = true end
     end
-    if not standing or blocked then M.virtualCrouched = false; M.physSlide = nil end
+    if not standing or blocked then M.virtualCrouched = false; M.physSlide = nil; M.land = nil end
 
     local target = 0
     local direct = false
@@ -146,19 +179,24 @@ local function updateOffset(pawn, now)
         M._dbgT = now
         U.dlog("crouch dbg: want=%s target=%.1f applied=%.1f dt=%.4f standing=%s blocked=%s", tostring(M.virtualCrouched), target, applied, dt, tostring(standing), tostring(blocked))
     end
-    if applied == 0 and target == 0 then return end
+    if applied == 0 and target == 0 and not M.land then baseApplied = 0; return end
     local step = (Slide.active and 520 or SPEED) * dt
-    local newApplied
-    if direct then newApplied = target
-    elseif target > applied then newApplied = math.min(target, applied + step)
-    else newApplied = math.max(target, applied - step) end
+    local newBase
+    if direct then newBase = target
+    elseif target > baseApplied then newBase = math.min(target, baseApplied + step)
+    else newBase = math.max(target, baseApplied - step) end
+    if math.abs(newBase) < 0.01 then newBase = 0 end
+    -- The landing dip goes on top: whichever is lower wins.
+    local newApplied = math.max(newBase, landDip(now))
     if math.abs(newApplied) < 0.01 then newApplied = 0 end
     -- Write when the value changes or when the game moved the origin back (e.g. recenter).
     if newApplied ~= applied or math.abs(originZ(pawn) + newApplied) > 0.5 then
         if applyOffset(pawn, newApplied) then
-            applied = newApplied
+            applied, baseApplied = newApplied, newBase
             U.call(pawn, "AdjustCapsuleHeightForCrouch")
         end
+    else
+        baseApplied = newBase
     end
 end
 
@@ -188,7 +226,8 @@ function M.tick(pawn, menuOpen, now)
     local addr = pawn:GetAddress()
     if addr ~= lastPawnAddr then
         lastPawnAddr = addr
-        applied, lastNow, armed = 0, nil, false
+        applied, baseApplied, lastNow, armed = 0, 0, nil, false
+        M.land = nil
         M.fixedTarget = nil
         M.virtualCrouched = false
         M.physSlide, lastStandH, lastStandT = nil, nil, nil
@@ -201,26 +240,36 @@ function M.tick(pawn, menuOpen, now)
     elseif not menuOpen then
         local y = U.get(pawn, "FlickTurningStick_YAxis")
         if type(y) ~= "number" then y = U.axis("OculusTouch_Right_Thumbstick_Y") end
+        local x = U.get(pawn, "FlickTurningStick_XAxis")
+        if type(x) ~= "number" then x = U.axis("OculusTouch_Right_Thumbstick_X") end
         local thr = C.get("crouch_stick_threshold")
+        -- Direction, not just the vertical part: a push slightly to the side still counts (the vertical part of
+        -- a stick pushed fully at 20 degrees is only 0.94), while snap turns (mostly sideways) never do.
+        local mag = math.sqrt(x * x + y * y)
+        local inCone = math.abs(x) <= STICK_CONE * math.abs(y)
         if math.abs(y) < 0.3 then
-            armed = true
+            if armed and stickPeak >= 0.6 and jumpOn then
+                U.log("jump stick: pushed up to %.2f only (needs %.2f)", stickPeak, thr)
+            end
+            armed, stickPeak = true, 0
         elseif armed then
-            if y <= -thr and crouchOn then
-                armed = false
+            if y > 0 and inCone and mag > stickPeak then stickPeak = mag end
+            if y < 0 and inCone and mag >= thr and crouchOn then
+                armed, stickPeak = false, 0
                 -- Crouching while sprinting starts a slide (ends crouched).
                 if U.pc and U.get(U.pc, "IsSprinting") == true and U.get(pawn, "IsStandingMode") ~= false then
                     local walk = U.gameSpeeds(U.pc, pawn)
                     Slide.tryStart(pawn, U.pc, now, walk)
                 end
                 M.setCrouched(pawn, true)
-            elseif y >= thr then
-                armed = false
+            elseif y > 0 and inCone and mag >= thr then
+                armed, stickPeak = false, 0
                 -- Up: stand up if crouched with the stick, otherwise jump.
                 local seatedCrouch = U.get(pawn, "IsStandingMode") == false and U.get(pawn, "IsCurrentlyCrouched") == true
                 if (crouchOn and (M.virtualCrouched or seatedCrouch)) or not jumpOn then
                     M.setCrouched(pawn, false)
                 elseif U.pc then
-                    Jump.tryJump(pawn, U.pc, now)
+                    Jump.request(pawn, U.pc, now)
                 end
             end
         end
@@ -270,6 +319,11 @@ function M.tick(pawn, menuOpen, now)
     -- Sprinting stands the player up (like the game's own crouch).
     if M.virtualCrouched and not Slide.active and U.pc and U.get(U.pc, "IsSprinting") == true then
         M.virtualCrouched = false
+    end
+
+    if Jump.landing then
+        if now - Jump.landing.t < 0.2 then startLand(pawn, Jump.landing.k, now) end
+        Jump.landing = nil
     end
 
     updateOffset(pawn, now)

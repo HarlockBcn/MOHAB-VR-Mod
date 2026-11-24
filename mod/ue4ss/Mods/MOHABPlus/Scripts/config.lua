@@ -29,6 +29,8 @@ M.defaults = {
     jump_height = 100,              -- cm
     jump_sound = "all",             -- "all" (voice + cloth) | "cloth" | "off"
     jump_guard = true,              -- invisible level barriers become infinitely tall (anything visible can be climbed)
+    land_crouch = true,             -- hard landings: bend down, grunt and jolt the controllers
+    land_crouch_height = 2.0,       -- m: falls from at least this high (from the top of a jump) are hard landings
 
     fall_damage_custom = true,      -- false = the game's rules (flat damage from ~3.3 m, death from ~10 m)
     fall_safe_height = 4.0,         -- m: shorter drops don't hurt
@@ -59,7 +61,7 @@ M.order = {
     { "Grabbing", { "body_grab_distance", "holster_grab_distance", "weapon_grip_reach", "cocking", "holster_below_eyes" } },
     { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons", "haptics_no_ammo", "haptics_holster_zone" } },
     { "Crouch", { "crouch_stick", "crouch_stick_threshold", "crouch_speed" } },
-    { "Jump (experimental)", { "jump_enabled", "jump_height", "jump_sound", "jump_guard" } },
+    { "Jump (experimental)", { "jump_enabled", "jump_height", "jump_sound", "jump_guard", "land_crouch", "land_crouch_height" } },
     { "Fall damage", { "fall_damage_custom", "fall_safe_height", "fall_fatal_height", "fall_damage_progressive", "fall_damage_scale" } },
     { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier", "sprint_turn_slowdown" } },
     { "Slide", { "slide_enabled", "slide_strength", "slide_sound" } },
@@ -152,6 +154,7 @@ M.vanilla = {
     crouch_speed = 0,               -- 0 = the game's own crouch speed
     jump_enabled = false,
     jump_guard = false,
+    land_crouch = false,
     fall_damage_custom = false,
     sprint_mode = "stick",
     sprint_speed_multiplier = 1.0,

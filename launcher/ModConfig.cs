@@ -44,6 +44,8 @@ internal sealed class ModConfig
         new("jump_height", "Jump: height (cm)", OptionKind.Float, "100", 20, 120, 5, Section: "Jump (experimental)"),
         new("jump_sound", "Jump: sounds", OptionKind.Choice, "all", Choices: new[] { "all", "cloth", "off" }, Section: "Jump (experimental)"),
         new("jump_guard", "Jump: stay inside the level (furniture can still be climbed)", OptionKind.Bool, "true", Section: "Jump (experimental)"),
+        new("land_crouch", "Hard landings: bend down on landing, with a grunt and a jolt", OptionKind.Bool, "true", Section: "Jump (experimental)"),
+        new("land_crouch_height", "Hard landings: from a fall of (m)", OptionKind.Float, "2", 1, 6, 0.5, Section: "Jump (experimental)"),
 
         new("fall_damage_custom", "Custom fall damage (off = the game's rules)", OptionKind.Bool, "true", Section: "Fall damage"),
         new("fall_safe_height", "Fall damage: safe height (m)", OptionKind.Float, "4", 1, 10, 0.5, Section: "Fall damage"),
