@@ -21,6 +21,10 @@
 -- registered slot: with a weapon held only by its front grip the game takes it again from pawn.WeaponHeldWithOffhand's
 -- slot. A loose weapon takes a holster that fits as soon as one is free, and is never put away on the chest.
 --
+-- Held by the off hand: a rifle sets HoldingWeaponWithOffhand; a pistol (also the sawed-off shotgun) sets neither that
+-- nor IsGripped, only pawn.WeaponHeldWithOffhand, while it is the hand's AttachedObject. Both hang from the hand's
+-- MotionController, and the game's throw detaches a weapon only when it finds where to throw it: a drop detaches first.
+--
 -- Not touched: mission objects (BP_HolsterObject), mission weapons (extinguisher, mine detector, C4, melee...: only
 -- the classes below are handled), weapons tagged MissionObjective, bazookas (no holster: the game drops them itself).
 local U = require("util")
@@ -263,6 +267,43 @@ local function keepInside(pawn, w)
     return true
 end
 
+-- Diagnostics: how a dropped weapon falls (attachment, physics, distance from where it was let go) for a second.
+local watch
+local watching = {}       -- address -> { w, name, t0, from, how, parent, n }
+function watch(w, t)
+    local ok, l = U.call(w, "K2_GetActorLocation")
+    watching[w:GetAddress()] = { w = w, name = t.name, t0 = os.clock(), from = ok and l and U.vec(l) or nil,
+        how = t.how or "?", parent = t.parent, side = t.side, n = 0 }
+end
+
+local function watchTick()
+    local t = os.clock()
+    for addr, d in pairs(watching) do
+        if not U.valid(d.w) or fname(d.w) ~= d.name then
+            watching[addr] = nil
+        else
+            local age = t - d.t0
+            local mark = d.n == 0 and age >= 0.05 or d.n == 1 and age >= 0.3 or d.n == 2 and age >= 1.0
+            if mark then
+                d.n = d.n + 1
+                local okP, p = U.call(d.w, "GetAttachParentActor")
+                local model = U.get(d.w, "Model")
+                local okS, sim = U.call(model, "IsSimulatingPhysics", FName("None"))
+                local okL, l = U.call(d.w, "K2_GetActorLocation")
+                local okM, ml = U.call(model, "K2_GetComponentLocation")
+                local okV, v = U.call(model, "GetPhysicsLinearVelocity", FName("None"))
+                local dist = (okL and l and d.from) and U.vlen(U.vsub(U.vec(l), d.from)) or -1
+                local gap = (okL and l and okM and ml) and U.vlen(U.vsub(U.vec(l), U.vec(ml))) or -1
+                U.log("manual holster: %s dropped (%s hand, %s%s) +%.2fs: attached to %s, physics %s, moved %.0f cm, model %.0f cm from the actor, speed %.0f",
+                    d.name, tostring(d.side), d.how, d.parent and (", was attached to " .. d.parent) or "", age,
+                    (okP and U.valid(p)) and fname(p) or "nothing", tostring(okS and sim), dist, gap,
+                    (okV and v) and U.vlen(U.vec(v)) or -1)
+                if d.n >= 3 then watching[addr] = nil end
+            end
+        end
+    end
+end
+
 local function drop(pawn, hc, t)
     local w = t.w
     local grenade = t.kind == "grenade"
@@ -274,6 +315,11 @@ local function drop(pawn, hc, t)
     stopFlight(w)
     U.call(U.get(w, "Ak"), "Stop")            -- the holster sound the release has just started
     local moved = keepInside(pawn, w)
+
+    -- Still hanging from a hand (held by the off hand): the throw below only detaches it when it finds where to throw it.
+    local okP, parent = U.call(w, "GetAttachParentActor")
+    t.parent = (okP and U.valid(parent)) and fname(parent) or nil
+    if t.parent then U.call(w, "K2_DetachFromActor", 1, 1, 1) end
 
     -- The throw clears weapon.HolsterSlot: only let it when that slot is really this weapon's.
     local current = U.get(w, "HolsterSlot")
@@ -311,6 +357,7 @@ local function drop(pawn, hc, t)
     else
         dropped[w:GetAddress()] = { w = w, name = t.name, ammo = t.ammo, canFire = t.canFire, ammoType = ammoType }
     end
+    watch(w, t)
     return moved
 end
 
@@ -356,7 +403,7 @@ local function released(pawn, hc, t)
     end
 
     if slot then
-        if store(hc, t, slot) then U.log("manual holster: %s -> holster %d (%s; cm %s; grip %.2f)", t.name, slot, how, distText(d), grip) end
+        if store(hc, t, slot) then U.log("manual holster: %s -> holster %d (%s, %s hand, %s; cm %s; grip %.2f)", t.name, slot, how, t.side, t.how or "?", distText(d), grip) end
     else
         local free = table.concat(freeSlots(pawn, hc, w), ",")
         local carried = {}
@@ -365,25 +412,37 @@ local function released(pawn, hc, t)
             if o then carried[#carried + 1] = s .. "=" .. fname(o) end
         end
         local moved = drop(pawn, hc, t)
-        U.log("manual holster: %s (%s) dropped by the %s hand%s%s (free holsters [%s] of [%s]; carried %s; cm %s; grip %.2f%s)",
-            t.name, t.kind, t.side, loose and ", no holster" or "", moved and ", hand behind a wall" or "", free,
+        U.log("manual holster: %s (%s) dropped by the %s hand (%s)%s%s (free holsters [%s] of [%s]; carried %s; cm %s; grip %.2f%s)",
+            t.name, t.kind, t.side, t.how or "?", loose and ", no holster" or "", moved and ", hand behind a wall" or "", free,
             table.concat(fittingSlots(pawn, t.kind), ","), table.concat(carried, " "), distText(d), grip,
             forced and "; released by the game" or "")
     end
 end
 
-local function isHeld(w) return U.get(w, "IsGripped") == true or U.get(w, "HoldingWeaponWithOffhand") == true end
+-- Held by the off hand only (see the top): a pistol that a hand holds while the game counts it as the off hand's.
+local function offhandPistol(pawn, w)
+    if not U.same(U.get(pawn, "WeaponHeldWithOffhand"), w) then return false end
+    for _, side in ipairs({ "LeftController", "RightController" }) do
+        if U.same(U.get(U.get(pawn, side), "AttachedObject"), w) then return true end
+    end
+    return false
+end
+
+local function isHeld(w, pawn)
+    return U.get(w, "IsGripped") == true or U.get(w, "HoldingWeaponWithOffhand") == true
+        or (pawn ~= nil and offhandPistol(pawn, w))
+end
 
 -- The weapon a hand holds (by its main grip, or only by the front grip), or nil. A weapon taken from the floor with the
 -- off hand is the hand's AttachedObject too, but not IsGripped.
-local function weaponInHand(ctrl)
+local function weaponInHand(ctrl, pawn)
     local o = U.get(ctrl, "AttachedObject")
     if not U.valid(o) then return nil end
-    if kindOf(o) then return isHeld(o) and o or nil end
+    if kindOf(o) then return isHeld(o, pawn) and o or nil end
     if not className(o):find("Grip") then return nil end
     for _, fn in ipairs({ "GetParentActor", "GetAttachParentActor" }) do
         local ok, p = U.call(o, fn)
-        if ok and U.valid(p) and isGun(kindOf(p)) and isHeld(p) then return p end
+        if ok and U.valid(p) and isGun(kindOf(p)) and isHeld(p, pawn) then return p end
     end
     return nil
 end
@@ -397,6 +456,8 @@ local function track(w, side)
         pickedUp(w)
     end
     t.side = side
+    t.how = U.get(w, "IsGripped") == true and "main grip" or (U.get(w, "HoldingWeaponWithOffhand") == true and "off hand"
+        or "off hand (pistol)")
     t.ammo, t.canFire = U.get(w, "Ammo"), U.get(w, "CanFireNow")
     if t.kind == "grenade" then
         local okA, n = U.call(U.get(w, "MyPlayerStateOwner"), "GetAmmoByIndex", U.get(w, "AmmoType"))
@@ -410,7 +471,7 @@ local function trackHands(pawn)
     local ctrls = { Left = U.get(pawn, "LeftController"), Right = U.get(pawn, "RightController") }
     local found = {}        -- address -> { w, side }
     for side, ctrl in pairs(ctrls) do
-        local w = weaponInHand(ctrl)
+        local w = weaponInHand(ctrl, pawn)
         if w then
             -- In two hands: the one at the main grip counts.
             local main = U.get(w, "IsGripped") == true and U.get(w, "GrippingController") or nil
@@ -421,7 +482,7 @@ local function trackHands(pawn)
         end
     end
     local off = U.get(pawn, "WeaponHeldWithOffhand")
-    if U.valid(off) and isGun(kindOf(off)) and isHeld(off) and not found[off:GetAddress()] then
+    if U.valid(off) and isGun(kindOf(off)) and isHeld(off, pawn) and not found[off:GetAddress()] then
         local side = U.same(U.get(pawn, "MovementHandController"), ctrls.Right) and "Right" or "Left"
         found[off:GetAddress()] = { w = off, side = side }
     end
@@ -433,7 +494,7 @@ local function checkReleases(pawn, hc)
         local w = t.w
         if not U.valid(w) or fname(w) ~= t.name then
             held[addr] = nil
-        elseif not isHeld(w) then
+        elseif not isHeld(w, pawn) then
             held[addr] = nil
             local ok, err = pcall(released, pawn, hc, t)
             if not ok then
@@ -535,7 +596,7 @@ local function disable()
 end
 
 function M.reset()
-    held, dropped, candidates, zone, kinds = {}, {}, {}, {}, {}
+    held, dropped, candidates, zone, kinds, watching = {}, {}, {}, {}, {}, {}
 end
 
 function M.tick(pawn, now)
@@ -553,6 +614,7 @@ function M.tick(pawn, now)
 
     checkReleases(pawn, hc)
     trackHands(pawn)
+    watchTick()
     adoptSlots(pawn, hc)
     prepareWorld(pawn, hc)
     zoneTaps(pawn, hc, now)

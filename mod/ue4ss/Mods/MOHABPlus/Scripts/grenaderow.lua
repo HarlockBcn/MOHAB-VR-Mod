@@ -63,6 +63,8 @@ local nearFloor, lastFloorScan = {}, -100    -- side -> true: a grenade on the f
 local lastPawn = nil
 local retryAt = 0                    -- os.clock(): no spawning before (after a failure)
 local failed = {}                    -- one log line per kind of failure
+local spawnedMeshes = {}             -- address -> { a, name }  every mesh actor made here (to find leftovers)
+local lastStrayScan = -100
 
 local function failOnce(key, fmt, ...)
     if failed[key] then return end
@@ -191,14 +193,49 @@ local function setHidden(g, hidden)
     end
 end
 
+-- Every mesh of a proxy: the Gammon and stick grenade proxies draw their cap with a mesh of their own (under the base
+-- proxy's MagazineRoot), besides the DisplayMesh. Only the meshes hidden here are shown again.
+local proxyHidden = {}               -- proxy address -> { name =, comps = { mesh, ... } }
+local function setProxyVisible(p, visible)
+    local addr = p:GetAddress()
+    local st = proxyHidden[addr]
+    if st and st.name ~= H.fname(p) then st = nil end
+    if visible then
+        proxyHidden[addr] = nil
+        for _, comp in ipairs(st and st.comps or {}) do
+            if U.valid(comp) then U.call(comp, "SetVisibility", true, false) end
+        end
+        if not st then U.call(U.get(p, "DisplayMesh"), "SetVisibility", true, false) end
+        return
+    end
+    st = st or { name = H.fname(p), comps = {} }
+    proxyHidden[addr] = st
+    local cls = H.class("/Script/Engine.MeshComponent")
+    local ok, arr = U.call(p, "K2_GetComponentsByClass", cls)
+    local list = {}
+    pcall(function()
+        for i = 1, #arr do
+            local c = arr[i]
+            if type(c) == "userdata" and c.get and not c.GetAddress then c = c:get() end
+            if U.valid(c) then list[#list + 1] = c end
+        end
+    end)
+    if not ok or #list == 0 then list = { U.get(p, "DisplayMesh") } end
+    for _, comp in ipairs(list) do
+        if U.valid(comp) and U.get(comp, "bVisible") ~= false then
+            U.call(comp, "SetVisibility", false, false)
+            st.comps[#st.comps + 1] = comp
+        end
+    end
+end
+
 -- Hides what the game shows on the chest: the slot's proxy and, for the variants without one (Quartermaster), the
 -- grenade itself.
 local function hideReal(hc, slot)
     local p = H.registered(hc, slot)
     local g = H.occupant(hc, slot)
     if H.isProxy(p) then
-        local mesh = U.get(p, "DisplayMesh")
-        if U.valid(mesh) and U.get(mesh, "bVisible") ~= false then U.call(mesh, "SetVisibility", false, false) end
+        setProxyVisible(p, false)
         hiddenProxy = p
     end
     if g and not isHeld(g) then
@@ -211,7 +248,7 @@ local function showReal(hc, slot)
     local p = H.registered(hc, slot)
     local g = H.occupant(hc, slot)
     if H.isProxy(p) then
-        U.call(U.get(p, "DisplayMesh"), "SetVisibility", true, false)
+        setProxyVisible(p, true)
     elseif g and typeOf(g) then
         setHidden(g, false)
     end
@@ -362,6 +399,7 @@ local function spawnVisual(pawn)
     U.call(a, "SetActorEnableCollision", false)
     local comp = U.get(a, "StaticMeshComponent")
     U.call(comp, "SetGenerateOverlapEvents", false)
+    spawnedMeshes[a:GetAddress()] = { a = a, name = H.fname(a) }
     return a, comp
 end
 
@@ -378,6 +416,63 @@ local function location(o, fn)
 end
 
 local function actorLoc(a) return location(a, "K2_GetActorLocation") end
+
+-- Extra rings / caps on the chest (a Gammon cap was seen drawn twice while hovering): meshes made here that no grenade
+-- of the row uses any more are destroyed; a real ring / cap shown next to the row while its grenade is hidden or gone
+-- is hidden. Each case is logged.
+local function strayScan(now)
+    if now - lastStrayScan < 0.25 and now >= lastStrayScan then return end
+    lastStrayScan = now
+    local used = {}
+    for i = 1, MAX_CARRIED do
+        local v = visuals[i]
+        if v then
+            if U.valid(v.actor) then used[v.actor:GetAddress()] = true end
+            if U.valid(v.pin) then used[v.pin:GetAddress()] = true end
+        end
+    end
+    for addr, s in pairs(spawnedMeshes) do
+        if not U.valid(s.a) or H.fname(s.a) ~= s.name then
+            spawnedMeshes[addr] = nil
+        elseif not used[addr] then
+            spawnedMeshes[addr] = nil
+            U.log("grenade row: leftover mesh %s destroyed", s.name)
+            U.call(s.a, "K2_DestroyActor")
+        end
+    end
+    local spots = {}
+    for i = 1, MAX_CARRIED do
+        local v = visuals[i]
+        local p = v and U.valid(v.actor) and actorLoc(v.actor) or nil
+        if p then spots[#spots + 1] = p end
+    end
+    if #spots == 0 then return end
+    for _, pin in ipairs(FindAllOf("BP_Weapon_GrenadePin_Base_C") or {}) do
+        if U.valid(pin) and U.get(pin, "bHidden") ~= true and U.get(pin, "IsGripped") ~= true then
+            local p = actorLoc(pin)
+            local near = false
+            for _, s in ipairs(spots) do
+                if p and U.vlen(U.vsub(p, s)) < 20 then near = true; break end
+            end
+            if near then
+                local okG, g = U.call(pin, "GetParentActor")
+                if not (okG and U.valid(g)) then okG, g = U.call(pin, "GetAttachParentActor") end
+                local owner = (okG and U.valid(g)) and g or nil
+                local ownerHidden = owner and U.get(owner, "bHidden") == true
+                if not owner or (ownerHidden and not isHeld(owner)) then
+                    U.log("grenade row: extra ring / cap %s on the chest (grenade %s) hidden", H.fname(pin),
+                        owner and (H.fname(owner) .. ", hidden") or "gone")
+                    hiddenPins[pin:GetAddress()] = H.fname(pin)     -- shown again with its grenade (setHidden)
+                    U.call(pin, "SetActorHiddenInGame", true)
+                elseif not failed["pin" .. pin:GetAddress()] then
+                    failed["pin" .. pin:GetAddress()] = true
+                    U.log("grenade row: a ring / cap is shown on the chest: %s of %s (hidden %s, held %s)", H.fname(pin),
+                        H.fname(owner), tostring(ownerHidden), tostring(isHeld(owner)))
+                end
+            end
+        end
+    end
+end
 
 local function setScale(v, m, s)
     if v.scale and math.abs(v.scale - s) < 0.001 then return end
@@ -535,7 +630,7 @@ local function disable(pawn, hc)
     giveBack(pawn)
     for i = 1, MAX_CARRIED do destroyVisual(i) end
     local slot = U.get(pawn, "GrenadeHolsterSlot")
-    if U.valid(hiddenProxy) then U.call(U.get(hiddenProxy, "DisplayMesh"), "SetVisibility", true, false) end
+    if U.valid(hiddenProxy) then setProxyVisible(hiddenProxy, true) end
     if U.valid(hc) and type(slot) == "number" then
         local t = firstType()
         if t and H.occupant(hc, slot) == nil then ensureReal(pawn, hc, slot, t) end
@@ -548,7 +643,11 @@ end
 function M.reset()
     for i = 1, MAX_CARRIED do destroyVisual(i) end
     row, visuals, meshes, classOf, known, hover, holding, pressed, quiet = {}, {}, {}, {}, {}, {}, {}, {}, {}
-    hiddenProxy, hiddenPins, nearFloor, bag = nil, {}, {}, {}
+    hiddenProxy, hiddenPins, nearFloor, bag, proxyHidden = nil, {}, {}, {}, {}
+    for _, s in pairs(spawnedMeshes) do
+        if U.valid(s.a) and H.fname(s.a) == s.name then U.call(s.a, "K2_DestroyActor") end
+    end
+    spawnedMeshes = {}
     M.forgetLoan()
 end
 
@@ -658,6 +757,8 @@ function M.tick(pawn, now)
             destroyVisual(i)
         end
     end
+
+    strayScan(now)
 
     -- The loan (last: what the mod itself has just taken or spawned counts).
     if not floor then giveBack(pawn) end
