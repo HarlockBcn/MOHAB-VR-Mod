@@ -251,6 +251,8 @@ local function content()
     local mSel = focus == "left" and leftSel == 0
     out.L1 = { (mSel and "> " or "") .. (on and "MOD: ON" or "MOD: OFF"), mSel and COLOR_SELECTED or (on and COLOR_ON or COLOR_OFF) }
     out.L2 = { "", COLOR_NORMAL }
+    -- Rows below the last category: empty (a text render left alone shows the engine's default "Text").
+    for r = #tabs + 3, ROWS do out["L" .. r] = { "", COLOR_NORMAL } end
     for i, t in ipairs(tabs) do
         local r = i + 2
         if r <= ROWS then
