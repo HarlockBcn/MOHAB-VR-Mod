@@ -18,6 +18,7 @@ local Cutscene = require("cutscene")
 local FallDamage = require("falldamage")
 local BodyGrab = require("bodygrab")
 local ManualHolster = require("manualholster")
+local GrenadeRow = require("grenaderow")
 local Cocking = require("cocking")
 local TeethPin = require("teethpin")
 local Respawn = require("respawn")
@@ -105,6 +106,7 @@ hooks[#hooks + 1] = {
     path = "/Game/R6/Core/GameModes/BP_R6CampaignGameMode.BP_R6CampaignGameMode_C:CheckpointLoad",
     fn = function()
         pcall(Respawn.onCheckpointLoad)
+        pcall(GrenadeRow.forgetLoan)
     end,
 }
 hooks[#hooks + 1] = {
@@ -182,6 +184,16 @@ for _, h in ipairs({ { "z_OnPinPulledWithTeeth", true }, { "z_OnPinPulled", fals
         fn = function(ctx)
             local ok, err = pcall(function() TeethPin.onPinPulled(ctx:get(), h[2]) end)
             if not ok then U.log("pin pulled hook error: %s", tostring(err)) end
+        end,
+    }
+end
+
+-- Grip presses, after the game's own grab (see grenaderow.lua; BP functions: post-hooks).
+for _, e in ipairs({ { "WeaponHandControllerGrabPressed", true }, { "NonWeaponHandControllerGrabPressed", false } }) do
+    hooks[#hooks + 1] = {
+        path = "/Game/R6/Core/VR/BP_VRPlayerCharacter.BP_VRPlayerCharacter_C:" .. e[1],
+        fn = function(ctx)
+            pcall(function() GrenadeRow.onGrabPressed(ctx:get(), e[2]) end)
         end,
     }
 end
@@ -286,6 +298,7 @@ local function findPlayer(now)
                         FallDamage.reset()
                         Cocking.reset()
                         ManualHolster.reset()
+                        GrenadeRow.reset()
                         Respawn.reset()
                         return pawn, pc
                     end
@@ -371,6 +384,7 @@ local function tick()
     guarded("holster", Holster.tick, pawn)
     guarded("bodygrab", BodyGrab.tick, pawn, now)
     guarded("manualholster", ManualHolster.tick, pawn, now)
+    guarded("grenaderow", GrenadeRow.tick, pawn, now)
     guarded("teethpin", TeethPin.tick, pawn, now)
     if not menuOpen then guarded("grabzones", BodyGrab.handTick, pawn, now) end
     guarded("haptics", Haptics.tick, pawn, pc, now)

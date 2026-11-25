@@ -26,6 +26,8 @@
 local U = require("util")
 local C = require("config")
 local Haptics = require("haptics")
+local H = require("holsters")
+local Row = require("grenaderow")
 
 local M = {}
 
@@ -40,8 +42,6 @@ local LONG_CLASSES = {
 local GRENADE_CLASS = "/Game/R6/Core/Weapons/BP_GrenadeBase.BP_GrenadeBase_C"
 -- Mission variants with their own holster logic
 local EXCLUDED = { BP_1911A_Pistol_Tunisia_C = true, BP_132_Dynamite_C = true }
-
-local PROXY_CLASS = "/Game/R6/Core/Weapons/BP_WeaponBaseProxy.BP_WeaponBaseProxy_C"
 
 -- EHolsterSlot (left-handed players use the mirrored ones; weapons on the floor have the right-handed ones)
 local RIGHT_HIP, RIGHT_CHEST, RIGHT_BACK, LEFT_HIP, LEFT_CHEST, NONE = 0, 1, 2, 3, 4, 6
@@ -65,27 +65,7 @@ local wasOn = false
 -- ---------------------------------------------------------------------------------------------
 -- Helpers
 -- ---------------------------------------------------------------------------------------------
-local function fname(o)
-    local ok, n = pcall(function() return o:GetFName():ToString() end)
-    return ok and n or "?"
-end
-
-local function className(o)
-    local ok, n = pcall(function() return o:GetClass():GetFName():ToString() end)
-    return ok and n or "?"
-end
-
-local classCache = {}
-local function isA(o, path)
-    local cls = classCache[path]
-    if not U.valid(cls) then
-        cls = StaticFindObject(path)
-        classCache[path] = cls
-    end
-    if not U.valid(cls) then return false end
-    local ok, r = pcall(function() return o:IsA(cls) end)
-    return ok and r == true
-end
+local fname, className, isA, occupant = H.fname, H.className, H.isA, H.occupant
 
 local function hasTag(w, tag)
     local ok, r = U.call(U.get(w, "Model"), "ComponentHasTag", FName(tag))
@@ -130,23 +110,6 @@ local function items(arr)
     return list
 end
 
--- What a holster slot holds: the weapon / object, or nil. Weapons are registered through a proxy (WeaponRef).
-local function occupant(hc, slot)
-    local a = nil
-    pcall(function()
-        local arr = hc.Actors
-        if slot + 1 > #arr then return end
-        a = arr[slot + 1]
-        if type(a) == "userdata" and a.get and not a.GetAddress then a = a:get() end
-    end)
-    if not U.valid(a) then return nil end
-    if isA(a, PROXY_CLASS) or className(a):lower():find("proxy") then
-        local w = U.get(a, "WeaponRef")
-        return U.valid(w) and w or nil
-    end
-    return a
-end
-
 local function rightHanded(pawn) return U.get(pawn, "RightHandIsWeaponHand") ~= false end
 
 -- Slot of a weapon on the floor, as the game expects it to pick it up.
@@ -172,6 +135,10 @@ end
 
 local function freeSlots(pawn, hc, w)
     local list = {}
+    -- The chest takes several grenades (grenaderow.lua), besides the ones in the hands.
+    if kindOf(w) == "grenade" and Row.active then
+        return Row.onChest() < Row.MAX_CARRIED and fittingSlots(pawn, "grenade") or {}
+    end
     for _, s in ipairs(fittingSlots(pawn, kindOf(w))) do
         local o = occupant(hc, s)
         if o == nil or U.same(o, w) then list[#list + 1] = s end
@@ -334,7 +301,12 @@ local function drop(pawn, hc, t)
         U.call(w, "SetGrenadeState", 0)
         U.call(w, "SetActorTickEnabled", false)
         -- The grenade in the hand counts as ammo until it is thrown; the next one appears on the chest.
-        if U.valid(state) and type(ammoType) == "number" then U.call(state, "ConsumeAmmoByIndex", ammoType, 1) end
+        -- (With more than the maximum of its type the game has already taken it away on release.)
+        local okA, n = U.call(state, "GetAmmoByIndex", ammoType)
+        local before = Row.active and Row.counted(ammoType) or t.reserve
+        if okA and type(n) == "number" and (type(before) ~= "number" or n >= before) then
+            U.call(state, "ConsumeAmmoByIndex", ammoType, 1)
+        end
         if type(slot) == "number" and occupant(hc, slot) == nil then U.call(w, "SpawnGrenadeIntoHolsterSlot", pawn, slot) end
     else
         dropped[w:GetAddress()] = { w = w, name = t.name, ammo = t.ammo, canFire = t.canFire, ammoType = ammoType }
@@ -426,6 +398,10 @@ local function track(w, side)
     end
     t.side = side
     t.ammo, t.canFire = U.get(w, "Ammo"), U.get(w, "CanFireNow")
+    if t.kind == "grenade" then
+        local okA, n = U.call(U.get(w, "MyPlayerStateOwner"), "GetAmmoByIndex", U.get(w, "AmmoType"))
+        t.reserve = okA and n or nil
+    end
     local ok, v = U.call(U.get(w, "VelocityEstimator"), "GetLinearVelocityEstimate")
     t.vel = (ok and v) and U.vec(v) or nil
 end

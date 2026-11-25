@@ -142,6 +142,10 @@ Without an internet connection the launcher works as usual. You can also update 
   (`ThrowHolsteredWeaponInFrontOfOwner` without relocation; it zeroes `Ammo`, which is restored). `HolstersComponent.Actors` holds
   proxies (`BP_WeaponBaseProxy.WeaponRef`). Floor weapons with no free holster get the free chest slot (1) so picking
   them up swaps nothing (the two-handed grip needs a registered slot).
+* **Row of grenades** (`grenaderow.lua`): the game keeps grenades as ammo counts (`GetAmmoByIndex` 2, 3, 7; 3 in total, the ones in
+  the hands included) plus one real actor in `GrenadeHolsterSlot`. The mod draws one `StaticMeshActor` per grenade (mesh copied
+  from the slot's proxy, which is hidden) and keeps the real one of the type nearest to the hand, or takes it with
+  `AttachObjectToHand` after the game's grip press (post-hooks on `...ControllerGrabPressed`).
 * **Holsters over the head**: `GetNearestHolsterSlot` uses `SlotToDistanceSquaredLeewayMap` (indices 0-5 = holsters,
   6-7 = sleeves). While a hand is over the head and near its axis, the mod zeroes the holster leeways.
 * **Haptics**: the mod watches the health of `VRPlayerCharacterHealthAndDamageComponent` and uses

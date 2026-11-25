@@ -14,6 +14,7 @@
 local U = require("util")
 local C = require("config")
 local Haptics = require("haptics")
+local Row = require("grenaderow")
 
 local M = {}
 
@@ -184,6 +185,7 @@ function M.handTick(pawn, now)
         local empty = U.valid(ctrl) and not U.valid(U.get(ctrl, "AttachedObject"))
         local s = empty and nearestSlot(pawn, ctrl) or NONE
         s = s or NONE
+        if s ~= NONE and Row.ownsSlot(pawn, s) then s = NONE end    -- the row of grenades has its own taps
         if s ~= zone[side] then
             if s ~= NONE and hapticsOn then Haptics.zoneTap(now, i - 1) end
             zone[side] = s
