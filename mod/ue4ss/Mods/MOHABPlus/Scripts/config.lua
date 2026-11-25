@@ -16,6 +16,8 @@ M.defaults = {
     weapon_grip_reach = 10,       -- cm from the free hand to a weapon's off-hand grip
     body_grab_distance = 10,      -- cm: taking things you carry (grenades, objects, syringes on the sleeves)
     holster_grab_distance = 25,   -- cm: taking a weapon from a holster (not back / shoulder weapons: game's distance)
+    grenade_physics = true,       -- realistic throws and bounces (game: twice the hand speed, sticky floors)
+    grenade_throw_strength = 1.2, -- x the hand's speed when a grenade is let go of (1.0 = real; 1.2 feels better in play)
     teeth_pin_distance = 5,       -- cm: a held grenade this close to the mouth loses its pin (game: 10; 0 = never)
     cocking = "manual",           -- "manual": pull the bolt / slide yourself | "auto": the game finishes it for you
 
@@ -65,7 +67,7 @@ M.defaults = {
 -- Order + sections used when writing the file (keep in sync with the launcher).
 M.order = {
     { "Syringes", { "syringe_require_trigger", "syringe_trigger_threshold", "syringe_small_holstered", "syringe_holster_scale" } },
-    { "Grabbing", { "grab_aim", "manual_holster", "holster_store_distance", "grenade_row", "grenade_row_scale", "body_grab_distance", "holster_grab_distance", "weapon_grip_reach", "teeth_pin_distance", "cocking", "holster_below_eyes" } },
+    { "Grabbing", { "grab_aim", "manual_holster", "holster_store_distance", "grenade_row", "grenade_row_scale", "body_grab_distance", "holster_grab_distance", "weapon_grip_reach", "grenade_physics", "grenade_throw_strength", "teeth_pin_distance", "cocking", "holster_below_eyes" } },
     { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons", "haptics_no_ammo", "haptics_holster_zone" } },
     { "Crouch", { "crouch_stick", "crouch_stick_threshold", "crouch_speed" } },
     { "Jump (experimental)", { "jump_enabled", "jump_stick_threshold", "jump_height", "jump_sound", "jump_guard", "land_crouch", "land_crouch_height" } },
@@ -155,6 +157,7 @@ M.vanilla = {
     manual_holster = false,
     grenade_row = false,
     teeth_pin_distance = -1,        -- -1 = the game's distance
+    grenade_physics = false,
     holster_below_eyes = false,
     cocking = "auto",
     haptics_damage = false,

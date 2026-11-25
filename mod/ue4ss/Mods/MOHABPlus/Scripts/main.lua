@@ -20,6 +20,7 @@ local BodyGrab = require("bodygrab")
 local ManualHolster = require("manualholster")
 local GrenadeRow = require("grenaderow")
 local GrabAim = require("grabaim")
+local GrenadePhysics = require("grenadephysics")
 local Cocking = require("cocking")
 local TeethPin = require("teethpin")
 local Respawn = require("respawn")
@@ -189,6 +190,20 @@ for _, h in ipairs({ { "z_OnPinPulledWithTeeth", true }, { "z_OnPinPulled", fals
     }
 end
 
+-- Grenade bounces, after the game's own floor cut (see grenadephysics.lua; the Gammon overrides the event).
+for _, p in ipairs({
+    "/Game/R6/Core/Weapons/BP_GrenadeBase.BP_GrenadeBase_C:ReceiveHit",
+    "/Game/R6/Weapons/GammonGrenade/BP_GammonBomb_Grenade.BP_GammonBomb_Grenade_C:ReceiveHit",
+}) do
+    hooks[#hooks + 1] = {
+        path = p,
+        fn = function(ctx, _, _, _, _, _, normal)
+            local ok, err = pcall(function() GrenadePhysics.onHit(ctx:get(), U.vec(normal:get())) end)
+            if not ok then U.dlog("grenade hit hook error: %s", tostring(err)) end
+        end,
+    }
+end
+
 -- Grip presses, after the game's own grab (see grenaderow.lua; BP functions: post-hooks).
 for _, e in ipairs({ { "WeaponHandControllerGrabPressed", true }, { "NonWeaponHandControllerGrabPressed", false } }) do
     hooks[#hooks + 1] = {
@@ -301,6 +316,7 @@ local function findPlayer(now)
                         ManualHolster.reset()
                         GrenadeRow.reset()
                         GrabAim.reset()
+                        GrenadePhysics.reset()
                         Respawn.reset()
                         return pawn, pc
                     end
@@ -387,6 +403,7 @@ local function tick()
     guarded("bodygrab", BodyGrab.tick, pawn, now)
     guarded("manualholster", ManualHolster.tick, pawn, now)
     guarded("grenaderow", GrenadeRow.tick, pawn, now)
+    guarded("grenadephysics", GrenadePhysics.tick, pawn, now)
     guarded("teethpin", TeethPin.tick, pawn, now)
     if not menuOpen then guarded("grabzones", BodyGrab.handTick, pawn, now) end
     guarded("grabaim", GrabAim.tick, pawn, now)
