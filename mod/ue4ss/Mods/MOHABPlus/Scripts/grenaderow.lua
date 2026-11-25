@@ -525,6 +525,9 @@ end
 function M.counted(t) return bag[t] end
 M.MAX_CARRIED = MAX_CARRIED
 
+-- Is that hand at one of the grenades?
+function M.isAt(side) return M.active and hover[side] ~= nil end
+
 -- Is this the chest zone that the row handles? (bodygrab.lua's own tap is skipped there)
 function M.ownsSlot(pawn, slot) return M.active and slot == U.get(pawn, "GrenadeHolsterSlot") end
 

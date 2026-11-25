@@ -12,6 +12,7 @@ M.defaults = {
     holster_store_distance = 30,  -- cm: how close to the holster the hand must be to put a weapon away
     grenade_row = true,           -- every grenade you carry is drawn on the chest and can be taken
     grenade_row_scale = 0.75,     -- size of the grenades on the chest
+    grab_aim = true,              -- an empty hand takes what its guide points at (game: see grabaim.lua)
     weapon_grip_reach = 10,       -- cm from the free hand to a weapon's off-hand grip
     body_grab_distance = 10,      -- cm: taking things you carry (grenades, objects, syringes on the sleeves)
     holster_grab_distance = 25,   -- cm: taking a weapon from a holster (not back / shoulder weapons: game's distance)
@@ -64,7 +65,7 @@ M.defaults = {
 -- Order + sections used when writing the file (keep in sync with the launcher).
 M.order = {
     { "Syringes", { "syringe_require_trigger", "syringe_trigger_threshold", "syringe_small_holstered", "syringe_holster_scale" } },
-    { "Grabbing", { "manual_holster", "holster_store_distance", "grenade_row", "grenade_row_scale", "body_grab_distance", "holster_grab_distance", "weapon_grip_reach", "teeth_pin_distance", "cocking", "holster_below_eyes" } },
+    { "Grabbing", { "grab_aim", "manual_holster", "holster_store_distance", "grenade_row", "grenade_row_scale", "body_grab_distance", "holster_grab_distance", "weapon_grip_reach", "teeth_pin_distance", "cocking", "holster_below_eyes" } },
     { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons", "haptics_no_ammo", "haptics_holster_zone" } },
     { "Crouch", { "crouch_stick", "crouch_stick_threshold", "crouch_speed" } },
     { "Jump (experimental)", { "jump_enabled", "jump_stick_threshold", "jump_height", "jump_sound", "jump_guard", "land_crouch", "land_crouch_height" } },
@@ -150,6 +151,7 @@ M.vanilla = {
     syringe_small_holstered = false,
     body_grab_distance = -1,        -- -1 = the game's distances
     holster_grab_distance = -1,
+    grab_aim = false,
     manual_holster = false,
     grenade_row = false,
     teeth_pin_distance = -1,        -- -1 = the game's distance

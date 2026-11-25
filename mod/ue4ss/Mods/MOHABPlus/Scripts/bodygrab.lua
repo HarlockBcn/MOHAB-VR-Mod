@@ -154,6 +154,9 @@ local function nearestSlot(pawn, ctrl)
     return s
 end
 
+-- The EHolsterSlot the game would take from now with that hand, or nil.
+function M.zoneOf(side) return zone[side] ~= NONE and zone[side] or nil end
+
 local function logMiss(pawn, side)
     local dist, lee = {}, {}
     local best, bestD = nil, 1e9

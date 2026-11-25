@@ -19,6 +19,7 @@ local FallDamage = require("falldamage")
 local BodyGrab = require("bodygrab")
 local ManualHolster = require("manualholster")
 local GrenadeRow = require("grenaderow")
+local GrabAim = require("grabaim")
 local Cocking = require("cocking")
 local TeethPin = require("teethpin")
 local Respawn = require("respawn")
@@ -299,6 +300,7 @@ local function findPlayer(now)
                         Cocking.reset()
                         ManualHolster.reset()
                         GrenadeRow.reset()
+                        GrabAim.reset()
                         Respawn.reset()
                         return pawn, pc
                     end
@@ -387,6 +389,7 @@ local function tick()
     guarded("grenaderow", GrenadeRow.tick, pawn, now)
     guarded("teethpin", TeethPin.tick, pawn, now)
     if not menuOpen then guarded("grabzones", BodyGrab.handTick, pawn, now) end
+    guarded("grabaim", GrabAim.tick, pawn, now)
     guarded("haptics", Haptics.tick, pawn, pc, now)
 end
 

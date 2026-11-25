@@ -56,6 +56,9 @@
 
 ## Fixes
 
+### Grabbing
+- **Grab guide not matching the blue object** - The game lit (and took) the object nearest to a point in front of your hand, and often kept it while you pointed at another one. Now it is the one your hand's guide points at, also from a distance; things beside or behind your hand are not lit, nor anything loose while your hand is at something on your chest or sleeves (can be turned off).
+
 ### Weapons
 - **Front grips grabbed from far away** - The game let your free hand grab a weapon's front grip from up to two metres away.
 - **Automatic cocking lost with the precise grip** - The precise two-handed grip could switch a front grip back on while the game had it disabled (weapon waiting to be cocked), so taking the grip no longer cocked the weapon as in the original game, even with the mod switched off from the menu.

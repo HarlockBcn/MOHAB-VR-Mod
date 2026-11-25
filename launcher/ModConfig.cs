@@ -23,6 +23,7 @@ internal sealed class ModConfig
         new("syringe_small_holstered", "Syringe: smaller when on the sleeve", OptionKind.Bool, "true", Section: "Syringes"),
         new("syringe_holster_scale", "Syringe: sleeve scale", OptionKind.Float, "0.5", 0.25, 1.0, 0.05, Section: "Syringes"),
 
+        new("grab_aim", "Grabbing: an empty hand takes what its guide points at", OptionKind.Bool, "true", Section: "Grabbing"),
         new("manual_holster", "Grabbing: manual holsters (letting go of a weapon drops it; take it to a free holster to put it away)", OptionKind.Bool, "true", Section: "Grabbing"),
         new("holster_store_distance", "Grabbing: manual holsters, distance to the holster to put a weapon away (cm)", OptionKind.Float, "30", 10, 50, 1, Section: "Grabbing"),
         new("grenade_row", "Grabbing: every grenade you carry is shown on your chest (take the one you want)", OptionKind.Bool, "true", Section: "Grabbing"),
