@@ -354,13 +354,64 @@ local function guardSpeed(ctrl, pawn, gameSpeed)
     end
 end
 
+-- Stairs and ramps: the engine's walking movement keeps the HORIZONTAL speed at MaxWalkSpeed and adds the climb on top
+-- (step-ups, ramps), so going up or down stairs the player really moves faster than on flat ground (x1.4 on 45 deg
+-- stairs). The real 3D path is measured from the actor's movement over the last STAIRS_WINDOW s (step-ups are single
+-- frame jumps, so it is averaged) and MaxWalkSpeed is scaled by horizontal / 3D distance, so the speed along the stairs
+-- is the same as on flat ground. Scaling the speed scales both distances alike, so there is no feedback.
+local STAIRS_WINDOW = 0.3          -- s
+local STAIRS_MIN = 0.6             -- never slower than this factor
+local stairs = { h = 0, z = 0, factor = 1, last = nil, logT = -100 }
+
+local function stairsFactor(pawn, cmc, dt)
+    local ok, loc = U.call(pawn, "K2_GetActorLocation")
+    -- Feet, not the capsule centre: the game resizes the capsule with the real head height (crouching, bobbing).
+    local okH, half = U.call(U.get(pawn, "CapsuleComponent"), "GetScaledCapsuleHalfHeight")
+    if ok and loc and okH and type(half) == "number" then loc = { X = loc.X, Y = loc.Y, Z = loc.Z - half } end
+    local last = stairs.last
+    stairs.last = ok and loc and { X = loc.X, Y = loc.Y, Z = loc.Z } or nil
+    local want = 1
+    if C.get("stairs_steady_speed") and stairs.last and last and dt and dt > 0
+        and U.get(cmc, "MovementMode") == 1 and not Slide.active then
+        local dx, dy, dz = loc.X - last.X, loc.Y - last.Y, math.abs(loc.Z - last.Z)
+        local dh = math.sqrt(dx * dx + dy * dy)
+        if dh + dz > 300 then
+            stairs.h, stairs.z = 0, 0              -- teleport
+        else
+            local keep = math.exp(-dt / STAIRS_WINDOW)
+            stairs.h, stairs.z = stairs.h * keep + dh, stairs.z * keep + dz
+        end
+        -- Only when really moving (not standing on a lift or wobbling in place).
+        if stairs.h > 15 * STAIRS_WINDOW then
+            want = stairs.h / math.sqrt(stairs.h * stairs.h + stairs.z * stairs.z)
+        end
+    else
+        stairs.h, stairs.z = 0, 0
+    end
+    want = U.clamp(want, STAIRS_MIN, 1)
+    local a = 1 - math.exp(-(dt or 0.016) / (want < stairs.factor and 0.1 or 0.25))
+    stairs.factor = stairs.factor + (want - stairs.factor) * a
+    if stairs.factor > 0.999 then stairs.factor = 1 end
+    if stairs.factor < 0.95 and U.now(pawn) - stairs.logT > 1.0 then
+        stairs.logT = U.now(pawn)
+        U.dlog("sprint: stairs / slope -> speed x%.2f", stairs.factor)
+    end
+    return stairs.factor
+end
+
 local afterTickInput
 
 -- Post-hook of BP_R6PlayerController_C:TickInput (runs every frame right after the game set MaxWalkSpeed).
 function M.afterTickInput(ctrl, pawn, dt)
     if not U.valid(pawn) then return end
-    local gameSpeed = U.get(U.get(pawn, "CharacterMovement"), "MaxWalkSpeed")
+    local cmc = U.get(pawn, "CharacterMovement")
+    local gameSpeed = U.get(cmc, "MaxWalkSpeed")
     afterTickInput(ctrl, pawn, dt)
+    pcall(function()
+        local f = stairsFactor(pawn, cmc, dt)
+        local speed = U.get(cmc, "MaxWalkSpeed")
+        if f < 1 and type(speed) == "number" then cmc.MaxWalkSpeed = speed * f end
+    end)
     pcall(guardSpeed, ctrl, pawn, gameSpeed)
 end
 

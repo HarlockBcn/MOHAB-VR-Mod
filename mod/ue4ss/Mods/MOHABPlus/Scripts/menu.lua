@@ -96,6 +96,8 @@ local tabs = {
           help = "Top sprint speed (1x = original)" },
         { key = "sprint_turn_slowdown", label = "Slow down on sharp turns", kind = "num", min = 0.0, max = 1.0, step = 0.1, digits = 1,
           help = "Speed lost when turning hard while sprinting (0 = off)" },
+        { key = "stairs_steady_speed", label = "Steady speed on stairs", kind = "bool",
+          help = "Stairs and slopes no longer speed you up (the original game does)" },
         { key = "slide_enabled", label = "Slide", kind = "bool",
           help = "Crouch while sprinting (stick or for real) to slide" },
         { key = "slide_strength", label = "Slide length", kind = "num", min = 0.5, max = 2.0, step = 0.1, digits = 1, suffix = "x",

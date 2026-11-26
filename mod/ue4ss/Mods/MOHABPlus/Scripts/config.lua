@@ -51,6 +51,7 @@ M.defaults = {
     sprint_arm_sensitivity = 1.3,
     sprint_speed_multiplier = 1.3,
     sprint_turn_slowdown = 1.0,     -- 0..1: speed lost on sharp turns while sprinting (0 = off)
+    stairs_steady_speed = true,     -- same speed along stairs / ramps as on flat ground (the engine is faster there)
 
     slide_enabled = true,
     slide_strength = 1.5,
@@ -72,7 +73,7 @@ M.order = {
     { "Crouch", { "crouch_stick", "crouch_stick_threshold", "crouch_speed" } },
     { "Jump (experimental)", { "jump_enabled", "jump_stick_threshold", "jump_height", "jump_sound", "jump_guard", "land_crouch", "land_crouch_height" } },
     { "Fall damage", { "fall_damage_custom", "fall_safe_height", "fall_fatal_height", "fall_damage_progressive", "fall_damage_scale" } },
-    { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier", "sprint_turn_slowdown" } },
+    { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier", "sprint_turn_slowdown", "stairs_steady_speed" } },
     { "Slide", { "slide_enabled", "slide_strength", "slide_sound" } },
     { "Cutscenes", { "skip_cutscenes", "skip_hold_time", "skip_speed" } },
     { "Menu", { "menu_hold_time" } },
@@ -173,6 +174,7 @@ M.vanilla = {
     sprint_mode = "stick",
     sprint_speed_multiplier = 1.0,
     sprint_turn_slowdown = 0,
+    stairs_steady_speed = false,
     slide_enabled = false,
     skip_cutscenes = false,
 }
