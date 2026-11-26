@@ -14,6 +14,9 @@
 -- off the game's list are put back with its own BeginOverlapCheck. From how far things can be grabbed is unchanged, but what
 -- is beside or behind the hand, away from the guide's direction, is not lit (a hand hanging down lit whatever was around).
 --
+-- A part of the grenade the other hand holds (its pin, ring or cap) right at the hand comes before anything else: the
+-- game would rather take an object in the middle of the capsule, a metre away along the guide, than the pin you touch.
+--
 -- While a hand is where it would take something from the chest (grenades, objects) or a sleeve, nothing loose is lit: the
 -- game grabs the lit object first, and the thing on the body would not be taken.
 --
@@ -41,6 +44,8 @@ local MAX_AIM_LIT = 0.42       -- farther away the capsule is narrower than that
 local PORTABLE = 100           -- cm: bigger meshes (half size) are not limited, what the hand takes may be a part of them
 local GRIP_FREEZE = 0.3        -- closing the hand tilts it: no changes while grip is being pressed
 local MAX_COMPS = 6
+local PART_NEAR = 12           -- cm from the hand: the held grenade's pin this near is lit first
+local PART_KEEP = 20           -- ... and stays lit until the hand is this far from it
 
 local CHEST_AND_SLEEVES = { [1] = true, [4] = true, [7] = true, [8] = true }   -- EHolsterSlot
 
@@ -81,6 +86,7 @@ local function isA(o, path)
 end
 
 local PICKUP = "/Game/R6/Core/Placeables/BP_GenericPickupActor.BP_GenericPickupActor_C"
+local GRENADE = "/Game/R6/Core/Weapons/BP_GrenadeBase.BP_GrenadeBase_C"
 
 local function name(o)
     local ok, s = pcall(function() return o:GetFName():ToString() end)
@@ -323,14 +329,39 @@ local function hasComponent(hand)
     return false
 end
 
-local function evaluate(side, hand, other, st, pawn, now)
-    local current = U.get(hand, "GrabSphereTraceObject")
-    if U.valid(current) then
-        -- A component (lever, slider...), a weapon part, something on the player or a climbing hold: the game's choice.
-        if not isA(current, "/Script/Engine.Actor") or isClimb(current) or not isLoose(current, pawn) then return end
+-- The pin, ring or cap of the grenade the other hand holds, if any.
+local function heldPin(other)
+    local g = U.get(other, "AttachedObject")
+    if not (U.valid(g) and isA(g, GRENADE)) then return nil end
+    local pin = U.get(g, "PinActor")
+    if not U.valid(pin) then pin = U.get(U.get(g, "Pin"), "ChildActor") end
+    if not U.valid(pin) then return nil end
+    local ok, p = U.call(pin, "GetAttachParentActor")      -- still in the grenade, not pulled
+    return ok and U.same(p, g) and pin or nil
+end
+
+-- cm from the hand to the actor's boxes.
+local function handDist(actor, o, dir, now)
+    local hand, best = U.vadd(o, U.vmul(dir, HAND_X)), nil
+    for _, box in ipairs(boxesOf(actor, now)) do
+        local d = boxDist(box, toBox(box, hand))
+        if not best or d < best then best = d end
     end
+    return best
+end
+
+local function evaluate(side, hand, other, st, pawn, now)
     local o, dir = line(hand)
     if not o then return end
+    local current = U.get(hand, "GrabSphereTraceObject")
+    if U.valid(current) then
+        if U.same(current, heldPin(other)) then
+            -- The held grenade's pin: kept while the hand is at it (see pinFirst), then the guide chooses again.
+            local d = handDist(current, o, dir, now)
+            if not d or d <= PART_KEEP then return end
+        -- A component (lever, slider...), a weapon part, something on the player or a climbing hold: the game's choice.
+        elseif not isA(current, "/Script/Engine.Actor") or isClimb(current) or not isLoose(current, pawn) then return end
+    end
 
     local listed = items(U.get(hand, "OverlappingGrabActors"))
     local real = touching(hand)
@@ -361,8 +392,10 @@ local function evaluate(side, hand, other, st, pawn, now)
             end
         end
         -- The game has just chosen again.
-        current = U.get(hand, "GrabSphereTraceObject")
-        if U.valid(current) and not (isA(current, "/Script/Engine.Actor") and isLoose(current, pawn)) then return end
+        local again = U.get(hand, "GrabSphereTraceObject")
+        if not U.same(again, current) and U.valid(again)
+            and not (isA(again, "/Script/Engine.Actor") and isLoose(again, pawn)) then return end
+        current = again
     end
     -- Nothing chosen: the game is refusing for its own reasons, unless it was us.
     if U.valid(current) then st.off = nil elseif not st.off then return end
@@ -397,6 +430,33 @@ local function evaluate(side, hand, other, st, pawn, now)
     -- Taking the highlight away from the old one also removed the other hand's, if it points at it too.
     local otherTarget = U.get(other, "GrabSphereTraceObject")
     if U.valid(current) and U.same(otherTarget, current) then U.call(other, "HighlightGrabObject", otherTarget) end
+end
+
+-- The held grenade's pin right at this hand is lit, whatever else the capsule touches or where the guide points.
+-- True while it is the choice (nothing else is evaluated then).
+local function pinFirst(side, hand, other, st, now)
+    local pin = heldPin(other)
+    if not pin then st.pin = nil; return false end
+    local current = U.get(hand, "GrabSphereTraceObject")
+    local lit = U.same(current, pin)
+    if now < st.pinNext and st.pinNext <= now + 1 then return lit and st.pin == true end
+    st.pinNext = now + PERIOD / 2
+    local o, dir = line(hand)
+    local d = o and handDist(pin, o, dir, now)
+    if not d or d > (lit and PART_KEEP or PART_NEAR) then st.pin = nil; return false end
+    if not canGrab(hand, pin) then st.pin = nil; return false end
+    st.pin = true
+    if lit then return true end
+    if not has(items(U.get(hand, "OverlappingGrabActors")), pin) then U.call(hand, "BeginOverlapCheck", pin, nil) end
+    logSome(side, now, "%s hand: %s at the hand (%.1f cm) instead of %s", side, name(pin), d,
+        U.valid(current) and name(current) or "nothing")
+    U.call(hand, "HighlightGrabObject", pin)
+    if not U.same(U.get(hand, "GrabSphereTraceObject"), pin) then warnOnce("pin", "can't light %s", name(pin)) end
+    -- Taking the highlight away from the old one also removed the other hand's, if it points at it too.
+    local otherTarget = U.get(other, "GrabSphereTraceObject")
+    if U.valid(current) and U.same(otherTarget, current) then U.call(other, "HighlightGrabObject", otherTarget) end
+    st.cleared, st.off = nil, nil
+    return true
 end
 
 local function ready(hand)
@@ -447,20 +507,28 @@ function M.tick(pawn, now)
         local hand = U.get(pawn, side .. "Controller")
         local st = hands[side]
         if not st then
-            st = { next = side == "Left" and now or now + PERIOD / 2, target = 0 }   -- the hands take turns
+            st = { next = side == "Left" and now or now + PERIOD / 2, target = 0, pinNext = 0 }   -- the hands take turns
             hands[side] = st
         end
         local other = U.get(pawn, side == "Left" and "RightController" or "LeftController")
         local free = ready(hand)
-        local body = free and atBody(side, other)
+        local pin = false
+        if free then
+            local ok, r = pcall(pinFirst, side, hand, other, st, now)
+            if not ok then warnOnce("pin error", "%s", tostring(r)) end
+            pin = ok and r
+        end
+        local body = free and not pin and atBody(side, other)
         if not free then
-            st.cleared, st.off = nil, nil       -- holding something: the game starts afresh when the hand is empty again
+            st.cleared, st.off, st.pin = nil, nil, nil   -- holding something: the game starts afresh when the hand is empty again
+        elseif pin then
+            st.target = addressOf(U.get(hand, "GrabSphereTraceObject"))
         elseif body then
             clear(side, hand, st, pawn, now)
         elseif st.cleared then
             restore(hand, st)
         end
-        if free and not body and U.axis("OculusTouch_" .. side .. "_Grip_Axis") < GRIP_FREEZE then
+        if free and not pin and not body and U.axis("OculusTouch_" .. side .. "_Grip_Axis") < GRIP_FREEZE then
             -- At once when the game changed its choice.
             local target = addressOf(U.get(hand, "GrabSphereTraceObject"))
             if target ~= st.target or now >= st.next or st.next > now + 1 then

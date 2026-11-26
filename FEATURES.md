@@ -58,7 +58,7 @@
 ## Fixes
 
 ### Grabbing
-- **Grab guide not matching the blue object** - The game lit (and took) the object nearest to a point in front of your hand, and often kept it while you pointed at another one. Now it is the one your hand's guide points at, also from a distance; things beside or behind your hand are not lit, nor anything loose while your hand is at something on your chest or sleeves (can be turned off).
+- **Grab guide not matching the blue object** - The game lit (and took) the object nearest to a point in front of your hand, and often kept it while you pointed at another one. Now it is the one your hand's guide points at, also from a distance; things beside or behind your hand are not lit, nor anything loose while your hand is at something on your chest or sleeves. The pin, ring or cap of the grenade in your other hand is taken as soon as your hand is at it, instead of an object farther along the guide (can be turned off).
 
 ### Weapons
 - **Front grips grabbed from far away** - The game let your free hand grab a weapon's front grip from up to two metres away.
