@@ -1,0 +1,220 @@
+# MOHAB Plus option descriptions.
+# Shown by the launcher (info icon next to each option) and by the in-game menu (X on an option).
+# Format: "[option_key]" and then one paragraph per line. Keep it plain ASCII (the in-game font has no accents) and
+# short: the in-game menu shows about 13 lines of 46 characters. The default value is added automatically.
+
+# --- Syringes ---
+[syringe_require_trigger]
+A syringe only injects when you bring it to your chest AND pull the trigger of the hand holding it.
+Original game: it injects as soon as it touches your chest, which also happens by accident while you move it around.
+
+[syringe_trigger_threshold]
+How far the trigger must be pulled to inject a syringe (0.1 = barely touched, 1.0 = pulled all the way).
+Only used with "Trigger to inject" on.
+
+[syringe_small_holstered]
+Syringes stored on your sleeve are drawn smaller, so they don't cover your arm. They get their normal size back as soon as you grab one.
+
+[syringe_holster_scale]
+Size of the syringes on your sleeve (1.0 = normal size).
+Only used with "Smaller on the sleeve" on.
+
+# --- Grabbing / weapons ---
+[grab_aim]
+The object lit in blue, and the one you take, is the one your hand's guide points at, also from a distance. The pin of the grenade in your other hand is taken as soon as your hand is at it.
+Original game: it lit the object nearest to a point in front of your hand, often not the one you pointed at.
+
+[manual_holster]
+Letting go of a weapon drops it to the floor. To put it away, take it to a free holster where it fits and let go: pistols at the hip, long weapons at either shoulder, grenades on the chest.
+Original game: a weapon you let go of flies back to its holster by itself.
+
+[holster_store_distance]
+How close to a holster your hand must be for a weapon you let go of to be put away instead of dropped. A light tap tells you when you are close enough.
+Only used with "Manual holsters" on.
+
+[grenade_row]
+Every grenade you carry (up to 3) is shown in a row on your chest. Take the one you want: the closest one grows and you feel a light tap.
+Original game: only one grenade is shown at a time.
+
+[grenade_row_scale]
+Size of the grenades on your chest (1.0 = normal size). They get their normal size back when you grab one.
+Only used with "All grenades on chest" on.
+
+[body_grab_distance]
+How close your hand must be to take grenades, mission objects and syringes you carry. Smaller: fewer grabs by accident when your hands pass near your body.
+Tip: raise it if you often miss what you reach for.
+
+[holster_grab_distance]
+How close your hand must be to take a weapon from a holster (hip pistol and the like). Weapons on your back and shoulders keep the game's distance.
+Tip: lower it if you pull weapons out by accident.
+
+[weapon_grip_reach]
+How close your free hand must be to a weapon's front grip to hold it with both hands.
+Original game: up to about two metres, so the second hand could grab the grip from far away.
+
+[grenade_physics]
+A grenade flies at the speed and spin of your hand and bounces by its weight: the metal grenade rolls, the stick grenade a bit less, the Gammon bag hardly at all.
+Original game: thrown twice as fast as your hand, and grenades stop dead on the floor.
+
+[grenade_throw_strength]
+Throw speed, times the speed of your hand (1.0 = exactly as fast as your hand).
+Tip: 1.2 feels better in play; raise it if your throws fall short.
+Only used with "Realistic grenade throws" on.
+
+[teeth_pin_distance]
+How close a grenade in your hand must get to your mouth to pull its pin with your teeth (0 = never).
+Original game: 10 cm, so the pin often comes out by accident when you take a grenade from your chest.
+
+[cocking]
+Manual: after a reload you pull the bolt or slide yourself, and letting go of a bolt halfway no longer finishes the cycle for you.
+Automatic: the game does it when you grab the front grip (original game).
+
+[holster_below_eyes]
+With your hand above your eyes (touching your helmet or hat) no weapon is pulled from a holster.
+Original game: grabbing near your head took a weapon from your back instead of your helmet.
+
+# --- Haptics ---
+[haptics_damage]
+Both controllers vibrate when you get hurt, stronger for big hits.
+
+[haptics_intensity]
+Strength of all the vibrations added by the mod (damage, reloading, grab zones, out of ammo, hard landings).
+Tip: lower it if the vibrations feel too strong.
+
+[haptics_duration]
+How long the damage vibration lasts. Big hits last a bit longer.
+Only used with "Vibrate on damage" on.
+
+[haptics_directional]
+The controller on the side the hit came from vibrates harder, so you can tell where you are being shot from.
+Only used with "Vibrate on damage" on.
+
+[haptics_weapons]
+Feel magazines, clips, shells and bullets going in, and break-action shotguns opening and closing.
+
+[haptics_no_ammo]
+Two taps on the hand that presses grip at your magazine pouch when you have no ammo left for your weapon.
+
+[haptics_holster_zone]
+A light tap when your empty hand is close enough to take a holstered weapon or something you carry (grenades, objects, syringes).
+
+# --- Crouch ---
+[crouch_stick]
+Push the turn stick down to crouch and up to stand up, without crouching for real.
+Original game: you can only crouch for real.
+
+[crouch_stick_threshold]
+How far the turn stick must be pushed to crouch or stand up (0.3 = a light push, 0.95 = all the way).
+Tip: raise it if you crouch by accident while turning.
+
+[crouch_speed]
+Walking speed while crouched, for real or with the stick (1.0 = normal walking speed).
+Original game: crouching does not slow you down.
+
+# --- Jump ---
+[jump_enabled]
+Push the turn stick up while standing to jump. You can climb onto tables, rocks and crates. Not under a low ceiling, swimming or skiing.
+Experimental: the levels were not designed for jumping.
+
+[jump_stick_threshold]
+How far the turn stick must be pushed up to jump (0.3 = a light push, 0.95 = all the way).
+With "Crouch with turn stick" on, pushing up while crouched stands you up instead.
+
+[jump_height]
+How high you jump. 100 cm is enough for tables and crates.
+
+[jump_sound]
+Sounds when you jump: an effort grunt and cloth rustle, only the cloth, or nothing.
+
+[jump_guard]
+Jumps can't take you over the level's invisible barriers, so you can't leave the playable area. Anything you can see can still be climbed.
+Tip: leave it on unless you want to explore.
+
+[land_crouch]
+After a big fall you bend down on landing and come back up, with an effort grunt and a jolt in both controllers. The bigger the fall, the deeper.
+If the fall hurts, the game's own pain reaction plays instead.
+
+[land_crouch_height]
+Falls from at least this height (counted from the top of a jump) are hard landings.
+Only used with "Hard landings" on.
+
+# --- Fall damage ---
+[fall_damage_custom]
+Falls under the safe height don't hurt and the damage grows with the height, from a scratch to a heavy hit.
+Original game: the same big chunk of health for any fall from about 3.3 m, and death from 10 m.
+
+[fall_safe_height]
+Falls shorter than this don't hurt (counted from the top of a jump).
+Only used with "Custom fall damage" on.
+
+[fall_fatal_height]
+Falls longer than this kill you.
+Only used with "Custom fall damage" on.
+
+[fall_damage_progressive]
+Small drops hurt a little and big ones a lot.
+OFF: every fall that hurts takes the game's flat amount.
+Only used with "Custom fall damage" on.
+
+[fall_damage_scale]
+Damage of a fall that does not kill you, times the game's (0 = falls never hurt, 2 = twice as much).
+Only used with "Custom fall damage" on.
+
+# --- Sprint / movement ---
+[sprint_mode]
+Stick click: click the movement stick to sprint (original game).
+Arm swing: swing your arms like a runner; faster swing, faster run.
+Stick + arms: both work.
+Always sprint: you run just by pushing the stick and only walk while you hold a weapon up or shoot.
+
+[sprint_arm_sensitivity]
+How much you must swing your arms to sprint. Higher: less swinging needed.
+Only used with the "Arm swing" and "Stick + arms" sprint modes.
+
+[sprint_speed_multiplier]
+Top sprint speed (1.0 = the original game's).
+Tip: 1.3 makes long levels less tedious without feeling unnatural.
+
+[sprint_turn_slowdown]
+Turning sharply while sprinting costs speed, which comes back over a second; a full U-turn drops you to walking pace (0 = off, 1 = full effect).
+
+[stairs_steady_speed]
+Going up or down stairs and slopes no longer speeds you up.
+Original game: you move noticeably faster along stairs than on flat ground.
+
+# --- Slide ---
+[slide_enabled]
+Crouch while sprinting (with the stick or for real) to slide along the floor, with a scraping sound.
+
+[slide_strength]
+How far a slide takes you (1.0 = a short slide, 2.0 = a long one).
+Only used with "Slide" on.
+
+[slide_sound]
+Sound played while sliding: body on the floor, a wood or metal scrape, or nothing.
+Only used with "Slide" on.
+
+# --- Cutscenes ---
+[skip_cutscenes]
+Hold both triggers and both grips to skip a cutscene. The same gesture speeds through dialogue scenes where you just stand and wait.
+Original game: many scenes can't be skipped.
+
+[skip_hold_time]
+How long you must hold both triggers and both grips to skip a cutscene.
+Only used with "Skip cutscenes" on.
+
+[skip_speed]
+Speed of the dialogue scenes you fast-forward with the skip gesture (x normal speed).
+Only used with "Skip cutscenes" on.
+
+# --- Menu / debug ---
+[menu_view]
+Basic: the most important options in three categories.
+Advanced: every option, including the fine-tuning ones.
+Options hidden in the basic view keep working with their values.
+
+[menu_hold_time]
+How long you must hold the left Y button to open or close the in-game menu.
+
+[debug_log]
+Writes much more detail to UE4SS.log. Only useful when reporting a problem.

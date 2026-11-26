@@ -1,10 +1,13 @@
 -- In-game VR menu made of TextRenderActors floating in front of the player.
 --   Hold LEFT Y to open / close.
---   Two columns: the master switch and the categories on the left, the options of the chosen category on the right,
---   and a help line for the selected option at the bottom.
---   Left column:  stick up/down = choose, A / trigger / stick right = open the category (or flip the master switch),
---                 B = close the menu.
+--   Two columns: the master switch, the view switch and the categories on the left, the options of the chosen category
+--   on the right, and a help line for the selected option at the bottom.
+--   Two views (menu_view, shared with the launcher): "basic" shows the main options in three categories, "advanced"
+--   every option. Options hidden in the basic view keep their values.
+--   Left column:  stick up/down = choose, A / trigger / stick right = open the category (or flip the master / view
+--                 switch), B = close the menu.
 --   Right column: stick up/down = choose, A / trigger = switch an ON/OFF option or start editing any other one,
+--                 X = detailed description of the option (descriptions.txt; X / B / stick left = back to the list),
 --                 B / stick left = back to the categories. The stick alone never changes a value.
 --   Editing:      stick left/right = change (applied live), A / trigger = confirm, B = cancel. Nothing else works;
 --                 closing the menu cancels too.
@@ -22,7 +25,7 @@ local OPEN_KEY = "OculusTouch_Left_Y_Click"
 -- Menu items ---------------------------------------------------------------------------------
 local function fmtNum(v, digits) return string.format("%." .. (digits or 2) .. "f", v) end
 
-local tabs = {
+local advancedTabs = {
     { name = "Syringes", items = {
         { key = "syringe_require_trigger", label = "Trigger to inject", kind = "bool",
           help = "Hold the trigger of the hand with the syringe to inject it" },
@@ -51,7 +54,7 @@ local tabs = {
         { key = "weapon_grip_reach", label = "Second hand reach", kind = "num", min = 5, max = 40, step = 1, digits = 0, suffix = " cm",
           help = "How close the second hand must be to grab a weapon's front grip" },
         { key = "grenade_physics", label = "Realistic grenade throws", kind = "bool",
-          help = "Grenades fly at your hand's speed and bounce by their weight (game: twice as fast, stop on the floor)" },
+          help = "Grenades fly at your hand's speed and bounce by their weight (game: 2x, stop dead)" },
         { key = "grenade_throw_strength", label = "Grenade throw strength", kind = "num", min = 0.5, max = 2.0, step = 0.1,
           help = "Realistic grenade throws: x your hand's speed (1.0 = exactly as fast as your hand)" },
         { key = "teeth_pin_distance", label = "Pull pin with teeth", kind = "num", min = 0, max = 15, step = 1, digits = 0, suffix = " cm",
@@ -59,6 +62,8 @@ local tabs = {
         { key = "cocking", label = "Cocking", kind = "choice",
           choices = { "manual", "auto" },
           names = { manual = "Manual", auto = "Automatic" },
+          helps = { manual = "Manual: after a reload, pull the bolt or slide yourself",
+                    auto = "Automatic: grabbing the front grip cocks the weapon (original game)" },
           help = "Manual: work the bolt or slide yourself.  Automatic: the game does it (original)" },
         { key = "holster_below_eyes", label = "No holster grab above eyes", kind = "bool",
           help = "A hand above your eyes grabs hats and helmets, not back weapons" },
@@ -66,7 +71,7 @@ local tabs = {
     { name = "Haptics", items = {
         { key = "haptics_damage", label = "Vibrate on damage", kind = "bool",
           help = "Both controllers vibrate when you are hit" },
-        { key = "haptics_intensity", label = "Intensity", kind = "num", min = 0.1, max = 1.0, step = 0.1, digits = 1,
+        { key = "haptics_intensity", label = "Vibration intensity", kind = "num", min = 0.1, max = 1.0, step = 0.1, digits = 1,
           help = "Strength of all the mod's vibrations" },
         { key = "haptics_duration", label = "Damage duration", kind = "num", min = 0.05, max = 1.0, step = 0.05, suffix = " s",
           help = "Length of the damage vibration (longer on big hits)" },
@@ -89,7 +94,11 @@ local tabs = {
         { key = "sprint_mode", label = "Sprint", kind = "choice",
           choices = { "stick", "arms", "both", "always" },
           names = { stick = "Stick click", arms = "Arm swing", both = "Stick + arms", always = "Always sprint" },
-          help = "Always sprint: you only walk while you hold a weapon up or shoot" },
+          helps = { stick = "Stick click: click the movement stick to sprint (original game)",
+                    arms = "Arm swing: swing your arms like a runner; faster swing, faster run",
+                    both = "Stick + arms: click the stick or swing your arms to sprint",
+                    always = "Always sprint: you only walk while you hold a weapon up or shoot" },
+          help = "How you sprint: stick click, arm swing, both, or always" },
         { key = "sprint_arm_sensitivity", label = "Arm swing sensitivity", kind = "num", min = 0.3, max = 2.0, step = 0.1, digits = 1,
           help = "Higher: less arm swinging needed to sprint" },
         { key = "sprint_speed_multiplier", label = "Sprint speed", kind = "num", min = 1.0, max = 1.5, step = 0.05, digits = 2, suffix = "x",
@@ -105,6 +114,8 @@ local tabs = {
         { key = "slide_sound", label = "Slide sound", kind = "choice",
           choices = { "body", "wood", "metal", "off" },
           names = { body = "Body", wood = "Wood scrape", metal = "Metal scrape", off = "Off" },
+          helps = { body = "Your body scraping along the floor", wood = "A wooden scrape while sliding",
+                    metal = "A metal scrape while sliding", off = "No sound while sliding" },
           help = "Sound played while sliding" },
     } },
     { name = "Jump", items = {
@@ -117,6 +128,8 @@ local tabs = {
         { key = "jump_sound", label = "Jump sounds", kind = "choice",
           choices = { "all", "cloth", "off" },
           names = { all = "Voice + cloth", cloth = "Cloth only", off = "Off" },
+          helps = { all = "Effort voice and cloth rustle when jumping", cloth = "Only the cloth rustle when jumping",
+                    off = "No sound when jumping" },
           help = "Effort voice and cloth rustle when jumping" },
         { key = "jump_guard", label = "Stay inside the level", kind = "bool",
           help = "Jumps can't take you over the level's invisible barriers" },
@@ -145,6 +158,31 @@ local tabs = {
     } },
 }
 
+-- Basic view: the main options (what is on and how you play), grouped in three categories. The items are the ones of
+-- the advanced view, so labels, ranges and help texts are shared. Keep in sync with ModConfig.BasicLayout (launcher).
+local basicLayout = {
+    { name = "Movement", keys = { "sprint_mode", "crouch_stick", "slide_enabled", "jump_enabled" } },
+    { name = "Weapons", keys = { "cocking", "manual_holster", "grenade_row", "grenade_physics", "syringe_require_trigger" } },
+    { name = "Comfort", keys = { "haptics_intensity", "fall_damage_custom", "skip_cutscenes" } },
+}
+local basicTabs = {}
+do
+    local byKey = {}
+    for _, t in ipairs(advancedTabs) do
+        for _, it in ipairs(t.items) do byKey[it.key] = it end
+    end
+    for _, b in ipairs(basicLayout) do
+        local t = { name = b.name, items = {} }
+        for _, k in ipairs(b.keys) do
+            if byKey[k] then t.items[#t.items + 1] = byKey[k] end
+        end
+        basicTabs[#basicTabs + 1] = t
+    end
+end
+
+local function isAdvanced() return C.raw("menu_view") == "advanced" end
+local function tabs() return isAdvanced() and advancedTabs or basicTabs end
+
 -- Text shown in the right column while the master switch is selected.
 local MASTER_INFO = {
     "Turns every change of the mod on or off",
@@ -157,9 +195,39 @@ local MASTER_INFO = {
     "hold a thumbstick click.",
 }
 
--- Rows of both columns: enough for the longest category and for the left column (master switch, gap, categories).
-local ROWS = #tabs + 2
-for _, t in ipairs(tabs) do ROWS = math.max(ROWS, #t.items) end
+-- Text shown in the right column while the view switch is selected.
+local VIEW_INFO = {
+    "BASIC: the main options, in three",
+    "categories.",
+    "",
+    "ADVANCED: every option, including the",
+    "fine-tuning ones (distances, sizes, sounds).",
+    "",
+    "Options hidden in the basic view keep",
+    "working with their values.",
+    "",
+    "Also available in the launcher.",
+}
+
+-- Rows of both columns: enough for the longest category and for the left column (master switch, view switch, gap,
+-- categories).
+local ROWS = #advancedTabs + 3
+for _, t in ipairs(advancedTabs) do ROWS = math.max(ROWS, #t.items) end
+
+-- Detailed description of an option: wrapped to the width of the right column, at most ROWS lines.
+local DETAIL_WIDTH = 46
+local function wrap(text, width, out)
+    local line = ""
+    for word in text:gmatch("%S+") do
+        if line == "" then line = word
+        elseif #line + 1 + #word <= width then line = line .. " " .. word
+        else
+            out[#out + 1] = line
+            line = word
+        end
+    end
+    if line ~= "" then out[#out + 1] = line end
+end
 
 local function valueText(it, v)
     if v == nil then v = C.raw(it.key) end
@@ -167,6 +235,15 @@ local function valueText(it, v)
     if it.kind == "num" then return fmtNum(v, it.digits) .. (it.suffix or "") end
     if it.kind == "choice" then return (it.names and it.names[v]) or tostring(v) end
     return ""
+end
+
+-- Help line of an option: for choices with one text per value, the one of the current value.
+local function helpText(it)
+    if it.helps then
+        local h = it.helps[C.raw(it.key)]
+        if h then return h end
+    end
+    return it.help or ""
 end
 
 local function change(it, dir)
@@ -186,18 +263,40 @@ local function change(it, dir)
 end
 
 -- Navigation state (kept between openings: the menu reopens where it was left).
+-- Left column positions: 1 = master switch, 2 = view switch, 2 + i = category i.
+local LEFT_MASTER, LEFT_VIEW, LEFT_TABS = 1, 2, 2
 local focus = "left"    -- "left" (categories) | "right" (options)
-local leftSel = 1       -- 0 = master switch, 1..#tabs = category
+local leftSel = LEFT_TABS + 1
 local sel = 1           -- option in the open category
-local lastTab = 1       -- category shown on the right while the master switch is selected
+local lastTab = 1       -- category shown on the right while a switch is selected
 local editing = nil     -- option being edited: { item, old = value before editing }
+local details = false   -- right column shows the selected option's detailed description
+local shownView = nil   -- view the navigation state was last checked against
+local dirty = true
 
-local function currentTab() return tabs[leftSel] or tabs[lastTab] end
+local function tabIndex() return leftSel - LEFT_TABS end   -- < 1 while a switch is selected
+local function currentTab()
+    local t = tabs()
+    return t[tabIndex()] or t[lastTab] or t[1]
+end
+
+-- Keep the selection valid when the view changes (menu, launcher, config file).
+local function checkView()
+    local v = C.raw("menu_view")
+    if v == shownView then return end
+    shownView = v
+    local n = #tabs()
+    if tabIndex() > n then leftSel = LEFT_TABS + n end
+    if lastTab > n then lastTab = 1 end
+    if sel > #currentTab().items then sel = 1 end
+    if focus == "right" and tabIndex() < 1 then focus = "left" end
+    details = false
+    dirty = true
+end
 
 -- Rendering ----------------------------------------------------------------------------------
 local actors = {}       -- slot name -> TextRenderActor
 local shown = {}        -- slot name -> last text .. colour (skip redundant updates)
-local dirty = true
 local textRenderClass = nil
 local hasChanges = false
 
@@ -240,7 +339,8 @@ addSlot("footer", 0, 3 + ROWS + 1.6, ALIGN_CENTER, 0.75)
 local TOTAL_LINES = 3 + ROWS + 1.6
 
 local FOOTER_LEFT = "Stick: choose   A: open   B: close   Grips: category   Hold stick click: mod on/off"
-local FOOTER_RIGHT = "Stick: choose   A: change   B: back   Grips: category   Hold stick click: mod on/off"
+local FOOTER_RIGHT = "Stick: choose   A: change   X: details   B: back   Grips: category   Hold stick click: mod on/off"
+local FOOTER_DETAILS = "DETAILS   Stick up/down: other option   A: change   X or B: back to the list"
 local FOOTER_EDIT = "EDITING (was %s)   Stick left/right: change   A: confirm   B: cancel"
 
 -- Text and colour of every slot for the current state.
@@ -249,17 +349,20 @@ local function content()
     local on = C.enabled
     out.title = on and { "MOHAB PLUS", COLOR_TITLE } or { "MOHAB PLUS  -  MOD OFF (original game)", COLOR_OFF }
 
-    -- Left column: master switch, a gap, the categories.
-    local mSel = focus == "left" and leftSel == 0
+    -- Left column: master switch, view switch, a gap, the categories.
+    local list = tabs()
+    local mSel = focus == "left" and leftSel == LEFT_MASTER
     out.L1 = { (mSel and "> " or "") .. (on and "MOD: ON" or "MOD: OFF"), mSel and COLOR_SELECTED or (on and COLOR_ON or COLOR_OFF) }
-    out.L2 = { "", COLOR_NORMAL }
+    local vSel = focus == "left" and leftSel == LEFT_VIEW
+    out.L2 = { (vSel and "> " or "") .. (isAdvanced() and "VIEW: ADVANCED" or "VIEW: BASIC"), vSel and COLOR_SELECTED or COLOR_HEADER }
+    out.L3 = { "", COLOR_NORMAL }
     -- Rows below the last category: empty (a text render left alone shows the engine's default "Text").
-    for r = #tabs + 3, ROWS do out["L" .. r] = { "", COLOR_NORMAL } end
-    for i, t in ipairs(tabs) do
-        local r = i + 2
+    for r = #list + 4, ROWS do out["L" .. r] = { "", COLOR_NORMAL } end
+    for i, t in ipairs(list) do
+        local r = i + 3
         if r <= ROWS then
             local color, prefix = COLOR_NORMAL, "   "
-            if leftSel == i then
+            if tabIndex() == i then
                 prefix = "> "
                 color = focus == "left" and COLOR_SELECTED or COLOR_CURRENT
             end
@@ -268,13 +371,43 @@ local function content()
     end
 
     -- Right column
-    if leftSel == 0 then
-        out.heading = { "ALL MOD CHANGES", COLOR_HEADER }
+    local detailItem = details and focus == "right" and not editing and currentTab().items[sel] or nil
+    if leftSel == LEFT_MASTER or leftSel == LEFT_VIEW then
+        local info = leftSel == LEFT_MASTER and MASTER_INFO or VIEW_INFO
+        out.heading = { leftSel == LEFT_MASTER and "ALL MOD CHANGES" or "MENU VIEW", COLOR_HEADER }
         for r = 1, ROWS do
-            out["R" .. r] = { MASTER_INFO[r] or "", COLOR_NORMAL }
+            out["R" .. r] = { info[r] or "", COLOR_NORMAL }
             out["V" .. r] = { "", COLOR_NORMAL }
         end
-        out.help = { on and "A or trigger: turn the whole mod OFF" or "A or trigger: turn the whole mod back ON", COLOR_HELP }
+        if leftSel == LEFT_MASTER then
+            out.help = { on and "A or trigger: turn the whole mod OFF" or "A or trigger: turn the whole mod back ON", COLOR_HELP }
+        else
+            out.help = { isAdvanced() and "A or trigger: switch to the basic view (main options only)"
+                or "A or trigger: switch to the advanced view (every option)", COLOR_HELP }
+        end
+    elseif detailItem then
+        local it = detailItem
+        out.heading = { it.label:upper(), COLOR_HEADER }
+        local lines = {}
+        local paras = C.descriptions()[it.key] or { it.help or "" }
+        for i, p in ipairs(paras) do
+            if i > 1 then lines[#lines + 1] = "" end
+            wrap(p, DETAIL_WIDTH, lines)
+        end
+        local tail = { "", "Now: " .. valueText(it) .. "     Default: " .. valueText(it, C.defaults[it.key]) }
+        -- Drop the blank lines between paragraphs if the text does not fit, then cut it.
+        if #lines + #tail > ROWS then
+            local packed = {}
+            for _, l in ipairs(lines) do if l ~= "" then packed[#packed + 1] = l end end
+            lines = packed
+        end
+        while #lines + #tail > ROWS do table.remove(lines) end
+        for _, l in ipairs(tail) do lines[#lines + 1] = l end
+        for r = 1, ROWS do
+            out["R" .. r] = { lines[r] or "", r == #lines and COLOR_HELP or COLOR_NORMAL }
+            out["V" .. r] = { "", COLOR_NORMAL }
+        end
+        out.help = { helpText(it), COLOR_HELP }
     else
         local tab = currentTab()
         out.heading = { tab.name:upper() .. (on and "" or "   (mod off: not applied)"), on and COLOR_HEADER or COLOR_DIM }
@@ -302,13 +435,15 @@ local function content()
         end
         local it = focus == "right" and tab.items[sel] or nil
         if it then
-            out.help = { it.help or "", COLOR_HELP }
+            out.help = { helpText(it), COLOR_HELP }
         else
             out.help = { "A or stick right: open " .. tab.name, COLOR_HELP }
         end
     end
     if editing then
         out.footer = { string.format(FOOTER_EDIT, valueText(editing.item, editing.old)), COLOR_EDIT }
+    elseif detailItem then
+        out.footer = { FOOTER_DETAILS, COLOR_FOOTER }
     else
         out.footer = { focus == "left" and FOOTER_LEFT or FOOTER_RIGHT, COLOR_FOOTER }
     end
@@ -435,7 +570,21 @@ local function toggleMaster()
     dirty = true
 end
 
+local function toggleView()
+    C.set("menu_view", isAdvanced() and "basic" or "advanced")
+    hasChanges = true
+    U.log("menu: %s view", C.raw("menu_view"))
+    checkView()
+end
+
+local function toggleDetails()
+    if editing or focus ~= "right" then return end
+    details = not details
+    dirty = true
+end
+
 local function startEdit(it)
+    details = false
     editing = { item = it, old = C.raw(it.key) }
     stickDir, dirty = WAIT, true
 end
@@ -455,8 +604,9 @@ end
 
 local function moveVertical(dir)
     if focus == "left" then
-        leftSel = (leftSel + dir) % (#tabs + 1)       -- 0 (master) .. #tabs
-        if leftSel > 0 then lastTab = leftSel end
+        local n = LEFT_TABS + #tabs()
+        leftSel = ((leftSel - 1 + dir) % n) + 1         -- master, view, categories
+        if tabIndex() >= 1 then lastTab = tabIndex() end
     else
         local n = #currentTab().items
         sel = ((sel - 1 + dir) % n) + 1
@@ -465,8 +615,10 @@ local function moveVertical(dir)
 end
 
 local function enter()
-    if leftSel == 0 then
+    if leftSel == LEFT_MASTER then
         toggleMaster()
+    elseif leftSel == LEFT_VIEW then
+        toggleView()
     else
         focus, sel = "right", 1
         stickDir, dirty = WAIT, true
@@ -479,6 +631,11 @@ local function back()
         cancelEdit()
         return true
     end
+    if details then
+        details = false
+        stickDir, dirty = WAIT, true
+        return true
+    end
     if focus == "right" then
         focus = "left"
         stickDir, dirty = WAIT, true
@@ -487,13 +644,14 @@ local function back()
     return false
 end
 
--- Previous / next category (skips the master switch).
+-- Previous / next category (skips the switches).
 local function switchTab(dir)
     if editing then return end
-    local i = leftSel
-    if i == 0 then i = dir > 0 and 0 or #tabs + 1 end
-    i = ((i - 1 + dir) % #tabs) + 1
-    leftSel, lastTab, sel = i, i, 1
+    local n = #tabs()
+    local i = tabIndex()
+    if i < 1 then i = dir > 0 and 0 or n + 1 end
+    i = ((i - 1 + dir) % n) + 1
+    leftSel, lastTab, sel = LEFT_TABS + i, i, 1
     dirty = true
 end
 
@@ -526,7 +684,7 @@ local function stickStep(dir, repeating)
     elseif dir == "up" or dir == "down" then
         moveVertical(dir == "up" and -1 or 1)
     elseif not repeating then
-        if dir == "right" and focus == "left" and leftSel > 0 then enter()
+        if dir == "right" and focus == "left" and tabIndex() >= 1 then enter()
         elseif dir == "left" and focus == "right" then back() end
     end
 end
@@ -583,7 +741,8 @@ local function buttons()
     -- Analog buttons: released well below the point where they are pressed, so they can't flicker.
     local function pull(v, was) return v > (was and 0.4 or 0.7) end
     return {
-        a = U.down("OculusTouch_Right_A_Click") or U.down("OculusTouch_Left_X_Click"),
+        a = U.down("OculusTouch_Right_A_Click"),
+        x = U.down("OculusTouch_Left_X_Click"),
         trig = pull(math.max(U.trigger("Right"), U.trigger("Left")), prev.trig),
         b = U.down("OculusTouch_Right_B_Click"),
         gripL = pull(U.axis("OculusTouch_Left_Grip_Axis"), prev.gripL),
@@ -653,11 +812,13 @@ function M.tick(pawn, pc, now)
         return false
     end
 
+    checkView()
     stickTick(now)
 
     local cur = buttons()
     local function pressed(k) return cur[k] and not prev[k] end
     if pressed("a") or pressed("trig") then activate() end
+    if pressed("x") then toggleDetails() end
     if pressed("gripL") then switchTab(-1) end
     if pressed("gripR") then switchTab(1) end
     if pressed("click") then clickStart = now end
@@ -686,6 +847,8 @@ function M.debugInput(cmd)
     elseif cmd == "tabnext" then switchTab(1)
     elseif cmd == "tabprev" then switchTab(-1)
     elseif cmd == "master" and not editing then toggleMaster()
+    elseif cmd == "view" and not editing then toggleView()
+    elseif cmd == "details" then toggleDetails()
     end
     if dirty then refresh() end
 end

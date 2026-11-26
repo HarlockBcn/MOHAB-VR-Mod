@@ -403,74 +403,213 @@ internal sealed class MainForm : Form
         outer.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         outer.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        var intro = Theme.Label("Same settings as the in-game menu (hold LEFT Y in game). Saved changes reach a running game within a couple of seconds.", Theme.Small, Theme.Muted);
-        intro.Margin = new Padding(0, 0, 0, Theme.S(8));
-        outer.Controls.Add(intro);
+        // Intro + BASIC / ADVANCED selector (shared with the in-game menu through config.ini).
+        var top = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2, BackColor = Color.Transparent, Margin = new Padding(0, 0, 0, Theme.S(8)) };
+        top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        top.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        var intro = Theme.Label("Same settings as the in-game menu (hold LEFT Y in game). Basic shows the main options, Advanced every option. " +
+                                "Point at (i) for details, click it to keep them open. Saved changes reach a running game within a couple of seconds.",
+                                Theme.Small, Theme.Muted);
+        intro.AutoSize = true;
+        intro.MaximumSize = new Size(Theme.S(560), 0);
+        intro.Anchor = AnchorStyles.Left;
+        top.Controls.Add(intro);
+        var views = new FlowLayoutPanel { AutoSize = true, WrapContents = false, BackColor = Color.Transparent, Margin = Padding.Empty, Anchor = AnchorStyles.Right };
+        _basicButton.Margin = new Padding(0, 0, Theme.S(4), 0);
+        _advancedButton.Margin = Padding.Empty;
+        _basicButton.Click += (_, _) => SwitchView("basic");
+        _advancedButton.Click += (_, _) => SwitchView("advanced");
+        views.Controls.Add(_basicButton);
+        views.Controls.Add(_advancedButton);
+        top.Controls.Add(views);
+        outer.Controls.Add(top);
 
         var card = new Card { Dock = DockStyle.Fill, Padding = new Padding(Theme.S(4)) };
-        var grid = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill, ColumnCount = 2, AutoScroll = true, BackColor = Theme.Surface,
-            Padding = new Padding(Theme.S(14), Theme.S(4), Theme.S(14), Theme.S(10)),
-        };
-        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Theme.S(170)));
-        Theme.DarkScrollBars(grid);
-        string? section = null;
-        foreach (var o in ModConfig.Options)
-        {
-            if (o.Section != section)
-            {
-                section = o.Section;
-                var header = new Label
-                {
-                    Text = section.ToUpperInvariant(), AutoSize = true, Font = Theme.Caption, ForeColor = Theme.Accent,
-                    Margin = new Padding(0, Theme.S(14), 0, Theme.S(4)),
-                };
-                grid.Controls.Add(header);
-                grid.SetColumnSpan(header, 2);
-            }
-            var label = Theme.Label(o.Label);
-            label.Anchor = AnchorStyles.Left;
-            label.Margin = new Padding(0, Theme.S(5), Theme.S(8), Theme.S(5));
-            grid.Controls.Add(label);
-            Control c = o.Kind switch
-            {
-                OptionKind.Bool => new ModernCheck(),
-                OptionKind.Float => new NumericUpDown
-                {
-                    DecimalPlaces = 2, Minimum = (decimal)o.Min, Maximum = (decimal)o.Max,
-                    Increment = (decimal)o.Step, Width = Theme.S(100),
-                    BackColor = Theme.Surface2, ForeColor = Theme.Text, BorderStyle = BorderStyle.FixedSingle,
-                },
-                _ => new ComboBox
-                {
-                    DropDownStyle = ComboBoxStyle.DropDownList, Width = Theme.S(140), FlatStyle = FlatStyle.Flat,
-                    BackColor = Theme.Surface2, ForeColor = Theme.Text,
-                },
-            };
-            if (c is ComboBox cb && o.Choices != null) cb.Items.AddRange(o.ChoiceLabels ?? o.Choices);
-            c.Anchor = AnchorStyles.Left;
-            c.Margin = new Padding(0, Theme.S(3), 0, Theme.S(3));
-            _optionControls[o.Key] = c;
-            grid.Controls.Add(c);
-        }
-        RefreshOptionControls();
-        card.Controls.Add(grid);
+        _optionGrid.Dock = DockStyle.Fill;
+        _optionGrid.ColumnCount = 2;
+        _optionGrid.AutoScroll = true;
+        _optionGrid.BackColor = Theme.Surface;
+        _optionGrid.Padding = new Padding(Theme.S(14), Theme.S(4), Theme.S(14), Theme.S(10));
+        _optionGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        _optionGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Theme.S(170)));
+        _optionGrid.Scroll += (_, _) => HideInfo();
+        _optionGrid.MouseWheel += (_, _) => HideInfo();
+        Theme.DarkScrollBars(_optionGrid);
+        _descriptions = ModConfig.LoadDescriptions(_config.Path);
+        PopulateOptionGrid();
+        card.Controls.Add(_optionGrid);
         outer.Controls.Add(card);
 
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, FlowDirection = FlowDirection.RightToLeft, BackColor = Color.Transparent, Margin = Padding.Empty };
         var save = new ModernButton("Save settings", primary: true) { Margin = new Padding(Theme.S(8), 0, 0, 0) };
         save.Click += (_, _) => { ReadOptionControls(); _config.Save(); Append("Settings saved. A running game picks them up within a couple of seconds."); };
         var reload = new ModernButton("Reload") { Margin = new Padding(Theme.S(8), 0, 0, 0) };
-        reload.Click += (_, _) => { _config.Load(); RefreshOptionControls(); };
-        var defaults = new ModernButton("Defaults") { Margin = new Padding(Theme.S(8), 0, 0, 0) };
-        defaults.Click += (_, _) => { foreach (var o in ModConfig.Options) _config.Values[o.Key] = o.Default; RefreshOptionControls(); };
+        reload.Click += (_, _) => { _config.Load(); ShowConfig(); };
+        _defaultsButton.Margin = new Padding(Theme.S(8), 0, 0, 0);
+        _defaultsButton.Click += (_, _) =>
+        {
+            // Every option, also the ones the basic view hides; the view itself stays.
+            foreach (var o in ModConfig.Options)
+                if (o.Key != ModConfig.ViewKey) _config.Values[o.Key] = o.Default;
+            RefreshOptionControls();
+        };
         buttons.Controls.Add(save);
         buttons.Controls.Add(reload);
-        buttons.Controls.Add(defaults);
+        buttons.Controls.Add(_defaultsButton);
         outer.Controls.Add(buttons);
+
+        outer.VisibleChanged += (_, _) => { if (!outer.Visible) HideInfo(); };
+        Deactivate += (_, _) => HideInfo();
+        Application.AddMessageFilter(new ClickOutsideFilter(this));
         return outer;
+    }
+
+    private readonly TableLayoutPanel _optionGrid = new();
+    private readonly ModernButton _basicButton = new("Basic");
+    private readonly ModernButton _advancedButton = new("Advanced");
+    private readonly ModernButton _defaultsButton = new("Defaults");
+    private readonly InfoPopup _infoPopup = new();
+    private Dictionary<string, List<string>> _descriptions = new();
+    private InfoIcon? _pinnedInfo;
+    private string? _shownView;
+
+    private bool AdvancedView => _config.Values[ModConfig.ViewKey] == "advanced";
+
+    /// <summary>Rebuilds the option rows for the current view (basic: a few main options, advanced: all of them).</summary>
+    private void PopulateOptionGrid()
+    {
+        HideInfo();
+        bool advanced = AdvancedView;
+        _shownView = _config.Values[ModConfig.ViewKey];
+        _basicButton.Primary = !advanced;
+        _advancedButton.Primary = advanced;
+        _basicButton.Invalidate();
+        _advancedButton.Invalidate();
+        _defaultsButton.Text = advanced ? "Defaults" : "Defaults (all options)";
+
+        var groups = advanced
+            ? ModConfig.Options.Where(o => o.Key != ModConfig.ViewKey).GroupBy(o => o.Section).Select(g => (g.Key, g.ToArray()))
+            : ModConfig.BasicLayout.Select(b => (b.Section, b.Keys.Select(k => ModConfig.Options.First(o => o.Key == k)).ToArray()));
+
+        var grid = _optionGrid;
+        grid.SuspendLayout();
+        foreach (Control old in grid.Controls.Cast<Control>().ToArray()) old.Dispose();
+        grid.Controls.Clear();
+        grid.RowStyles.Clear();
+        grid.RowCount = 0;
+        _optionControls.Clear();
+        foreach (var (section, options) in groups)
+        {
+            var header = new Label
+            {
+                Text = section.ToUpperInvariant(), AutoSize = true, Font = Theme.Caption, ForeColor = Theme.Accent,
+                Margin = new Padding(0, Theme.S(14), 0, Theme.S(4)),
+            };
+            grid.Controls.Add(header);
+            grid.SetColumnSpan(header, 2);
+            foreach (var o in options)
+            {
+                var row = new FlowLayoutPanel { AutoSize = true, WrapContents = false, BackColor = Color.Transparent, Anchor = AnchorStyles.Left, Margin = new Padding(0, Theme.S(2), Theme.S(8), Theme.S(2)) };
+                var label = Theme.Label(o.Label);
+                label.Margin = new Padding(0, Theme.S(3), Theme.S(4), Theme.S(3));
+                row.Controls.Add(label);
+                var info = new InfoIcon { Margin = new Padding(0, Theme.S(5), 0, 0) };
+                var opt = o;
+                info.MouseEnter += (_, _) => { if (_pinnedInfo == null) ShowInfo(info, opt); };
+                info.MouseLeave += (_, _) => { if (_pinnedInfo == null) _infoPopup.Hide(); };
+                info.MouseDown += (_, e) =>
+                {
+                    if (e.Button != MouseButtons.Left) return;
+                    if (_pinnedInfo == info) { HideInfo(); return; }
+                    if (_pinnedInfo != null) _pinnedInfo.Pinned = false;
+                    _pinnedInfo = info;
+                    info.Pinned = true;
+                    ShowInfo(info, opt);
+                };
+                row.Controls.Add(info);
+                grid.Controls.Add(row);
+
+                Control c = o.Kind switch
+                {
+                    OptionKind.Bool => new ModernCheck(),
+                    OptionKind.Float => new NumericUpDown
+                    {
+                        DecimalPlaces = 2, Minimum = (decimal)o.Min, Maximum = (decimal)o.Max,
+                        Increment = (decimal)o.Step, Width = Theme.S(100),
+                        BackColor = Theme.Surface2, ForeColor = Theme.Text, BorderStyle = BorderStyle.FixedSingle,
+                    },
+                    _ => new ComboBox
+                    {
+                        DropDownStyle = ComboBoxStyle.DropDownList, Width = Theme.S(140), FlatStyle = FlatStyle.Flat,
+                        BackColor = Theme.Surface2, ForeColor = Theme.Text,
+                    },
+                };
+                if (c is ComboBox cb && o.Choices != null) cb.Items.AddRange(o.ChoiceLabels ?? o.Choices);
+                c.Anchor = AnchorStyles.Left;
+                c.Margin = new Padding(0, Theme.S(3), 0, Theme.S(3));
+                _optionControls[o.Key] = c;
+                grid.Controls.Add(c);
+            }
+        }
+        if (!advanced)
+        {
+            var more = Theme.Label("More options (distances, sizes, sounds, haptics one by one...) in Advanced. Options not shown here keep their values.", Theme.Small, Theme.Muted);
+            more.AutoSize = true;
+            more.MaximumSize = new Size(Theme.S(520), 0);
+            more.Margin = new Padding(0, Theme.S(16), 0, 0);
+            grid.Controls.Add(more);
+            grid.SetColumnSpan(more, 2);
+        }
+        RefreshOptionControls();
+        grid.ResumeLayout();
+        grid.AutoScrollPosition = Point.Empty;
+    }
+
+    /// <summary>Switches view, keeping unsaved edits; only the view is written to config.ini right away.</summary>
+    private void SwitchView(string view)
+    {
+        if (_config.Values[ModConfig.ViewKey] == view) return;
+        ReadOptionControls();
+        _config.Values[ModConfig.ViewKey] = view;
+        try
+        {
+            var disk = new ModConfig(_config.Path);
+            disk.Load();
+            disk.Values[ModConfig.ViewKey] = view;
+            disk.Save();
+            _lastConfigText = File.ReadAllText(_config.Path);
+        }
+        catch { /* not critical: saved with the other settings */ }
+        PopulateOptionGrid();
+    }
+
+    private void ShowInfo(InfoIcon icon, ModOption o)
+    {
+        var paragraphs = _descriptions.TryGetValue(o.Key, out var p) ? p : new List<string> { "No description available." };
+        _infoPopup.ShowFor(icon, o.Label, paragraphs, "Default: " + ModConfig.DisplayValue(o, o.Default));
+    }
+
+    private void HideInfo()
+    {
+        if (_pinnedInfo != null && !_pinnedInfo.IsDisposed) _pinnedInfo.Pinned = false;
+        _pinnedInfo = null;
+        if (_infoPopup.Visible) _infoPopup.Hide();
+    }
+
+    /// <summary>A click anywhere but on an info icon closes a pinned description.</summary>
+    private sealed class ClickOutsideFilter : IMessageFilter
+    {
+        private readonly MainForm _form;
+        public ClickOutsideFilter(MainForm form) { _form = form; }
+        public bool PreFilterMessage(ref Message m)
+        {
+            const int WM_LBUTTONDOWN = 0x201, WM_RBUTTONDOWN = 0x204, WM_NCLBUTTONDOWN = 0xA1;
+            if (m.Msg is WM_LBUTTONDOWN or WM_RBUTTONDOWN or WM_NCLBUTTONDOWN && _form._pinnedInfo != null)
+            {
+                if (Control.FromHandle(m.HWnd) is not InfoIcon) _form.HideInfo();
+            }
+            return false;
+        }
     }
 
     private string? _lastConfigText;
@@ -484,14 +623,21 @@ internal sealed class MainForm : Form
         }
         catch { return; }   // file being written; another event follows
         _config.Load();
-        RefreshOptionControls();
+        ShowConfig();
+    }
+
+    /// <summary>Shows the loaded values, switching view if the in-game menu changed it.</summary>
+    private void ShowConfig()
+    {
+        if (_config.Values[ModConfig.ViewKey] != _shownView) PopulateOptionGrid();
+        else RefreshOptionControls();
     }
 
     private void RefreshOptionControls()
     {
-        foreach (var o in ModConfig.Options)
+        foreach (var (key, c) in _optionControls)
         {
-            var c = _optionControls[o.Key];
+            var o = ModConfig.Options.First(x => x.Key == key);
             switch (c)
             {
                 case CheckBox cb: cb.Checked = _config.GetBool(o.Key); break;
@@ -505,11 +651,13 @@ internal sealed class MainForm : Form
         }
     }
 
+    /// <summary>Copies the shown controls into the config values (options hidden by the basic view keep theirs).</summary>
     private void ReadOptionControls()
     {
-        foreach (var o in ModConfig.Options)
+        foreach (var (key, c) in _optionControls)
         {
-            switch (_optionControls[o.Key])
+            var o = ModConfig.Options.First(x => x.Key == key);
+            switch (c)
             {
                 case CheckBox cb: _config.Set(o.Key, cb.Checked); break;
                 case NumericUpDown n: _config.Set(o.Key, (double)n.Value); break;

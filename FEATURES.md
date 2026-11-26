@@ -50,7 +50,9 @@
 - **Fast-forward dialogue** - The same gesture speeds through dialogue scenes where you just stand and wait.
 
 ### Launcher and menu
-- **In-game settings menu** - Hold the left Y button to change every option without leaving VR. Options are grouped in categories (switch with the grips), with a short explanation of the selected one. Values only change after pressing A or the trigger on an option (B cancels), so moving the sticks never changes a setting by accident.
+- **In-game settings menu** - Hold the left Y button to change every option without leaving VR. Options are grouped in categories (switch with the grips), with a short explanation of the selected one; press X for a detailed description. Values only change after pressing A or the trigger on an option (B cancels), so moving the sticks never changes a setting by accident.
+- **Basic and advanced views** - The basic view shows only the main options (movement, weapons, comfort); the advanced view shows every option, including distances, sizes and sounds. Switch in the in-game menu or in the launcher (the choice is shared). Hidden options keep working with their values.
+- **Option details** - Every option has a detailed description: what it does, how the original game behaves and its default value. In the launcher, point at the (i) next to an option (click it to keep it open); in the game, press X on an option.
 - **Mod on/off switch** - From the in-game menu, turn every change of the mod off and on again at once (or hold a thumbstick click) to compare with the original game. Your settings are kept, and the mod is always on when the game starts.
 - **Auto-load from Virtual Desktop / Oculus** - Start the game as usual; the launcher loads the mod by itself.
 - **Automatic updates** - The launcher tells you when a new version is out and installs it with one click.

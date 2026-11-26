@@ -18,71 +18,130 @@ internal sealed class ModConfig
 {
     public static readonly ModOption[] Options =
     {
-        new("syringe_require_trigger", "Syringe: require trigger to inject", OptionKind.Bool, "true", Section: "Syringes"),
-        new("syringe_trigger_threshold", "Syringe: trigger threshold", OptionKind.Float, "0.5", 0.1, 1.0, 0.05, Section: "Syringes"),
-        new("syringe_small_holstered", "Syringe: smaller when on the sleeve", OptionKind.Bool, "true", Section: "Syringes"),
-        new("syringe_holster_scale", "Syringe: sleeve scale", OptionKind.Float, "0.5", 0.25, 1.0, 0.05, Section: "Syringes"),
+        new("syringe_require_trigger", "Trigger to inject", OptionKind.Bool, "true", Section: "Syringes"),
+        new("syringe_trigger_threshold", "Trigger threshold", OptionKind.Float, "0.5", 0.1, 1.0, 0.05, Section: "Syringes"),
+        new("syringe_small_holstered", "Smaller on the sleeve", OptionKind.Bool, "true", Section: "Syringes"),
+        new("syringe_holster_scale", "Sleeve scale", OptionKind.Float, "0.5", 0.25, 1.0, 0.05, Section: "Syringes"),
 
-        new("grab_aim", "Grabbing: an empty hand takes what its guide points at", OptionKind.Bool, "true", Section: "Grabbing"),
-        new("manual_holster", "Grabbing: manual holsters (letting go of a weapon drops it; take it to a free holster to put it away)", OptionKind.Bool, "true", Section: "Grabbing"),
-        new("holster_store_distance", "Grabbing: manual holsters, distance to the holster to put a weapon away (cm)", OptionKind.Float, "30", 10, 50, 1, Section: "Grabbing"),
-        new("grenade_row", "Grabbing: every grenade you carry is shown on your chest (take the one you want)", OptionKind.Bool, "true", Section: "Grabbing"),
-        new("grenade_row_scale", "Grabbing: size of the grenades on the chest", OptionKind.Float, "0.75", 0.4, 1.0, 0.05, Section: "Grabbing"),
-        new("body_grab_distance", "Grabbing: distance to take grenades, objects and syringes you carry (cm)", OptionKind.Float, "10", 5, 30, 1, Section: "Grabbing"),
-        new("holster_grab_distance", "Grabbing: distance to take a weapon from a holster, back weapons excluded (cm)", OptionKind.Float, "25", 5, 30, 1, Section: "Grabbing"),
-        new("weapon_grip_reach", "Grabbing: second hand distance to a weapon's front grip (cm)", OptionKind.Float, "10", 5, 40, 1, Section: "Grabbing"),
-        new("grenade_physics", "Grabbing: realistic grenade throws and bounces (game: twice the hand's speed, they stop on the floor)", OptionKind.Bool, "true", Section: "Grabbing"),
-        new("grenade_throw_strength", "Grabbing: realistic grenade throws, x the hand's speed", OptionKind.Float, "1.2", 0.5, 2.0, 0.1, Section: "Grabbing"),
-        new("teeth_pin_distance", "Grabbing: how close a held grenade must get to your mouth to pull its pin with your teeth (cm; game 10, 0 = never)", OptionKind.Float, "5", 0, 15, 1, Section: "Grabbing"),
-        new("cocking", "Grabbing: cocking - manual (work the bolt / slide yourself) or auto (the game does it, original)", OptionKind.Choice, "manual", Choices: new[] { "manual", "auto" }, Section: "Grabbing"),
-        new("holster_below_eyes", "Grabbing: no holster grab with the hand above the eyes", OptionKind.Bool, "true", Section: "Grabbing"),
+        new("grab_aim", "Grab what you point at", OptionKind.Bool, "true", Section: "Grabbing"),
+        new("manual_holster", "Manual holsters", OptionKind.Bool, "true", Section: "Grabbing"),
+        new("holster_store_distance", "Put away distance (cm)", OptionKind.Float, "30", 10, 50, 1, Section: "Grabbing"),
+        new("grenade_row", "All grenades on chest", OptionKind.Bool, "true", Section: "Grabbing"),
+        new("grenade_row_scale", "Chest grenade size", OptionKind.Float, "0.75", 0.4, 1.0, 0.05, Section: "Grabbing"),
+        new("body_grab_distance", "Inventory grab distance (cm)", OptionKind.Float, "10", 5, 30, 1, Section: "Grabbing"),
+        new("holster_grab_distance", "Holster grab distance (cm)", OptionKind.Float, "25", 5, 30, 1, Section: "Grabbing"),
+        new("weapon_grip_reach", "Second hand reach (cm)", OptionKind.Float, "10", 5, 40, 1, Section: "Grabbing"),
+        new("grenade_physics", "Realistic grenade throws", OptionKind.Bool, "true", Section: "Grabbing"),
+        new("grenade_throw_strength", "Grenade throw strength (x hand speed)", OptionKind.Float, "1.2", 0.5, 2.0, 0.1, Section: "Grabbing"),
+        new("teeth_pin_distance", "Pull pin with teeth (cm, 0 = never)", OptionKind.Float, "5", 0, 15, 1, Section: "Grabbing"),
+        new("cocking", "Cocking", OptionKind.Choice, "manual", Choices: new[] { "manual", "auto" }, Section: "Grabbing",
+            ChoiceLabels: new[] { "Manual", "Automatic" }),
+        new("holster_below_eyes", "No holster grab above eyes", OptionKind.Bool, "true", Section: "Grabbing"),
 
-        new("haptics_damage", "Haptics on damage", OptionKind.Bool, "true", Section: "Haptics"),
-        new("haptics_intensity", "Haptics: intensity", OptionKind.Float, "1.0", 0.1, 1.0, 0.1, Section: "Haptics"),
-        new("haptics_duration", "Haptics: duration (s)", OptionKind.Float, "0.35", 0.05, 1.0, 0.05, Section: "Haptics"),
-        new("haptics_directional", "Haptics: stronger on the side of the hit", OptionKind.Bool, "true", Section: "Haptics"),
-        new("haptics_weapons", "Haptics when reloading / opening weapons", OptionKind.Bool, "true", Section: "Haptics"),
-        new("haptics_no_ammo", "Haptics when pressing grip at the magazine pouch with no ammo left", OptionKind.Bool, "true", Section: "Haptics"),
-        new("haptics_holster_zone", "Haptics: light tap when an empty hand can take a weapon or item you carry", OptionKind.Bool, "true", Section: "Haptics"),
+        new("haptics_damage", "Vibrate on damage", OptionKind.Bool, "true", Section: "Haptics"),
+        new("haptics_intensity", "Vibration intensity", OptionKind.Float, "1.0", 0.1, 1.0, 0.1, Section: "Haptics"),
+        new("haptics_duration", "Damage duration (s)", OptionKind.Float, "0.35", 0.05, 1.0, 0.05, Section: "Haptics"),
+        new("haptics_directional", "Stronger on hit side", OptionKind.Bool, "true", Section: "Haptics"),
+        new("haptics_weapons", "Vibrate when reloading", OptionKind.Bool, "true", Section: "Haptics"),
+        new("haptics_no_ammo", "Vibrate when out of ammo", OptionKind.Bool, "true", Section: "Haptics"),
+        new("haptics_holster_zone", "Vibrate at grab zones", OptionKind.Bool, "true", Section: "Haptics"),
 
-        new("crouch_stick", "Crouch with turn stick (down / up)", OptionKind.Bool, "true", Section: "Crouch"),
-        new("crouch_stick_threshold", "Crouch: how far the stick must be pushed to crouch / stand up", OptionKind.Float, "0.7", 0.3, 0.95, 0.05, Section: "Crouch"),
-        new("crouch_speed", "Crouch: walking speed while crouched (x normal)", OptionKind.Float, "0.6", 0.3, 1.0, 0.05, Section: "Crouch"),
+        new("crouch_stick", "Crouch with turn stick", OptionKind.Bool, "true", Section: "Crouch"),
+        new("crouch_stick_threshold", "Crouch stick threshold", OptionKind.Float, "0.7", 0.3, 0.95, 0.05, Section: "Crouch"),
+        new("crouch_speed", "Crouched speed (x walking)", OptionKind.Float, "0.6", 0.3, 1.0, 0.05, Section: "Crouch"),
 
-        new("jump_enabled", "Jump with turn stick up (while standing)", OptionKind.Bool, "true", Section: "Jump (experimental)"),
-        new("jump_stick_threshold", "Jump: how far the stick must be pushed up", OptionKind.Float, "0.7", 0.3, 0.95, 0.05, Section: "Jump (experimental)"),
-        new("jump_height", "Jump: height (cm)", OptionKind.Float, "100", 20, 120, 5, Section: "Jump (experimental)"),
-        new("jump_sound", "Jump: sounds", OptionKind.Choice, "all", Choices: new[] { "all", "cloth", "off" }, Section: "Jump (experimental)"),
-        new("jump_guard", "Jump: stay inside the level (furniture can still be climbed)", OptionKind.Bool, "true", Section: "Jump (experimental)"),
-        new("land_crouch", "Hard landings: bend down on landing, with a grunt and a jolt", OptionKind.Bool, "true", Section: "Jump (experimental)"),
-        new("land_crouch_height", "Hard landings: from a fall of (m)", OptionKind.Float, "2", 1, 6, 0.5, Section: "Jump (experimental)"),
+        new("jump_enabled", "Jump (experimental)", OptionKind.Bool, "true", Section: "Jump (experimental)"),
+        new("jump_stick_threshold", "Jump stick threshold", OptionKind.Float, "0.7", 0.3, 0.95, 0.05, Section: "Jump (experimental)"),
+        new("jump_height", "Jump height (cm)", OptionKind.Float, "100", 20, 120, 5, Section: "Jump (experimental)"),
+        new("jump_sound", "Jump sounds", OptionKind.Choice, "all", Choices: new[] { "all", "cloth", "off" }, Section: "Jump (experimental)",
+            ChoiceLabels: new[] { "Voice + cloth", "Cloth only", "Off" }),
+        new("jump_guard", "Stay inside the level", OptionKind.Bool, "true", Section: "Jump (experimental)"),
+        new("land_crouch", "Hard landings", OptionKind.Bool, "true", Section: "Jump (experimental)"),
+        new("land_crouch_height", "Hard landing from (m)", OptionKind.Float, "2", 1, 6, 0.5, Section: "Jump (experimental)"),
 
-        new("fall_damage_custom", "Custom fall damage (off = the game's rules)", OptionKind.Bool, "true", Section: "Fall damage"),
-        new("fall_safe_height", "Fall damage: safe height (m)", OptionKind.Float, "3.5", 1, 10, 0.5, Section: "Fall damage"),
-        new("fall_fatal_height", "Fall damage: fatal height (m)", OptionKind.Float, "10", 4, 30, 1, Section: "Fall damage"),
-        new("fall_damage_progressive", "Fall damage: grows with the height of the fall", OptionKind.Bool, "true", Section: "Fall damage"),
-        new("fall_damage_scale", "Fall damage: amount (x the game's)", OptionKind.Float, "1.0", 0.0, 2.0, 0.1, Section: "Fall damage"),
+        new("fall_damage_custom", "Custom fall damage", OptionKind.Bool, "true", Section: "Fall damage"),
+        new("fall_safe_height", "Safe height (m)", OptionKind.Float, "3.5", 1, 10, 0.5, Section: "Fall damage"),
+        new("fall_fatal_height", "Fatal height (m)", OptionKind.Float, "10", 4, 30, 1, Section: "Fall damage"),
+        new("fall_damage_progressive", "Damage grows with height", OptionKind.Bool, "true", Section: "Fall damage"),
+        new("fall_damage_scale", "Damage amount (x the game's)", OptionKind.Float, "1.0", 0.0, 2.0, 0.1, Section: "Fall damage"),
 
-        new("sprint_mode", "Sprint mode (always sprint: you only walk while you hold a weapon up or shoot)", OptionKind.Choice, "both",
+        new("sprint_mode", "Sprint", OptionKind.Choice, "both",
             Choices: new[] { "stick", "arms", "both", "always" }, Section: "Sprint",
             ChoiceLabels: new[] { "Stick click", "Arm swing", "Stick + arms", "Always sprint" }),
-        new("sprint_arm_sensitivity", "Sprint: arm swing sensitivity", OptionKind.Float, "1.3", 0.3, 2.0, 0.1, Section: "Sprint"),
-        new("sprint_speed_multiplier", "Sprint: max speed multiplier", OptionKind.Float, "1.3", 1.0, 1.5, 0.05, Section: "Sprint"),
-        new("sprint_turn_slowdown", "Sprint: slow down on sharp turns (0 = off)", OptionKind.Float, "1.0", 0.0, 1.0, 0.1, Section: "Sprint"),
-        new("stairs_steady_speed", "Steady speed on stairs and slopes (the original game speeds you up)", OptionKind.Bool, "true", Section: "Sprint"),
+        new("sprint_arm_sensitivity", "Arm swing sensitivity", OptionKind.Float, "1.3", 0.3, 2.0, 0.1, Section: "Sprint"),
+        new("sprint_speed_multiplier", "Sprint speed (x original)", OptionKind.Float, "1.3", 1.0, 1.5, 0.05, Section: "Sprint"),
+        new("sprint_turn_slowdown", "Slow down on sharp turns (0 = off)", OptionKind.Float, "1.0", 0.0, 1.0, 0.1, Section: "Sprint"),
+        new("stairs_steady_speed", "Steady speed on stairs", OptionKind.Bool, "true", Section: "Sprint"),
 
-        new("slide_enabled", "Slide when crouching while sprinting", OptionKind.Bool, "true", Section: "Slide"),
-        new("slide_strength", "Slide: length", OptionKind.Float, "1.5", 0.5, 2.0, 0.1, Section: "Slide"),
-        new("slide_sound", "Slide: sound", OptionKind.Choice, "body", Choices: new[] { "body", "wood", "metal", "off" }, Section: "Slide"),
+        new("slide_enabled", "Slide", OptionKind.Bool, "true", Section: "Slide"),
+        new("slide_strength", "Slide length", OptionKind.Float, "1.5", 0.5, 2.0, 0.1, Section: "Slide"),
+        new("slide_sound", "Slide sound", OptionKind.Choice, "body", Choices: new[] { "body", "wood", "metal", "off" }, Section: "Slide",
+            ChoiceLabels: new[] { "Body", "Wood scrape", "Metal scrape", "Off" }),
 
-        new("skip_cutscenes", "Skip cutscenes (hold both triggers + grips)", OptionKind.Bool, "true", Section: "Cutscenes"),
-        new("skip_hold_time", "Skip: hold time (s)", OptionKind.Float, "1.0", 0.3, 3.0, 0.1, Section: "Cutscenes"),
-        new("skip_speed", "Skip: dialogue fast-forward speed (x)", OptionKind.Float, "12", 2, 15, 1, Section: "Cutscenes"),
+        new("skip_cutscenes", "Skip cutscenes", OptionKind.Bool, "true", Section: "Cutscenes"),
+        new("skip_hold_time", "Skip hold time (s)", OptionKind.Float, "1.0", 0.3, 3.0, 0.1, Section: "Cutscenes"),
+        new("skip_speed", "Dialogue fast-forward (x)", OptionKind.Float, "12", 2, 15, 1, Section: "Cutscenes"),
 
-        new("menu_hold_time", "Menu: hold time to open (s)", OptionKind.Float, "1.5", 0.3, 2.0, 0.1, Section: "Menu"),
+        // Not shown as an option: the BASIC / ADVANCED selector of the settings page (and of the in-game menu).
+        new("menu_view", "Menu view", OptionKind.Choice, "basic", Choices: new[] { "basic", "advanced" }, Section: "Menu"),
+        new("menu_hold_time", "Menu hold time to open (s)", OptionKind.Float, "1.5", 0.3, 2.0, 0.1, Section: "Menu"),
 
         new("debug_log", "Verbose logging to UE4SS.log", OptionKind.Bool, "false", Section: "Debug"),
     };
+
+    public const string ViewKey = "menu_view";
+
+    /// <summary>
+    /// Basic view: the main options in three categories. Keep in sync with basicLayout in Scripts/menu.lua.
+    /// </summary>
+    public static readonly (string Section, string[] Keys)[] BasicLayout =
+    {
+        ("Movement", new[] { "sprint_mode", "crouch_stick", "slide_enabled", "jump_enabled" }),
+        ("Weapons", new[] { "cocking", "manual_holster", "grenade_row", "grenade_physics", "syringe_require_trigger" }),
+        ("Comfort", new[] { "haptics_intensity", "fall_damage_custom", "skip_cutscenes" }),
+    };
+
+    /// <summary>
+    /// Detailed descriptions (paragraphs) per option, from descriptions.txt: the file installed next to config.ini if
+    /// there is one (same text the in-game menu shows), else the copy embedded in the launcher.
+    /// </summary>
+    public static Dictionary<string, List<string>> LoadDescriptions(string configPath)
+    {
+        string? text = null;
+        try
+        {
+            var file = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(configPath)!, "descriptions.txt");
+            if (File.Exists(file)) text = File.ReadAllText(file);
+        }
+        catch { }
+        if (text == null)
+        {
+            using var s = typeof(ModConfig).Assembly.GetManifestResourceStream("MOHABPlus.descriptions.txt");
+            if (s != null) using (var r = new StreamReader(s)) text = r.ReadToEnd();
+        }
+        var result = new Dictionary<string, List<string>>();
+        List<string>? cur = null;
+        foreach (var raw in (text ?? "").Split('\n'))
+        {
+            var line = raw.Trim();
+            if (line.Length > 2 && line[0] == '[' && line[^1] == ']') { cur = new List<string>(); result[line[1..^1]] = cur; }
+            else if (cur != null && line.Length > 0 && line[0] != '#') cur.Add(line);
+        }
+        return result;
+    }
+
+    /// <summary>Text shown for a value: the choice label, ON/OFF, or the number.</summary>
+    public static string DisplayValue(ModOption o, string value)
+    {
+        switch (o.Kind)
+        {
+            case OptionKind.Bool: return value.Equals("true", StringComparison.OrdinalIgnoreCase) ? "ON" : "OFF";
+            case OptionKind.Choice:
+                int i = Array.IndexOf(o.Choices!, value);
+                return i >= 0 && o.ChoiceLabels != null ? o.ChoiceLabels[i] : value;
+            default: return value;
+        }
+    }
 
     public readonly Dictionary<string, string> Values = new();
     public string Path { get; }

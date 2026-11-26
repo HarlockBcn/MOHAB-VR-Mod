@@ -61,6 +61,7 @@ M.defaults = {
     skip_hold_time = 1.0,
     skip_speed = 12,               -- fast-forward speed for dialogue scenes
 
+    menu_view = "basic",            -- "basic" (the main options) | "advanced" (every option); in-game menu and launcher
     menu_hold_time = 1.5,
     debug_log = false,
 }
@@ -76,7 +77,7 @@ M.order = {
     { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier", "sprint_turn_slowdown", "stairs_steady_speed" } },
     { "Slide", { "slide_enabled", "slide_strength", "slide_sound" } },
     { "Cutscenes", { "skip_cutscenes", "skip_hold_time", "skip_speed" } },
-    { "Menu", { "menu_hold_time" } },
+    { "Menu", { "menu_view", "menu_hold_time" } },
     { "Debug", { "debug_log" } },
 }
 
@@ -106,7 +107,33 @@ local function fmt(v)
     return tostring(v)
 end
 
+-- Detailed option descriptions (descriptions.txt next to config.ini, shared with the launcher):
+-- "[key]" followed by one paragraph per line. Returns key -> list of paragraphs; re-read when the file changes.
+local descText, descs = nil, {}
+function M.descriptions()
+    if not M.dir then return descs end
+    local f = io.open(M.dir .. "\\descriptions.txt", "r")
+    if not f then return descs end
+    local text = f:read("*a")
+    f:close()
+    if text == descText then return descs end
+    descText, descs = text, {}
+    local cur = nil
+    for raw in text:gmatch("[^\r\n]+") do
+        local line = raw:match("^%s*(.-)%s*$")
+        local k = line:match("^%[([%w_]+)%]$")
+        if k then
+            cur = {}
+            descs[k] = cur
+        elseif cur and line ~= "" and line:sub(1, 1) ~= "#" then
+            cur[#cur + 1] = line
+        end
+    end
+    return descs
+end
+
 function M.init(modDir)
+    M.dir = modDir
     path = modDir .. "\\config.ini"
     if not M.reload() then M.save() end
 end

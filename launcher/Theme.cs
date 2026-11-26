@@ -425,3 +425,122 @@ internal sealed class StepBadge : Control
         TextRenderer.DrawText(g, Text, Font, ClientRectangle, Theme.AccentText, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
     }
 }
+
+/// <summary>Small round "i" next to an option: hover shows its description, a click keeps it open.</summary>
+internal sealed class InfoIcon : Control
+{
+    private bool _hover;
+    public bool Pinned { get => _pinned; set { _pinned = value; Invalidate(); } }
+    private bool _pinned;
+
+    public InfoIcon()
+    {
+        SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer |
+                 ControlStyles.ResizeRedraw | ControlStyles.SupportsTransparentBackColor, true);
+        SetStyle(ControlStyles.Selectable, false);   // a click must not move the focus (or scroll the option list)
+        BackColor = Color.Transparent;
+        Cursor = Cursors.Hand;
+        Size = new Size(Theme.S(16), Theme.S(16));
+        Font = new Font("Segoe UI Semibold", 7.5f);
+        TabStop = false;
+    }
+
+    protected override void OnMouseEnter(EventArgs e) { _hover = true; Invalidate(); base.OnMouseEnter(e); }
+    protected override void OnMouseLeave(EventArgs e) { _hover = false; Invalidate(); base.OnMouseLeave(e); }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        var g = e.Graphics;
+        g.Clear(ModernButton.EffectiveBack(Parent));
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        bool on = _hover || _pinned;
+        var r = new RectangleF(1, 1, Width - 3, Height - 3);
+        if (_pinned)
+        {
+            using var b = new SolidBrush(Theme.Accent);
+            g.FillEllipse(b, r);
+        }
+        using (var p = new Pen(on ? Theme.Accent : Theme.Muted, Math.Max(1f, Theme.S(1.2f)))) g.DrawEllipse(p, r);
+        TextRenderer.DrawText(g, "i", Font, new Rectangle(0, 0, Width - 1, Height - 1),
+            _pinned ? Theme.AccentText : on ? Theme.Accent : Theme.Muted,
+            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
+    }
+}
+
+/// <summary>Borderless popup with an option's title, description paragraphs and a footer line (never takes the focus).</summary>
+internal sealed class InfoPopup : Form
+{
+    private string _title = "";
+    private List<string> _paragraphs = new();
+    private string _footer = "";
+    private static readonly Font TitleFont = Theme.Bold;
+    private static readonly Font BodyFont = Theme.Body;
+    private static readonly Font FooterFont = Theme.Small;
+
+    public InfoPopup()
+    {
+        FormBorderStyle = FormBorderStyle.None;
+        ShowInTaskbar = false;
+        StartPosition = FormStartPosition.Manual;
+        BackColor = Theme.Surface2;
+        SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint, true);
+    }
+
+    protected override bool ShowWithoutActivation => true;
+
+    protected override CreateParams CreateParams
+    {
+        get
+        {
+            const int WS_EX_NOACTIVATE = 0x08000000, WS_EX_TOOLWINDOW = 0x80, WS_EX_TOPMOST = 0x8;
+            var cp = base.CreateParams;
+            cp.ExStyle |= WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST;
+            return cp;
+        }
+    }
+
+    private int Pad => Theme.S(12);
+    private int MaxText => Theme.S(380);
+    private const TextFormatFlags Wrap = TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix | TextFormatFlags.TextBoxControl;
+
+    private IEnumerable<(string Text, Font Font, Color Color, int Gap)> Blocks()
+    {
+        yield return (_title, TitleFont, Theme.Accent, 0);
+        foreach (var p in _paragraphs) yield return (p, BodyFont, Theme.Text, Theme.S(6));
+        if (_footer.Length > 0) yield return (_footer, FooterFont, Theme.Muted, Theme.S(10));
+    }
+
+    /// <summary>Shows the popup below (or above, near the screen bottom) the given control.</summary>
+    public void ShowFor(Control anchor, string title, List<string> paragraphs, string footer)
+    {
+        _title = title;
+        _paragraphs = paragraphs;
+        _footer = footer;
+        int h = 0;
+        foreach (var b in Blocks())
+            h += b.Gap + TextRenderer.MeasureText(b.Text, b.Font, new Size(MaxText, int.MaxValue), Wrap).Height;
+        var size = new Size(MaxText + 2 * Pad, h + 2 * Pad);
+        var screen = Screen.FromControl(anchor).WorkingArea;
+        var p = anchor.PointToScreen(new Point(anchor.Width + Theme.S(6), anchor.Height + Theme.S(4)));
+        if (p.Y + size.Height > screen.Bottom) p.Y = anchor.PointToScreen(Point.Empty).Y - size.Height - Theme.S(4);
+        if (p.X + size.Width > screen.Right) p.X = screen.Right - size.Width;
+        Bounds = new Rectangle(p, size);
+        if (!Visible) Show(anchor.FindForm());
+        Invalidate();
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        var g = e.Graphics;
+        g.Clear(Theme.Surface2);
+        using (var pen = new Pen(Theme.Accent)) g.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
+        int y = Pad;
+        foreach (var b in Blocks())
+        {
+            y += b.Gap;
+            int hh = TextRenderer.MeasureText(b.Text, b.Font, new Size(MaxText, int.MaxValue), Wrap).Height;
+            TextRenderer.DrawText(g, b.Text, b.Font, new Rectangle(Pad, y, MaxText, hh), b.Color, Wrap);
+            y += hh;
+        }
+    }
+}
