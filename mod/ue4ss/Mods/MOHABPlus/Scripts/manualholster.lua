@@ -53,17 +53,24 @@ local MAX_SLOT = 5                      -- 0-5 = body holsters
 -- GetNearestHolsterSlot's distance array index -> holster slot it measures
 local INDEX_OF_SLOT = { [3] = 0, [0] = 1, [5] = 2, [2] = 3, [4] = 4, [1] = 5 }
 
-local MAX_DROP_SPEED = 900              -- cm/s
+local MAX_DROP_SPEED = 600              -- cm/s
+local VEL_WINDOW = 0.1                  -- s of hand positions the drop speed is measured over
+local ROOT_GAP = 8                      -- cm between a weapon's model and where its actor should be before it is moved
+local PAWN_FREE_TIME = 0.5              -- s a dropped weapon passes through the player's body
+local ECC_PAWN = 2
 local FORCED_GRIP = 0.9                 -- grip still pressed this much: the player did not let go
 local STEP_IN = 30                      -- cm in front of the head: where a weapon released behind a wall falls
 
 -- ---------------------------------------------------------------------------------------------
 -- State
 -- ---------------------------------------------------------------------------------------------
-local held = {}        -- address -> { w, name, side, kind, ammo, canFire, vel }  weapons in the player's hands
+local held = {}        -- address -> { w, name, side, kind, how, ammo, canFire }  weapons in the player's hands
 local dropped = {}     -- address -> { w, name, ammo, canFire }  dropped weapons still on the floor
 local zone = {}        -- side -> slot the held weapon would go to now
+local samples = {}     -- side -> list of { t, p } hand positions (the last VEL_WINDOW or so)
+local passing = {}     -- address -> { w, name, t0, resp }  dropped weapons ignoring the player's body for a moment
 local lastPawn = nil
+local clock = 0         -- the tick's time (s)
 local wasOn = false
 
 -- ---------------------------------------------------------------------------------------------
@@ -198,6 +205,131 @@ local function location(o, fn)
 end
 
 -- ---------------------------------------------------------------------------------------------
+-- Hand speed and the weapon's actor vs its model
+-- ---------------------------------------------------------------------------------------------
+-- The hand's own speed (its tracked controller), not the weapon's VelocityEstimator: a weapon just grabbed jumps from
+-- the floor to the hand, and one held by the off hand hangs from an actor that can be far from the hand (see below),
+-- so its estimate turned a drop into a throw.
+local function sampleHands(pawn, t)
+    for _, side in ipairs({ "Left", "Right" }) do
+        local mc = U.get(U.get(pawn, side .. "Controller"), "MotionController")
+        local p = U.valid(mc) and location(mc, "K2_GetComponentLocation") or nil
+        local list = samples[side] or {}
+        if p then
+            list[#list + 1] = { t = t, p = p }
+            while #list > 2 and t - list[2].t >= VEL_WINDOW do table.remove(list, 1) end
+        end
+        samples[side] = list
+    end
+end
+
+local function handVelocity(side)
+    local list = samples[side]
+    if not list or #list < 2 then return nil end
+    local a, b = list[1], list[#list]
+    local dt = b.t - a.t
+    if dt <= 0.005 or dt > 0.5 then return nil end
+    return U.vmul(U.vsub(b.p, a.p), 1 / dt)
+end
+
+-- A weapon is an actor (root) with its model under it. A dropped weapon falls by its model while the actor stays
+-- where the hand let go. The off hand's grab (BP_Weapon_Rifle_MagazineLoaded) puts the model back on the actor, attaches
+-- the actor to the hand where it is (keeping its distance) and moves the model to the hand turned 45 degrees; its
+-- release (OffhandDroppedWeapon) then zeroes the model's rotation relative to the actor. With the actor still up where
+-- the last drop happened, the model swung around it on every release, and the distance grew with each grab: the
+-- weapon jumped up / forward, more every time. The fix keeps the actor under its model.
+local kml = nil
+local function rotate(v, rot)
+    if not U.valid(kml) then kml = StaticFindObject("/Script/Engine.Default__KismetMathLibrary") end
+    local ok, r = U.call(kml, "GreaterGreater_VectorRotator", v, rot)
+    return (ok and r) and U.vec(r) or v
+end
+
+local function angleDiff(a, b)
+    return math.abs((a - b + 180) % 360 - 180)
+end
+
+-- Where the actor should be for its model (model turned like the actor, at its stored offset). Returns the model's
+-- location and rotation, the actor's target location and how far the actor is from it (cm, or 999 if turned).
+local function rootTarget(w)
+    local model = U.get(w, "Model")
+    local mLoc, aLoc = location(model, "K2_GetComponentLocation"), location(w, "K2_GetActorLocation")
+    local okM, mr = U.call(model, "K2_GetComponentRotation")
+    local okA, ar = U.call(w, "K2_GetActorRotation")
+    if not mLoc or not aLoc or not okM or not mr or not okA or not ar then return nil end
+    local rot = { Pitch = mr.Pitch, Yaw = mr.Yaw, Roll = mr.Roll }
+    local rel = { X = 0, Y = 0, Z = 0 }
+    pcall(function() rel = U.vec(w.StoredModelTransform.Translation) end)
+    local target = U.vsub(mLoc, rotate(rel, rot))
+    local gap = U.vlen(U.vsub(aLoc, target))
+    if angleDiff(ar.Pitch, rot.Pitch) > 1 or angleDiff(ar.Yaw, rot.Yaw) > 1 or angleDiff(ar.Roll, rot.Roll) > 1 then
+        gap = math.max(gap, 999)
+    end
+    return model, mLoc, rot, target, gap
+end
+
+-- Puts the actor under its model; the model stays where it is (min: only if the actor is farther than that, cm).
+-- Returns the distance the actor was off, or nil if it was not moved.
+local function alignRoot(w, min)
+    local model, mLoc, rot, target, gap = rootTarget(w)
+    if not model or gap <= (min or 0) then return nil end
+    U.call(w, "K2_SetActorLocationAndRotation", target, rot, false, {}, true)
+    -- A model attached to the actor has moved with it: back where it was. A falling one (physics) has not.
+    local now = location(model, "K2_GetComponentLocation")
+    if now and U.vlen(U.vsub(now, mLoc)) > 0.5 then
+        U.call(model, "K2_SetWorldLocationAndRotation", mLoc, rot, false, {}, true)
+    end
+    return gap
+end
+
+-- A rifle held by the off hand: its actor is kept under the model, so the release does not swing it.
+local function keepOffhandPose(t)
+    if t.kind ~= "long" or t.how ~= "off hand" then return end
+    local gap = alignRoot(t.w, ROOT_GAP)
+    if gap and not t.aligned then
+        t.aligned = true
+        U.dlog("manual holster: %s in the off hand: actor moved %s under its model", t.name,
+            gap >= 999 and "and turned" or string.format("%.0f cm", gap))
+    end
+end
+
+-- Dropped weapons: the actor follows its falling model, so a weapon grabbed again (even before it lands) has its
+-- actor where it is.
+local function followDropped(pawn)
+    for addr, d in pairs(dropped) do
+        local w = d.w
+        if not U.valid(w) or fname(w) ~= d.name or U.get(w, "HeldByAI") == true then
+            dropped[addr] = nil
+        elseif not held[addr] and not U.same(U.get(w, "WeaponOwner"), pawn) then
+            local okS, sim = U.call(U.get(w, "Model"), "IsSimulatingPhysics", FName("None"))
+            if okS and sim == true then alignRoot(w, ROOT_GAP) end
+        end
+    end
+end
+
+-- A weapon let go of by the off hand has its stock in the player's body: the physics pushed it out forward / up.
+local function passThroughPlayer(w, name, now)
+    local model = U.get(w, "Model")
+    local ok, resp = U.call(model, "GetCollisionResponseToChannel", ECC_PAWN)
+    U.call(model, "SetCollisionResponseToChannel", ECC_PAWN, 0)
+    passing[w:GetAddress()] = { w = w, name = name, t0 = now, resp = (ok and type(resp) == "number") and resp or 2 }
+end
+
+local function passingTick(pawn, now)
+    for addr, p in pairs(passing) do
+        if not U.valid(p.w) or fname(p.w) ~= p.name then
+            passing[addr] = nil
+        elseif now - p.t0 >= PAWN_FREE_TIME then
+            passing[addr] = nil
+            -- Grabbed again: the game has set the weapon's collision itself.
+            if not held[addr] and not U.same(U.get(p.w, "WeaponOwner"), pawn) then
+                U.call(U.get(p.w, "Model"), "SetCollisionResponseToChannel", ECC_PAWN, p.resp)
+            end
+        end
+    end
+end
+
+-- ---------------------------------------------------------------------------------------------
 -- Putting a weapon into a holster, without the flight
 -- ---------------------------------------------------------------------------------------------
 -- Gives a held / released weapon a holster slot (clears the one it had).
@@ -320,6 +452,7 @@ local function drop(pawn, hc, t)
     local okP, parent = U.call(w, "GetAttachParentActor")
     t.parent = (okP and U.valid(parent)) and fname(parent) or nil
     if t.parent then U.call(w, "K2_DetachFromActor", 1, 1, 1) end
+    t.rootGap = alignRoot(w, ROOT_GAP)
 
     -- The throw clears weapon.HolsterSlot: only let it when that slot is really this weapon's.
     local current = U.get(w, "HolsterSlot")
@@ -336,12 +469,17 @@ local function drop(pawn, hc, t)
     if type(t.canFire) == "boolean" then w.CanFireNow = t.canFire end
     w.HolsterSlot = floorSlot(t.kind)
 
-    local v = t.vel
-    if v and not moved then
-        local s = U.vlen(v)
-        if s > MAX_DROP_SPEED then v = U.vmul(v, MAX_DROP_SPEED / s) end
-        U.call(U.get(w, "Model"), "SetAllPhysicsLinearVelocity", v, false)
-    end
+    -- The hand's speed at the release (none behind a wall), no spin: whatever the weapon had from the grab, the
+    -- off hand's swing or the throw is discarded.
+    local v = (not moved) and handVelocity(t.side) or nil
+    v = v or { X = 0, Y = 0, Z = 0 }
+    local s = U.vlen(v)
+    if s > MAX_DROP_SPEED then v = U.vmul(v, MAX_DROP_SPEED / s) end
+    t.dropSpeed = math.min(s, MAX_DROP_SPEED)
+    local model = U.get(w, "Model")
+    U.call(model, "SetAllPhysicsLinearVelocity", v, false)
+    U.call(model, "SetAllPhysicsAngularVelocityInDegrees", { X = 0, Y = 0, Z = 0 }, false)
+    if not grenade then passThroughPlayer(w, t.name, clock) end
 
     if grenade then
         U.call(w, "SetGrenadeState", 0)
@@ -412,10 +550,11 @@ local function released(pawn, hc, t)
             if o then carried[#carried + 1] = s .. "=" .. fname(o) end
         end
         local moved = drop(pawn, hc, t)
-        U.log("manual holster: %s (%s) dropped by the %s hand (%s)%s%s (free holsters [%s] of [%s]; carried %s; cm %s; grip %.2f%s)",
+        U.log("manual holster: %s (%s) dropped by the %s hand (%s)%s%s (free holsters [%s] of [%s]; carried %s; cm %s; grip %.2f%s; speed %.0f%s)",
             t.name, t.kind, t.side, t.how or "?", loose and ", no holster" or "", moved and ", hand behind a wall" or "", free,
             table.concat(fittingSlots(pawn, t.kind), ","), table.concat(carried, " "), distText(d), grip,
-            forced and "; released by the game" or "")
+            forced and "; released by the game" or "", t.dropSpeed or -1,
+            t.rootGap and (t.rootGap >= 999 and "; actor turned under the model" or string.format("; actor %.0f cm off the model", t.rootGap)) or "")
     end
 end
 
@@ -463,8 +602,6 @@ local function track(w, side)
         local okA, n = U.call(U.get(w, "MyPlayerStateOwner"), "GetAmmoByIndex", U.get(w, "AmmoType"))
         t.reserve = okA and n or nil
     end
-    local ok, v = U.call(U.get(w, "VelocityEstimator"), "GetLinearVelocityEstimate")
-    t.vel = (ok and v) and U.vec(v) or nil
 end
 
 local function trackHands(pawn)
@@ -596,7 +733,7 @@ local function disable()
 end
 
 function M.reset()
-    held, dropped, candidates, zone, kinds, watching = {}, {}, {}, {}, {}, {}
+    held, dropped, candidates, zone, kinds, watching, samples, passing = {}, {}, {}, {}, {}, {}, {}, {}
 end
 
 function M.tick(pawn, now)
@@ -612,9 +749,14 @@ function M.tick(pawn, now)
     local hc = U.get(pawn, "HolstersComponent")
     if not U.valid(hc) then return end
 
+    clock = now
+    sampleHands(pawn, now)
     checkReleases(pawn, hc)
     trackHands(pawn)
+    for _, t in pairs(held) do keepOffhandPose(t) end
     watchTick()
+    followDropped(pawn)
+    passingTick(pawn, now)
     adoptSlots(pawn, hc)
     prepareWorld(pawn, hc)
     zoneTaps(pawn, hc, now)
