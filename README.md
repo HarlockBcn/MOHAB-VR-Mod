@@ -110,6 +110,10 @@ Without an internet connection the launcher works as usual. You can also update 
 * **MOD ON/OFF** (or **holding a thumbstick click** for half a second in the menu) turns every change of the mod off and on again, to
   compare with the original game. Your settings are kept, and the mod is always on when the game starts.
 * Changes are saved to `ue4ss\Mods\MOHABPlus\config.ini` when the menu closes.
+* **Language**: chosen at the top right of the launcher (`language` in `config.ini`). *Automatic* means Windows'
+  language for the launcher and the game's language for the in-game menu (English when there is no file for it). The
+  texts are in `ue4ss\Mods\MOHABPlus\lang\<code>.txt` (`key = text`, shared by the launcher and the menu); a text
+  missing from a language is shown in English.
 
 ## How it works (technical summary)
 

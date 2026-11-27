@@ -64,6 +64,7 @@ M.defaults = {
     skip_hold_time = 1.0,
     skip_speed = 12,               -- fast-forward speed for dialogue scenes
 
+    language = "auto",              -- "auto" (in game: the game's language) | "en" | "es" | ... (lang/<code>.txt)
     menu_view = "basic",            -- "basic" (the main options) | "advanced" (every option); in-game menu and launcher
     menu_hold_time = 1.5,
     debug_log = false,
@@ -80,7 +81,7 @@ M.order = {
     { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier", "sprint_turn_slowdown", "stairs_steady_speed" } },
     { "Slide", { "slide_enabled", "slide_strength", "slide_sound" } },
     { "Cutscenes", { "skip_cutscenes", "skip_hold_time", "skip_speed" } },
-    { "Menu", { "menu_view", "menu_hold_time" } },
+    { "Menu", { "language", "menu_view", "menu_hold_time" } },
     { "Debug", { "debug_log" } },
 }
 

@@ -28,6 +28,7 @@ internal sealed class MainForm : Form
     private readonly Label _updateText = Theme.Label("", Theme.Bold);
     private readonly ModernButton _updateNow = new(Lang.T("ui.update_now"), primary: true);
     private readonly ModernButton _updateNotes = new(Lang.T("ui.whats_new"));
+    private readonly ModernButton _updateLater = new(Lang.T("ui.later"));
     private readonly LinkLabel _updateStatus = new() { AutoSize = true, Font = Theme.Small, BackColor = Color.Transparent };
     private ReleaseInfo? _available;
     private bool _checking, _installing;
@@ -41,10 +42,10 @@ internal sealed class MainForm : Form
         _svc.Log += s => BeginInvoke(() => { _log.AppendText(s + Environment.NewLine); });
         _config = new ModConfig(Path.Combine(baseDir, "ue4ss", "Mods", "MOHABPlus", "config.ini"));
         _config.Load();
+        Lang.SetLanguage(Lang.Resolve(_config.Values[ModConfig.LanguageKey]));
 
         using (var g = CreateGraphics()) Theme.Dpi = g.DpiX / 96f;
         AutoScaleMode = AutoScaleMode.None;
-        Text = Lang.T("ui.window_title", AppInfo.VersionText, AppInfo.Credit);
         ClientSize = new Size(Theme.S(900), Theme.S(800));
         MinimumSize = new Size(Theme.S(800), Theme.S(700));
         StartPosition = FormStartPosition.CenterScreen;
@@ -53,84 +54,12 @@ internal sealed class MainForm : Form
         ForeColor = Theme.Text;
         Font = Theme.Body;
 
-        // Pages
-        var content = new Panel { Dock = DockStyle.Fill, BackColor = Theme.Bg };
-        var play = BuildPlayPage();
-        var featuresPage = new FeatureListView(FeatureCatalog.Load()) { Dock = DockStyle.Fill, Visible = false };
-        var settingsPage = BuildSettingsPage();
-        settingsPage.Visible = false;
-        content.Controls.Add(play);
-        content.Controls.Add(featuresPage);
-        content.Controls.Add(settingsPage);
-        var aboutPage = BuildAboutPage();
-        aboutPage.Visible = false;
-        content.Controls.Add(aboutPage);
-
-        // Navigation
-        var nav = new Panel { Dock = DockStyle.Top, Height = Theme.S(46), BackColor = Theme.Bg, Padding = new Padding(Theme.S(16), 0, Theme.S(18), 0) };
-        var pages = new (NavTab Tab, Control Page)[]
-        {
-            (new NavTab(Lang.T("ui.tab_play")) { Selected = true }, play),
-            (new NavTab(Lang.T("ui.tab_features")), featuresPage),
-            (new NavTab(Lang.T("ui.tab_settings")), settingsPage),
-            (new NavTab(Lang.T("ui.tab_about")), aboutPage),
-        };
-        var tabs = new FlowLayoutPanel { Dock = DockStyle.Left, AutoSize = true, WrapContents = false, BackColor = Color.Transparent, Margin = Padding.Empty };
-        foreach (var (tab, page) in pages)
-        {
-            tabs.Controls.Add(tab);
-            tab.Click += (_, _) =>
-            {
-                foreach (var (t, p) in pages) { t.Selected = t == tab; p.Visible = t == tab; }
-                if (page == settingsPage) { _config.Load(); RefreshOptionControls(); }
-            };
-        }
-        _updateStatus.LinkColor = Theme.Muted; _updateStatus.ActiveLinkColor = Theme.Accent; _updateStatus.VisitedLinkColor = Theme.Muted;
-        _updateStatus.LinkBehavior = LinkBehavior.HoverUnderline;
-        _updateStatus.Dock = DockStyle.Right;
-        _updateStatus.TextAlign = ContentAlignment.MiddleRight;
-        _updateStatus.AutoSize = false;
-        _updateStatus.Width = Theme.S(320);
-        _updateStatus.LinkClicked += async (_, _) =>
-        {
-            if (_available != null) ShowReleaseNotes(_available);
-            else await CheckForUpdatesAsync(manual: true);
-        };
-        nav.Controls.Add(tabs);
-        nav.Controls.Add(_updateStatus);
-        nav.Paint += (_, e) => { using var p = new Pen(Theme.Border); e.Graphics.DrawLine(p, 0, nav.Height - 1, nav.Width, nav.Height - 1); };
-
-        BuildUpdateBar();
-
-        var banner = new BannerPanel { Dock = DockStyle.Top, VersionText = AppInfo.VersionText };
-
-        // Footer
-        var footer = new Panel { Dock = DockStyle.Bottom, Height = Theme.S(28), BackColor = Theme.Footer, Padding = new Padding(Theme.S(16), 0, Theme.S(16), 0) };
-        var footerText = Theme.Label(Lang.T("ui.footer", AppInfo.VersionText, AppInfo.Credit), Theme.Small, Theme.Muted);
-        footerText.AutoSize = false; footerText.Dock = DockStyle.Fill; footerText.TextAlign = ContentAlignment.MiddleLeft;
-        var footerLink = new LinkLabel
-        {
-            Text = "GitHub", AutoSize = false, Dock = DockStyle.Right, Width = Theme.S(80), TextAlign = ContentAlignment.MiddleRight,
-            Font = Theme.Small, LinkColor = Theme.Accent, ActiveLinkColor = Theme.AccentHover, LinkBehavior = LinkBehavior.HoverUnderline,
-        };
-        footerLink.LinkClicked += (_, _) => OpenUrl(AppInfo.RepoUrl);
-        footer.Controls.Add(footerText);
-        footer.Controls.Add(footerLink);
-
-        // Docking order: the last added control docks first.
-        Controls.Add(content);
-        Controls.Add(footer);
-        Controls.Add(nav);
-        Controls.Add(_updateBar);
-        Controls.Add(banner);
+        InitControls();
+        BuildUi();
 
         _tray.Icon = Icon; _tray.Text = $"MOHAB Plus {AppInfo.VersionText} {AppInfo.Credit}"; _tray.Visible = false;
         // Minimised while auto-load is on = keep running in the tray. Windows 11 often tucks new tray icons away in the
-        // overflow (^), so say so the first time and offer an explicit Exit.
-        var trayMenu = new ContextMenuStrip();
-        trayMenu.Items.Add(Lang.T("ui.tray_open"), null, (_, _) => RestoreFromTray());
-        trayMenu.Items.Add(Lang.T("ui.tray_exit"), null, (_, _) => Close());
-        _tray.ContextMenuStrip = trayMenu;
+        // overflow (^), so say so the first time and offer an explicit Exit (menu built in BuildUi).
         _tray.MouseClick += (_, e) => { if (e.Button == MouseButtons.Left) RestoreFromTray(); };
         _tray.BalloonTipClicked += (_, _) => RestoreFromTray();
         Resize += (_, _) =>
@@ -170,6 +99,220 @@ internal sealed class MainForm : Form
             _configWatcher.Created += (_, _) => BeginInvoke(ReloadConfigFromDisk);
         }
         catch { /* not critical */ }
+    }
+
+    // ---------------------------------------------------------------- Window and language
+
+    // Controls that outlive a language change (their state is kept): set up once here, placed again by BuildUi.
+    private void InitControls()
+    {
+        // Play page
+        Theme.Style(_gameDir);
+        _gameDir.Text = _settings.GameDir ?? "";
+        _gameDir.Leave += (_, _) => SaveLauncherSettings();
+        _autoWatch.Checked = _settings.AutoWatch;
+        _autoWatch.CheckedChanged += (_, _) =>
+        {
+            SaveLauncherSettings();
+            if (_autoWatch.Checked) _svc.StartWatching(); else { _svc.StopWatching(); Append(Lang.T("ui.auto_watch_disabled")); }
+            UpdateWatchStatus();
+        };
+        Theme.DarkScrollBars(_log);
+
+        // Settings page
+        _basicButton.Click += (_, _) => SwitchView("basic");
+        _advancedButton.Click += (_, _) => SwitchView("advanced");
+        _defaultsButton.Click += (_, _) =>
+        {
+            // Every option, also the ones the basic view hides; the view and the language stay.
+            foreach (var o in ModConfig.Options)
+                if (!ModConfig.HasOwnControl(o.Key)) _config.Values[o.Key] = o.Default;
+            RefreshOptionControls();
+        };
+        _optionGrid.ColumnCount = 2;
+        _optionGrid.AutoScroll = true;
+        _optionGrid.BackColor = Theme.Surface;
+        _optionGrid.Padding = new Padding(Theme.S(14), Theme.S(4), Theme.S(14), Theme.S(10));
+        _optionGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        _optionGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Theme.S(170)));
+        _optionGrid.Scroll += (_, _) => HideInfo();
+        _optionGrid.MouseWheel += (_, _) => HideInfo();
+        Theme.DarkScrollBars(_optionGrid);
+        Deactivate += (_, _) => HideInfo();
+        Application.AddMessageFilter(new ClickOutsideFilter(this));
+
+        // Top bar: update status and language picker
+        _updateStatus.LinkColor = Theme.Muted; _updateStatus.ActiveLinkColor = Theme.Accent; _updateStatus.VisitedLinkColor = Theme.Muted;
+        _updateStatus.LinkBehavior = LinkBehavior.HoverUnderline;
+        _updateStatus.Dock = DockStyle.Right;
+        _updateStatus.TextAlign = ContentAlignment.MiddleRight;
+        _updateStatus.AutoSize = false;
+        _updateStatus.Width = Theme.S(320);
+        _updateStatus.LinkClicked += async (_, _) =>
+        {
+            if (_available != null) ShowReleaseNotes(_available);
+            else await CheckForUpdatesAsync(manual: true);
+        };
+        _languageBox.SelectedIndexChanged += (_, _) =>
+        {
+            if (_buildingUi || _languageBox.SelectedIndex < 0) return;
+            string code = _languageCodes[_languageBox.SelectedIndex];
+            if (code != _config.Values[ModConfig.LanguageKey]) BeginInvoke(() => SwitchLanguage(code));
+        };
+
+        BuildUpdateBar();
+    }
+
+    private Control? _content, _nav, _banner, _footer;
+    private ContextMenuStrip? _trayMenu;
+    private bool _buildingUi;
+    private int _page;   // page shown (kept across language changes)
+    private readonly ComboBox _languageBox = new()
+    {
+        DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, Width = Theme.S(170),
+        BackColor = Theme.Surface2, ForeColor = Theme.Text, Font = Theme.Small,
+    };
+    private readonly List<string> _languageCodes = new();
+
+    /// <summary>Builds (or rebuilds, after a language change) every text-bearing part of the window. The long-lived
+    /// controls (game folder, activity log, option grid, update bar...) keep their state.</summary>
+    private void BuildUi()
+    {
+        _buildingUi = true;
+        SuspendLayout();
+        HideInfo();
+        foreach (var c in new Control[] { _gameDir, _autoWatch, _watchStatus, _log, _optionGrid, _basicButton, _advancedButton,
+                                          _defaultsButton, _updateStatus, _languageBox, _updateBar })
+            c.Parent?.Controls.Remove(c);
+        foreach (var old in new[] { _content, _nav, _banner, _footer })
+            if (old != null) { Controls.Remove(old); old.Dispose(); }
+
+        Text = Lang.T("ui.window_title", AppInfo.VersionText, AppInfo.Credit);
+        _autoWatch.Text = Lang.T("ui.auto_watch");
+        _basicButton.Text = Lang.T("ui.basic");
+        _advancedButton.Text = Lang.T("ui.advanced");
+        _updateNotes.Text = Lang.T("ui.whats_new");
+        _updateLater.Text = Lang.T("ui.later");
+
+        // Pages
+        var content = new Panel { Dock = DockStyle.Fill, BackColor = Theme.Bg };
+        var play = BuildPlayPage();
+        var featuresPage = new FeatureListView(FeatureCatalog.Load()) { Dock = DockStyle.Fill, Visible = false };
+        var settingsPage = BuildSettingsPage();
+        settingsPage.Visible = false;
+        content.Controls.Add(play);
+        content.Controls.Add(featuresPage);
+        content.Controls.Add(settingsPage);
+        var aboutPage = BuildAboutPage();
+        aboutPage.Visible = false;
+        content.Controls.Add(aboutPage);
+
+        // Navigation
+        var nav = new Panel { Dock = DockStyle.Top, Height = Theme.S(46), BackColor = Theme.Bg, Padding = new Padding(Theme.S(16), 0, Theme.S(18), 0) };
+        var pages = new (NavTab Tab, Control Page)[]
+        {
+            (new NavTab(Lang.T("ui.tab_play")), play),
+            (new NavTab(Lang.T("ui.tab_features")), featuresPage),
+            (new NavTab(Lang.T("ui.tab_settings")), settingsPage),
+            (new NavTab(Lang.T("ui.tab_about")), aboutPage),
+        };
+        var tabs = new FlowLayoutPanel { Dock = DockStyle.Left, AutoSize = true, WrapContents = false, BackColor = Color.Transparent, Margin = Padding.Empty };
+        void SelectPage(int index)
+        {
+            for (int i = 0; i < pages.Length; i++) { pages[i].Tab.Selected = i == index; pages[i].Page.Visible = i == index; }
+            _page = index;
+            if (pages[index].Page == settingsPage) { _config.Load(); RefreshOptionControls(); }
+        }
+        for (int i = 0; i < pages.Length; i++)
+        {
+            int index = i;
+            tabs.Controls.Add(pages[i].Tab);
+            pages[i].Tab.Click += (_, _) => SelectPage(index);
+        }
+        for (int i = 0; i < pages.Length; i++) { pages[i].Tab.Selected = i == _page; pages[i].Page.Visible = i == _page; }
+
+        // Language picker: "Automatic (<Windows language>)" and every language with a file, each in its own name.
+        _languageCodes.Clear();
+        _languageBox.Items.Clear();
+        var langs = Lang.Available();
+        string winCode = Lang.Resolve("auto");
+        string winName = langs.FirstOrDefault(l => l.Code == winCode).Name ?? "English";
+        _languageCodes.Add("auto");
+        _languageBox.Items.Add(Lang.T("lang.auto", winName));
+        foreach (var (code, name) in langs) { _languageCodes.Add(code); _languageBox.Items.Add(name); }
+        int sel = _languageCodes.IndexOf(_config.Values[ModConfig.LanguageKey]);
+        _languageBox.SelectedIndex = sel >= 0 ? sel : 0;
+        _tips.SetToolTip(_languageBox, Lang.T("ui.language_tip"));
+
+        nav.Controls.Add(tabs);
+        nav.Controls.Add(_updateStatus);
+        nav.Paint += (_, e) => { using var p = new Pen(Theme.Border); e.Graphics.DrawLine(p, 0, nav.Height - 1, nav.Width, nav.Height - 1); };
+
+        var banner = new BannerPanel { Dock = DockStyle.Top, VersionText = AppInfo.VersionText };
+        _languageBox.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        banner.Controls.Add(_languageBox);
+
+        // Footer
+        var footer = new Panel { Dock = DockStyle.Bottom, Height = Theme.S(28), BackColor = Theme.Footer, Padding = new Padding(Theme.S(16), 0, Theme.S(16), 0) };
+        var footerText = Theme.Label(Lang.T("ui.footer", AppInfo.VersionText, AppInfo.Credit), Theme.Small, Theme.Muted);
+        footerText.AutoSize = false; footerText.Dock = DockStyle.Fill; footerText.TextAlign = ContentAlignment.MiddleLeft;
+        var footerLink = new LinkLabel
+        {
+            Text = "GitHub", AutoSize = false, Dock = DockStyle.Right, Width = Theme.S(80), TextAlign = ContentAlignment.MiddleRight,
+            Font = Theme.Small, LinkColor = Theme.Accent, ActiveLinkColor = Theme.AccentHover, LinkBehavior = LinkBehavior.HoverUnderline,
+        };
+        footerLink.LinkClicked += (_, _) => OpenUrl(AppInfo.RepoUrl);
+        footer.Controls.Add(footerText);
+        footer.Controls.Add(footerLink);
+
+        // Docking order: the last added control docks first.
+        Controls.Add(content);
+        Controls.Add(footer);
+        Controls.Add(nav);
+        Controls.Add(_updateBar);
+        Controls.Add(banner);
+        (_content, _nav, _banner, _footer) = (content, nav, banner, footer);
+
+        var oldMenu = _trayMenu;
+        _trayMenu = new ContextMenuStrip();
+        _trayMenu.Items.Add(Lang.T("ui.tray_open"), null, (_, _) => RestoreFromTray());
+        _trayMenu.Items.Add(Lang.T("ui.tray_exit"), null, (_, _) => Close());
+        _tray.ContextMenuStrip = _trayMenu;
+        oldMenu?.Dispose();
+
+        ShowUpdateState();
+        UpdateWatchStatus();
+        ResumeLayout(true);
+        // Language picker at the top right of the banner, left of the version pill (see BannerPanel.OnPaint).
+        int pillX = banner.ClientSize.Width - TextRenderer.MeasureText(AppInfo.VersionText, Theme.Bold, Size.Empty, TextFormatFlags.NoPadding).Width - Theme.S(44);
+        _languageBox.Location = new Point(pillX - Theme.S(10) - _languageBox.Width, Theme.S(18));
+        _buildingUi = false;
+    }
+
+    /// <summary>Picker changed: saves the language right away (also read by a running game) and rebuilds the window.
+    /// Unsaved settings edits are kept.</summary>
+    private void SwitchLanguage(string code)
+    {
+        ReadOptionControls();
+        _config.Values[ModConfig.LanguageKey] = code;
+        SaveSingleValue(ModConfig.LanguageKey, code);
+        Lang.SetLanguage(Lang.Resolve(code));
+        BuildUi();
+        ActiveControl = _languageBox;
+    }
+
+    /// <summary>Writes one value to config.ini, leaving the other values on disk as they are.</summary>
+    private void SaveSingleValue(string key, string value)
+    {
+        try
+        {
+            var disk = new ModConfig(_config.Path);
+            disk.Load();
+            disk.Values[key] = value;
+            disk.Save();
+            _lastConfigText = File.ReadAllText(_config.Path);
+        }
+        catch { /* not critical: saved with the other settings */ }
     }
 
     protected override void OnHandleCreated(EventArgs e)
@@ -214,12 +357,9 @@ internal sealed class MainForm : Form
         var folderCaption = Theme.CaptionLabel(Lang.T("ui.game_folder"));
         folderGrid.Controls.Add(folderCaption, 0, 0);
         folderGrid.SetColumnSpan(folderCaption, 2);
-        Theme.Style(_gameDir);
         _gameDir.Anchor = AnchorStyles.Left | AnchorStyles.Right;
         _gameDir.Dock = DockStyle.None;
         _gameDir.Margin = new Padding(0, Theme.S(4), Theme.S(8), 0);
-        _gameDir.Text = _settings.GameDir ?? "";
-        _gameDir.Leave += (_, _) => SaveLauncherSettings();
         var browse = new ModernButton(Lang.T("ui.browse")) { Margin = new Padding(0) };
         browse.Click += (_, _) =>
         {
@@ -267,13 +407,6 @@ internal sealed class MainForm : Form
         }
         _tips.SetToolTip(_autoWatch, Lang.T("ui.auto_watch_tip"));
         _autoWatch.Margin = new Padding(0, Theme.S(10), 0, 0);
-        _autoWatch.Checked = _settings.AutoWatch;
-        _autoWatch.CheckedChanged += (_, _) =>
-        {
-            SaveLauncherSettings();
-            if (_autoWatch.Checked) _svc.StartWatching(); else { _svc.StopWatching(); Append(Lang.T("ui.auto_watch_disabled")); }
-            UpdateWatchStatus();
-        };
         Span(_autoWatch);
         _watchStatus.Margin = new Padding(0, Theme.S(6), 0, 0);
         Span(_watchStatus);
@@ -311,7 +444,6 @@ internal sealed class MainForm : Form
         var logCard = new Card { Dock = DockStyle.Fill, Padding = new Padding(Theme.S(12), Theme.S(8), Theme.S(4), Theme.S(8)) };
         var logCaption = Theme.CaptionLabel(Lang.T("ui.activity"));
         logCaption.Dock = DockStyle.Top;
-        Theme.DarkScrollBars(_log);
         logCard.Controls.Add(_log);
         logCard.Controls.Add(logCaption);
         layout.Controls.Add(logCard);
@@ -414,8 +546,6 @@ internal sealed class MainForm : Form
         var views = new FlowLayoutPanel { AutoSize = true, WrapContents = false, BackColor = Color.Transparent, Margin = Padding.Empty, Anchor = AnchorStyles.Right };
         _basicButton.Margin = new Padding(0, 0, Theme.S(4), 0);
         _advancedButton.Margin = Padding.Empty;
-        _basicButton.Click += (_, _) => SwitchView("basic");
-        _advancedButton.Click += (_, _) => SwitchView("advanced");
         views.Controls.Add(_basicButton);
         views.Controls.Add(_advancedButton);
         top.Controls.Add(views);
@@ -423,15 +553,6 @@ internal sealed class MainForm : Form
 
         var card = new Card { Dock = DockStyle.Fill, Padding = new Padding(Theme.S(4)) };
         _optionGrid.Dock = DockStyle.Fill;
-        _optionGrid.ColumnCount = 2;
-        _optionGrid.AutoScroll = true;
-        _optionGrid.BackColor = Theme.Surface;
-        _optionGrid.Padding = new Padding(Theme.S(14), Theme.S(4), Theme.S(14), Theme.S(10));
-        _optionGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        _optionGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Theme.S(170)));
-        _optionGrid.Scroll += (_, _) => HideInfo();
-        _optionGrid.MouseWheel += (_, _) => HideInfo();
-        Theme.DarkScrollBars(_optionGrid);
         _descriptions = ModConfig.LoadDescriptions(_config.Path);
         PopulateOptionGrid();
         card.Controls.Add(_optionGrid);
@@ -443,21 +564,12 @@ internal sealed class MainForm : Form
         var reload = new ModernButton(Lang.T("ui.reload")) { Margin = new Padding(Theme.S(8), 0, 0, 0) };
         reload.Click += (_, _) => { _config.Load(); ShowConfig(); };
         _defaultsButton.Margin = new Padding(Theme.S(8), 0, 0, 0);
-        _defaultsButton.Click += (_, _) =>
-        {
-            // Every option, also the ones the basic view hides; the view itself stays.
-            foreach (var o in ModConfig.Options)
-                if (o.Key != ModConfig.ViewKey) _config.Values[o.Key] = o.Default;
-            RefreshOptionControls();
-        };
         buttons.Controls.Add(save);
         buttons.Controls.Add(reload);
         buttons.Controls.Add(_defaultsButton);
         outer.Controls.Add(buttons);
 
         outer.VisibleChanged += (_, _) => { if (!outer.Visible) HideInfo(); };
-        Deactivate += (_, _) => HideInfo();
-        Application.AddMessageFilter(new ClickOutsideFilter(this));
         return outer;
     }
 
@@ -485,7 +597,7 @@ internal sealed class MainForm : Form
         _defaultsButton.Text = Lang.T(advanced ? "ui.defaults" : "ui.defaults_all");
 
         var groups = advanced
-            ? ModConfig.Options.Where(o => o.Key != ModConfig.ViewKey).GroupBy(o => o.Section).Select(g => (g.Key, g.ToArray()))
+            ? ModConfig.Options.Where(o => !ModConfig.HasOwnControl(o.Key)).GroupBy(o => o.Section).Select(g => (g.Key, g.ToArray()))
             : ModConfig.BasicLayout.Select(b => (b.Section, b.Keys.Select(k => ModConfig.Options.First(o => o.Key == k)).ToArray()));
 
         var grid = _optionGrid;
@@ -568,15 +680,7 @@ internal sealed class MainForm : Form
         if (_config.Values[ModConfig.ViewKey] == view) return;
         ReadOptionControls();
         _config.Values[ModConfig.ViewKey] = view;
-        try
-        {
-            var disk = new ModConfig(_config.Path);
-            disk.Load();
-            disk.Values[ModConfig.ViewKey] = view;
-            disk.Save();
-            _lastConfigText = File.ReadAllText(_config.Path);
-        }
-        catch { /* not critical: saved with the other settings */ }
+        SaveSingleValue(ModConfig.ViewKey, view);
         PopulateOptionGrid();
     }
 
@@ -626,6 +730,12 @@ internal sealed class MainForm : Form
     /// <summary>Shows the loaded values, switching view if the in-game menu changed it.</summary>
     private void ShowConfig()
     {
+        if (Lang.Resolve(_config.Values[ModConfig.LanguageKey]) != Lang.Code)
+        {
+            Lang.SetLanguage(Lang.Resolve(_config.Values[ModConfig.LanguageKey]));
+            BuildUi();
+            return;
+        }
         if (_config.Values[ModConfig.ViewKey] != _shownView) PopulateOptionGrid();
         else RefreshOptionControls();
     }
@@ -680,15 +790,15 @@ internal sealed class MainForm : Form
         _updateText.ForeColor = Theme.Text;
 
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Right, AutoSize = true, WrapContents = false, BackColor = Color.Transparent, Margin = Padding.Empty };
-        var later = new ModernButton(Lang.T("ui.later")) { Margin = new Padding(Theme.S(6), 0, 0, 0) };
+        _updateLater.Margin = new Padding(Theme.S(6), 0, 0, 0);
         _updateNotes.Margin = new Padding(Theme.S(6), 0, 0, 0);
         _updateNow.Margin = new Padding(Theme.S(6), 0, 0, 0);
-        later.Click += (_, _) => _updateBar.Visible = false;
+        _updateLater.Click += (_, _) => _updateBar.Visible = false;
         _updateNotes.Click += (_, _) => { if (_available != null) ShowReleaseNotes(_available); };
         _updateNow.Click += async (_, _) => { if (_available != null) await InstallUpdateAsync(_available); };
         buttons.Controls.Add(_updateNotes);
         buttons.Controls.Add(_updateNow);
-        buttons.Controls.Add(later);
+        buttons.Controls.Add(_updateLater);
 
         _updateBar.Controls.Add(_updateText);
         _updateBar.Controls.Add(buttons);
@@ -715,33 +825,56 @@ internal sealed class MainForm : Form
                 r = new(UpdateCheckState.UpdateAvailable, new ReleaseInfo(fake, "v" + fake, "MOHAB Plus v" + fake,
                     "## New\n- Fake release used to test the update UI.\n\n## Fixes\n- Nothing real.", AppInfo.ReleasesUrl, null, 0));
 #endif
+            _lastCheck = r;
+            _available = r.State == UpdateCheckState.UpdateAvailable ? r.Release : null;
+            _checking = false;
+            ShowUpdateState();
             switch (r.State)
             {
                 case UpdateCheckState.UpdateAvailable:
-                    _available = r.Release!;
-                    string v = AppInfo.Format(_available.Version);
-                    SetUpdateStatus(Lang.T("ui.update_available_short", v), Theme.Accent);
-                    _updateText.Text = Lang.T("ui.update_available", v, AppInfo.VersionText);
-                    _updateNow.Text = _available.ZipUrl != null ? Lang.T("ui.update_to", v) : Lang.T("ui.download_page");
                     _updateBar.Visible = true;
-                    Append(Lang.T("ui.update_available_log", v, _updateNow.Text));
+                    Append(Lang.T("ui.update_available_log", AppInfo.Format(_available!.Version), _updateNow.Text));
                     break;
                 case UpdateCheckState.UpToDate:
-                    _available = null;
-                    SetUpdateStatus(Lang.T("ui.up_to_date_short", AppInfo.VersionText), Theme.Muted);
                     if (manual) Append(Lang.T("ui.up_to_date", AppInfo.VersionText));
                     break;
                 case UpdateCheckState.NoReleases:
-                    SetUpdateStatus(Lang.T("ui.no_releases_short"), Theme.Muted);
                     if (manual) Append(Lang.T("ui.no_releases"));
                     break;
                 default:
-                    SetUpdateStatus(Lang.T("ui.check_failed_short"), Theme.Muted);
                     if (manual) Append(Lang.T("ui.check_failed", r.Error));
                     break;
             }
         }
         finally { _checking = false; }
+    }
+
+    private UpdateCheckResult? _lastCheck;
+
+    /// <summary>Shows the last update check (top bar status, update bar texts) in the current language.</summary>
+    private void ShowUpdateState()
+    {
+        _updateNow.Text = Lang.T("ui.update_now");
+        if (_checking) { SetUpdateStatus(Lang.T("ui.checking"), Theme.Muted); return; }
+        if (_lastCheck == null) { SetUpdateStatus("", Theme.Muted); return; }
+        switch (_lastCheck.State)
+        {
+            case UpdateCheckState.UpdateAvailable when _available != null:
+                string v = AppInfo.Format(_available.Version);
+                SetUpdateStatus(Lang.T("ui.update_available_short", v), Theme.Accent);
+                if (!_installing) _updateText.Text = Lang.T("ui.update_available", v, AppInfo.VersionText);
+                _updateNow.Text = _available.ZipUrl != null ? Lang.T("ui.update_to", v) : Lang.T("ui.download_page");
+                break;
+            case UpdateCheckState.UpToDate:
+                SetUpdateStatus(Lang.T("ui.up_to_date_short", AppInfo.VersionText), Theme.Muted);
+                break;
+            case UpdateCheckState.NoReleases:
+                SetUpdateStatus(Lang.T("ui.no_releases_short"), Theme.Muted);
+                break;
+            default:
+                SetUpdateStatus(Lang.T("ui.check_failed_short"), Theme.Muted);
+                break;
+        }
     }
 
     private void ShowReleaseNotes(ReleaseInfo rel)

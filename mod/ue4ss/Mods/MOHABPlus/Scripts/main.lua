@@ -28,7 +28,8 @@ local Respawn = require("respawn")
 C.init(modDir)
 local Lang = require("lang")
 Lang.init(modDir)
-Lang.setLanguage("en")
+Lang.onGameLanguage = function(raw, c) U.log("game language: %s (%s)", raw, c) end
+Lang.apply(C.raw("language"))
 U.debug = C.get("debug_log") == true
 U.log("v%s loaded (mod dir: %s)", VERSION, modDir)
 
@@ -370,7 +371,10 @@ local function tick()
     end
     if now - lastConfigCheck > 2.0 or now < lastConfigCheck then
         lastConfigCheck = now
-        if not Menu.open then C.reload() end
+        if not Menu.open then
+            C.reload()
+            Lang.apply(C.raw("language"))
+        end
     end
 
     local menuOpen = Menu.tick(pawn, pc, now)

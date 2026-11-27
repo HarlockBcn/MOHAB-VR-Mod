@@ -3,6 +3,11 @@
  starts a new line. Lines starting with # are comments.
 # Shared by the in-game menu (Scripts/lang.lua) and the launcher (launcher/Lang.cs). Keep the keys, translate the texts.
 
+# ===== Language =====
+# lang.name: the language's own name, shown in the launcher's language picker.
+lang.name = English
+lang.auto = Automatic ({0})
+
 # ===== Options: name, help line (in-game menu), choices =====
 # opt.KEY = name (in-game menu and launcher). opt.KEY.long = name in the launcher, where it differs (units).
 
@@ -169,6 +174,7 @@ opt.skip_speed.help = Speed of dialogue scenes where you just stand and wait
 
 # --- Launcher only ---
 opt.skip_hold_time = Skip hold time (s)
+opt.language = Language
 opt.menu_view = Menu view
 opt.menu_view.choice.basic = basic
 opt.menu_view.choice.advanced = advanced
@@ -227,6 +233,7 @@ ui.tab_play = PLAY
 ui.tab_features = FEATURES
 ui.tab_settings = MOD SETTINGS
 ui.tab_about = ABOUT
+ui.language_tip = Language of the launcher and of the in-game menu. Automatic: the launcher follows Windows and the in-game menu follows the game.
 ui.tray_open = Open MOHAB Plus
 ui.tray_exit = Exit
 ui.tray_hint_title = MOHAB Plus keeps running in the tray

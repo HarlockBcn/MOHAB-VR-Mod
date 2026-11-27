@@ -86,7 +86,9 @@ internal sealed class ModConfig
         new("skip_hold_time", OptionKind.Float, "1.0", 0.3, 3.0, 0.1, Section: "Cutscenes"),
         new("skip_speed", OptionKind.Float, "12", 2, 15, 1, Section: "Cutscenes"),
 
-        // Not shown as an option: the BASIC / ADVANCED selector of the settings page (and of the in-game menu).
+        // Not shown as options: the language picker (launcher top bar) and the BASIC / ADVANCED selector of the settings
+        // page (and of the in-game menu). "auto": the launcher follows Windows, the in-game menu the game's language.
+        new("language", OptionKind.Choice, "auto", Choices: new[] { "auto", "en", "es", "fr", "it", "de" }, Section: "Menu"),
         new("menu_view", OptionKind.Choice, "basic", Choices: new[] { "basic", "advanced" }, Section: "Menu"),
         new("menu_hold_time", OptionKind.Float, "1.5", 0.3, 2.0, 0.1, Section: "Menu"),
 
@@ -94,6 +96,10 @@ internal sealed class ModConfig
     };
 
     public const string ViewKey = "menu_view";
+    public const string LanguageKey = "language";
+
+    /// <summary>Options with their own control instead of a row in the settings grid (and kept by "Defaults").</summary>
+    public static bool HasOwnControl(string key) => key is ViewKey or LanguageKey;
 
     /// <summary>
     /// Basic view: the main options in three categories. Keep in sync with basicLayout in Scripts/menu.lua.

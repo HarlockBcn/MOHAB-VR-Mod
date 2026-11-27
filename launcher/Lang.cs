@@ -57,6 +57,40 @@ internal static class Lang
         }
     }
 
+    /// <summary>Languages that have a file (installed or embedded): code and own name (lang.name), English first.</summary>
+    public static List<(string Code, string Name)> Available()
+    {
+        var codes = new SortedSet<string>(StringComparer.Ordinal);
+        const string prefix = "MOHABPlus.lang.";
+        foreach (var n in typeof(Lang).Assembly.GetManifestResourceNames())
+            if (n.StartsWith(prefix) && n.EndsWith(".txt")) codes.Add(n[prefix.Length..^4]);
+        try
+        {
+            if (_dir != null && Directory.Exists(_dir))
+                foreach (var f in Directory.GetFiles(_dir, "*.txt")) codes.Add(Path.GetFileNameWithoutExtension(f).ToLowerInvariant());
+        }
+        catch { }
+        var list = new List<(string Code, string Name)>();
+        foreach (var c in codes)
+        {
+            if (!Regex.IsMatch(c, "^[a-z]{2}$")) continue;
+            var t = new Dictionary<string, string>();
+            Read(c, t);
+            list.Add((c, t.TryGetValue("lang.name", out var n) ? n : c));
+        }
+        list.Sort((a, b) => a.Code == "en" ? -1 : b.Code == "en" ? 1 : string.Compare(a.Name, b.Name, StringComparison.CurrentCultureIgnoreCase));
+        return list;
+    }
+
+    /// <summary>Language for a "language" setting: the code itself, or for "auto" Windows' language if there is a file
+    /// for it (else English).</summary>
+    public static string Resolve(string? setting)
+    {
+        if (!string.IsNullOrWhiteSpace(setting) && setting != "auto") return setting.Trim().ToLowerInvariant();
+        var win = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToLowerInvariant();
+        return Available().Any(l => l.Code == win) ? win : "en";
+    }
+
     /// <summary>Text of a key with its {0} {1}... filled in.</summary>
     public static string T(string key, params object?[] args)
     {

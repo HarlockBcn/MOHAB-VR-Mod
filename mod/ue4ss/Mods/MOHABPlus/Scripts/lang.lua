@@ -38,6 +38,30 @@ end
 
 function M.language() return code end
 
+-- The game's language ("es", "fr"...; Kismet GetCurrentLanguage), nil while it can't be read.
+local gameCode = nil
+function M.gameLanguage()
+    if gameCode then return gameCode end
+    local ok, s = pcall(function()
+        local lib = StaticFindObject("/Script/Engine.Default__KismetInternationalizationLibrary")
+        if not lib or not lib:IsValid() then return nil end
+        local v = lib:GetCurrentLanguage()
+        if type(v) ~= "string" then v = v:ToString() end
+        return v
+    end)
+    if ok and type(s) == "string" then
+        gameCode = s:lower():match("^(%a%a)")
+        if gameCode and M.onGameLanguage then M.onGameLanguage(s, gameCode) end
+    end
+    return gameCode
+end
+
+-- Applies the "language" setting: a language code, or "auto" = the game's language (English until it is known).
+function M.apply(setting)
+    if setting == nil or setting == "" or setting == "auto" then setting = M.gameLanguage() or "en" end
+    M.setLanguage(setting)
+end
+
 -- Text of a key with its {0} {1}... filled in.
 function M.t(key, ...)
     local s = texts[key] or key
