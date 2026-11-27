@@ -977,7 +977,7 @@ local function weaponOf(o)
 end
 
 local function offhandTook(pawn, ctrl)
-    if C.get("manual_holster") ~= true or not U.valid(pawn) then return end
+    if C.get("auto_holster") ~= false or not U.valid(pawn) then return end
     if not U.same(ctrl, U.get(pawn, "MovementHandController")) then return end
     local o = U.get(ctrl, "AttachedObject")
     if not U.valid(o) or not isGun(kindOf(o)) then return end
@@ -1009,7 +1009,7 @@ function M.reset()
 end
 
 function M.tick(pawn, now)
-    local on = C.get("manual_holster") == true
+    local on = C.get("auto_holster") == false   -- manual holsters
     local auto = not on and (C.get("flick_drop") == true or C.get("holster_nearest") == true)
     if not on then
         if wasOn then disable() end

@@ -24,26 +24,26 @@ Only used with "Smaller on the sleeve" on.
 The object lit in blue, and the one you take, is the one your hand's guide points at, also from a distance. The pin of the grenade in your other hand is taken as soon as your hand is at it. With your hand close to a weapon in a holster (hip or shoulder, within the holster grab distance), you take that weapon, not one on the floor your hand points at.
 Original game: it lit the object nearest to a point in front of your hand, often not the one you pointed at.
 
-[manual_holster]
-Letting go of a weapon drops it to the floor. To put it away, take it to a free holster where it fits and let go: pistols at the hip, long weapons at either shoulder, grenades on the chest.
-Original game: a weapon you let go of flies back to its holster by itself.
+[auto_holster]
+ON: a weapon you let go of flies back to its holster by itself, as in the original game (with "Flick to drop" and "Nearest holster").
+OFF: letting go of a weapon drops it to the floor. To put it away, take it to a free holster where it fits and let go: pistols at the hip, long weapons at either shoulder, grenades on the chest.
 
 [holster_store_distance]
 How close to a holster your hand must be for a weapon you let go of to be put away instead of dropped. A light tap tells you when you are close enough: it comes when your hand stops at the holster (not when it passes by), once while it rests there.
 Grenades don't use it: they go in at the row of grenades on your chest, 5 cm farther than the inventory grab distance.
-Only used with "Manual holsters" on.
+Only used with "Automatic holsters" off.
 
 [flick_drop]
-With "Manual holsters" off, weapons you let go of still fly back to their holsters, but letting go while you flick the hand sharply, as if throwing the weapon away, drops it to the floor instead. Works with either hand, with pistols, rifles and other long weapons, and with grenades (with the pin in; with the pin out they are thrown as usual).
+With "Automatic holsters" on, weapons you let go of fly back to their holsters, but letting go while you flick the hand sharply, as if throwing the weapon away, drops it to the floor instead. Works with either hand, with pistols, rifles and other long weapons, and with grenades (with the pin in; with the pin out they are thrown as usual).
 Original game: there is no way to drop a weapon.
 
 [flick_drop_speed]
 How fast your hand must move (relative to your body, so running does not count) when you let go for it to count as a flick.
 Tip: raise it if weapons fall when you only meant to put them away; lower it if your flicks don't drop them.
-Only used with "Flick to drop" on and "Manual holsters" off.
+Only used with "Flick to drop" and "Automatic holsters" on.
 
 [holster_nearest]
-With "Manual holsters" off, a weapon you let go of flies to the free holster nearest to the hand that let go of it last: your weapon hand if you held it with that hand or with both, your other hand if only that one held it. In practice it decides which shoulder a rifle goes to; pistols and grenades have a single place.
+With "Automatic holsters" on, a weapon you let go of flies to the free holster nearest to the hand that let go of it last: your weapon hand if you held it with that hand or with both, your other hand if only that one held it. In practice it decides which shoulder a rifle goes to; pistols and grenades have a single place.
 Original game: a weapon goes back to the holster it was given when you took it, your weapon hand's side first.
 
 [grenade_row]
@@ -111,7 +111,7 @@ Three short taps on the hand that presses grip at your magazine pouch when you h
 
 [haptics_holster_zone]
 A light tap when your empty hand is close enough to take a holstered weapon or something you carry (grenades, objects, syringes). No tap at a holster whose weapon is in your other hand.
-With "Manual holsters" on, also when a weapon in your hand stops at a free holster where it fits (letting go puts it away), once each time you bring it there. Not while you hold the weapon with both hands or aim a long weapon, so aiming with a hand near the shoulder doesn't vibrate.
+With "Automatic holsters" off, also when a weapon in your hand stops at a free holster where it fits (letting go puts it away), once each time you bring it there. Not while you hold the weapon with both hands or aim a long weapon, so aiming with a hand near the shoulder doesn't vibrate.
 
 # --- Crouch ---
 [crouch_stick]

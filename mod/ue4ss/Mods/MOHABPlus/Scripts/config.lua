@@ -8,11 +8,11 @@ M.defaults = {
     syringe_holster_scale = 0.5,
 
     holster_below_eyes = true,    -- no holster grabs with the hand above the eyes (hats/helmets)
-    manual_holster = true,        -- a released weapon falls, unless the hand is at a free holster that fits it
+    auto_holster = true,          -- false: a released weapon falls, unless the hand is at a free holster that fits it
     holster_store_distance = 30,  -- cm: how close to the holster the hand must be to put a weapon away
-    flick_drop = true,            -- manual holsters off: letting go with a sharp flick drops the weapon instead
+    flick_drop = true,            -- automatic holsters: letting go with a sharp flick drops the weapon instead
     flick_drop_speed = 250,       -- cm/s (hand relative to the body) that counts as a flick
-    holster_nearest = true,       -- manual holsters off: a released weapon flies to the free holster nearest the hand
+    holster_nearest = true,       -- automatic holsters: a released weapon flies to the free holster nearest the hand
     grenade_row = true,           -- every grenade you carry is drawn on the chest and can be taken
     grenade_row_scale = 0.75,     -- size of the grenades on the chest
     grab_aim = true,              -- an empty hand takes what its guide points at (game: see grabaim.lua)
@@ -50,7 +50,7 @@ M.defaults = {
     fall_damage_progressive = true, -- damage grows with the height instead of the game's flat amount
     fall_damage_scale = 1.0,        -- x the game's damage
 
-    sprint_mode = "both",           -- "stick" | "arms" | "both" (stick + arms) | "always"
+    sprint_mode = "always",         -- "stick" | "arms" | "both" (stick + arms) | "always"
     sprint_arm_sensitivity = 1.3,
     sprint_speed_multiplier = 1.3,
     sprint_turn_slowdown = 1.0,     -- 0..1: speed lost on sharp turns while sprinting (0 = off)
@@ -72,7 +72,7 @@ M.defaults = {
 -- Order + sections used when writing the file (keep in sync with the launcher).
 M.order = {
     { "Syringes", { "syringe_require_trigger", "syringe_trigger_threshold", "syringe_small_holstered", "syringe_holster_scale" } },
-    { "Grabbing", { "grab_aim", "manual_holster", "holster_store_distance", "flick_drop", "flick_drop_speed", "holster_nearest", "grenade_row", "grenade_row_scale", "body_grab_distance", "holster_grab_distance", "weapon_grip_reach", "grenade_physics", "grenade_throw_strength", "teeth_pin_distance", "cocking", "holster_below_eyes" } },
+    { "Grabbing", { "grab_aim", "auto_holster", "holster_store_distance", "flick_drop", "flick_drop_speed", "holster_nearest", "grenade_row", "grenade_row_scale", "body_grab_distance", "holster_grab_distance", "weapon_grip_reach", "grenade_physics", "grenade_throw_strength", "teeth_pin_distance", "cocking", "holster_below_eyes" } },
     { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons", "haptics_no_ammo", "haptics_holster_zone" } },
     { "Crouch", { "crouch_stick", "crouch_stick_threshold", "crouch_speed" } },
     { "Jump (experimental)", { "jump_enabled", "jump_stick_threshold", "jump_height", "jump_sound", "jump_guard", "land_crouch", "land_crouch_height" } },
@@ -185,7 +185,7 @@ M.vanilla = {
     body_grab_distance = -1,        -- -1 = the game's distances
     holster_grab_distance = -1,
     grab_aim = false,
-    manual_holster = false,
+    auto_holster = true,
     flick_drop = false,
     holster_nearest = false,
     grenade_row = false,

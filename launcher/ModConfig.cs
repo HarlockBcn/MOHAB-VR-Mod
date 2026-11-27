@@ -24,7 +24,7 @@ internal sealed class ModConfig
         new("syringe_holster_scale", "Sleeve scale", OptionKind.Float, "0.5", 0.25, 1.0, 0.05, Section: "Syringes"),
 
         new("grab_aim", "Grab what you point at", OptionKind.Bool, "true", Section: "Grabbing"),
-        new("manual_holster", "Manual holsters", OptionKind.Bool, "true", Section: "Grabbing"),
+        new("auto_holster", "Automatic holsters", OptionKind.Bool, "true", Section: "Grabbing"),
         new("holster_store_distance", "Put away distance (cm)", OptionKind.Float, "30", 10, 50, 1, Section: "Grabbing"),
         new("flick_drop", "Flick to drop", OptionKind.Bool, "true", Section: "Grabbing"),
         new("flick_drop_speed", "Flick speed (cm/s)", OptionKind.Float, "250", 100, 500, 10, Section: "Grabbing"),
@@ -68,7 +68,7 @@ internal sealed class ModConfig
         new("fall_damage_progressive", "Damage grows with height", OptionKind.Bool, "true", Section: "Fall damage"),
         new("fall_damage_scale", "Damage amount (x the game's)", OptionKind.Float, "1.0", 0.0, 2.0, 0.1, Section: "Fall damage"),
 
-        new("sprint_mode", "Sprint", OptionKind.Choice, "both",
+        new("sprint_mode", "Sprint", OptionKind.Choice, "always",
             Choices: new[] { "stick", "arms", "both", "always" }, Section: "Sprint",
             ChoiceLabels: new[] { "Stick click", "Arm swing", "Stick + arms", "Always sprint" }),
         new("sprint_arm_sensitivity", "Arm swing sensitivity", OptionKind.Float, "1.3", 0.3, 2.0, 0.1, Section: "Sprint"),
@@ -100,7 +100,7 @@ internal sealed class ModConfig
     public static readonly (string Section, string[] Keys)[] BasicLayout =
     {
         ("Movement", new[] { "sprint_mode", "crouch_stick", "slide_enabled", "jump_enabled" }),
-        ("Weapons", new[] { "cocking", "manual_holster", "grenade_row", "grenade_physics", "syringe_require_trigger" }),
+        ("Weapons", new[] { "cocking", "auto_holster", "grenade_row", "grenade_physics", "syringe_require_trigger" }),
         ("Comfort", new[] { "haptics_intensity", "haptics_holster_zone", "fall_damage_custom", "skip_cutscenes" }),
     };
 

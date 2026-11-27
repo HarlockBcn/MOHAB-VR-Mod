@@ -37,16 +37,16 @@ local advancedTabs = {
           help = "Size of the syringes on the sleeve" },
     } },
     { name = "Grabbing", items = {
-        { key = "manual_holster", label = "Manual holsters", kind = "bool",
-          help = "Letting go drops the weapon; take it to a free holster to put it away" },
+        { key = "auto_holster", label = "Automatic holsters", kind = "bool",
+          help = "ON: weapons fly back to their holster.  OFF: letting go drops them" },
         { key = "holster_store_distance", label = "Put away distance", kind = "num", min = 10, max = 50, step = 1, digits = 0, suffix = " cm",
-          help = "Manual holsters: how close to the holster the hand must be to put a weapon away" },
+          help = "Automatic holsters off: how close to the holster the hand must be to put a weapon away" },
         { key = "flick_drop", label = "Flick to drop", kind = "bool",
-          help = "Manual holsters off: let go with a sharp flick to drop a weapon" },
+          help = "Automatic holsters: let go with a sharp flick to drop a weapon" },
         { key = "flick_drop_speed", label = "Flick speed", kind = "num", min = 100, max = 500, step = 10, digits = 0, suffix = " cm/s",
           help = "Flick to drop: how fast the hand must move. Higher: harder" },
         { key = "holster_nearest", label = "Nearest holster", kind = "bool",
-          help = "Manual holsters off: a weapon flies to the free holster nearest your hand" },
+          help = "Automatic holsters: a weapon flies to the free holster nearest your hand" },
         { key = "grenade_row", label = "All grenades on chest", kind = "bool",
           help = "Every grenade you carry is shown on your chest; take the one you want" },
         { key = "grenade_row_scale", label = "Chest grenade size", kind = "num", min = 0.4, max = 1.0, step = 0.05,
@@ -168,7 +168,7 @@ local advancedTabs = {
 -- the advanced view, so labels, ranges and help texts are shared. Keep in sync with ModConfig.BasicLayout (launcher).
 local basicLayout = {
     { name = "Movement", keys = { "sprint_mode", "crouch_stick", "slide_enabled", "jump_enabled" } },
-    { name = "Weapons", keys = { "cocking", "manual_holster", "grenade_row", "grenade_physics", "syringe_require_trigger" } },
+    { name = "Weapons", keys = { "cocking", "auto_holster", "grenade_row", "grenade_physics", "syringe_require_trigger" } },
     { name = "Comfort", keys = { "haptics_intensity", "haptics_holster_zone", "fall_damage_custom", "skip_cutscenes" } },
 }
 local basicTabs = {}
