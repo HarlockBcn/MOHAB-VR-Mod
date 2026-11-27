@@ -33,6 +33,15 @@ How close to a holster your hand must be for a weapon you let go of to be put aw
 Grenades don't use it: they go in at the row of grenades on your chest, 5 cm farther than the inventory grab distance.
 Only used with "Manual holsters" on.
 
+[flick_drop]
+With "Manual holsters" off, weapons you let go of still fly back to their holsters, but letting go while you flick the hand sharply, as if throwing the weapon away, drops it to the floor instead. Works with either hand, with pistols, rifles and other long weapons, and with grenades (with the pin in; with the pin out they are thrown as usual).
+Original game: there is no way to drop a weapon.
+
+[flick_drop_speed]
+How fast your hand must move (relative to your body, so running does not count) when you let go for it to count as a flick.
+Tip: raise it if weapons fall when you only meant to put them away; lower it if your flicks don't drop them.
+Only used with "Flick to drop" on and "Manual holsters" off.
+
 [grenade_row]
 Every grenade you carry (up to 3) is shown in a row on your chest. Take the one you want: the closest one grows and you feel a light tap.
 Original game: only one grenade is shown at a time.

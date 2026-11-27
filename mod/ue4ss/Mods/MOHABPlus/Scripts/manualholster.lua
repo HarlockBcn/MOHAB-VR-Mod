@@ -26,6 +26,9 @@
 -- nor IsGripped, only pawn.WeaponHeldWithOffhand, while it is the hand's AttachedObject. Both hang from the hand's
 -- MotionController, and the game's throw detaches a weapon only when it finds where to throw it: a drop detaches first.
 --
+-- With manual holsters off the game's holsters are kept (a released weapon flies back), but letting go with a sharp
+-- flick of the hand (flick_drop, flick_drop_speed) drops the weapon the same way: see flickReleased.
+--
 -- Not touched: mission objects (BP_HolsterObject), mission weapons (extinguisher, mine detector, C4, melee...: only
 -- the classes below are handled), weapons tagged MissionObjective, bazookas (no holster: the game drops them itself).
 local U = require("util")
@@ -67,6 +70,7 @@ local SLOW_SPEED = 35                   -- cm/s (relative to the body): a hand t
 local EXIT_MARGIN = 3                   -- cm beyond the holster's reach before the hand counts as gone from it
 local REARM = 0.5                       -- s gone from a holster before it may vibrate again
 local AIM_COS = 0.82                    -- cos 35 deg: a long gun pointing this close to where the player looks is aimed
+local FLICK_WINDOW = 0.15               -- s before the release noticed in which the hand's top speed counts as the flick
 
 -- ---------------------------------------------------------------------------------------------
 -- State
@@ -81,6 +85,8 @@ local clock = 0         -- the tick's time (s)
 local flying = {}       -- address -> time its flight back was last logged
 local wasOn = false
 local offWas = nil      -- address of what the off hand held last tick
+local manual = true     -- manual holsters on (false: the game's holsters, with flick to drop)
+local flicks = {}       -- side -> list of { t, s = speed relative to the body, v = world velocity } (last FLICK_WINDOW)
 
 -- ---------------------------------------------------------------------------------------------
 -- Helpers
@@ -244,6 +250,7 @@ end
 -- The hand's own speed (its tracked controller), not the weapon's VelocityEstimator: a weapon just grabbed jumps from
 -- the floor to the hand, and one held by the off hand hangs from an actor that can be far from the hand (see below),
 -- so its estimate turned a drop into a throw.
+local bodySpeed, handVelocity
 local function sampleHands(pawn, t)
     local body = location(pawn, "K2_GetActorLocation")
     for _, side in ipairs({ "Left", "Right" }) do
@@ -256,10 +263,27 @@ local function sampleHands(pawn, t)
         end
         samples[side] = list
     end
+    for _, side in ipairs({ "Left", "Right" }) do
+        local f = flicks[side] or {}
+        local s = bodySpeed(side)
+        if s then f[#f + 1] = { t = t, s = s, v = handVelocity(side) } end
+        while #f > 0 and (t - f[1].t > FLICK_WINDOW or f[1].t > t) do table.remove(f, 1) end
+        flicks[side] = f
+    end
+end
+
+-- The hand's top speed relative to the body over the last FLICK_WINDOW, and its world velocity then.
+local function flickOf(side)
+    local best = nil
+    for _, e in ipairs(flicks[side] or {}) do
+        if not best or e.s > best.s then best = e end
+    end
+    if not best then return 0, nil end
+    return best.s, best.v
 end
 
 -- The hand's speed relative to the body (cm/s, walking does not count), or nil.
-local function bodySpeed(side)
+bodySpeed = function(side)
     local list = samples[side]
     if not list or #list < 2 then return nil end
     local a, b = list[1], list[#list]
@@ -268,7 +292,7 @@ local function bodySpeed(side)
     return U.vlen(U.vsub(b.r, a.r)) / dt
 end
 
-local function handVelocity(side)
+handVelocity = function(side)
     local list = samples[side]
     if not list or #list < 2 then return nil end
     local a, b = list[1], list[#list]
@@ -531,7 +555,7 @@ local function drop(pawn, hc, t)
 
     -- The hand's speed at the release (none behind a wall), no spin: whatever the weapon had from the grab, the
     -- off hand's swing or the throw is discarded.
-    local v = (not moved) and handVelocity(t.side) or nil
+    local v = (not moved) and (t.flickVel or handVelocity(t.side)) or nil
     v = v or { X = 0, Y = 0, Z = 0 }
     local s = U.vlen(v)
     if s > MAX_DROP_SPEED then v = U.vmul(v, MAX_DROP_SPEED / s) end
@@ -659,6 +683,30 @@ local function released(pawn, hc, t)
     end
 end
 
+-- Manual holsters off: the game flies a released weapon back to its holster, unless the hand let go with a sharp
+-- flick (its top speed relative to the body over the last FLICK_WINDOW reached flick_drop_speed): then it is dropped,
+-- with the flick's speed. Releases the player did not ask for (grip still pressed, the game taking it) always fly back.
+local function flickReleased(pawn, hc, t)
+    local w = t.w
+    if t.kind == "grenade" and U.get(w, "Cooking") == true then return end        -- thrown with the pin out
+    if U.get(w, "TurretModeActive") == true then return end                       -- standing on its bipod
+    if not U.same(U.get(w, "WeaponOwner"), pawn) then return end                  -- the game has taken it (swap...)
+    local ctrl = U.get(pawn, t.side .. "Controller")
+    local grip = U.axis("OculusTouch_" .. t.side .. "_Grip_Axis")
+    local forced = grip > FORCED_GRIP or U.get(ctrl, "ForceDrop") == true
+    local speed, v = flickOf(t.side)
+    local need = tonumber(C.get("flick_drop_speed")) or 250
+    if forced or speed < need then
+        U.log("manual holster (off): %s back to its holster (%s hand, %s; flick %.0f of %.0f cm/s%s)", t.name, t.side,
+            t.how or "?", speed, need, forced and "; released by the game" or "")
+        return
+    end
+    t.flickVel = v
+    local moved = drop(pawn, hc, t)
+    U.log("manual holster (off): %s (%s) flicked away by the %s hand (%s; flick %.0f of %.0f cm/s; speed %.0f%s)", t.name,
+        t.kind, t.side, t.how or "?", speed, need, t.dropSpeed or -1, moved and ", hand behind a wall" or "")
+end
+
 -- Held by the off hand only (see the top): a pistol that a hand holds while the game counts it as the off hand's.
 local function offhandPistol(pawn, w)
     if not U.same(U.get(pawn, "WeaponHeldWithOffhand"), w) then return false end
@@ -735,7 +783,7 @@ local function checkReleases(pawn, hc)
             held[addr] = nil
         elseif not isHeld(w, pawn) then
             held[addr] = nil
-            local ok, err = pcall(released, pawn, hc, t)
+            local ok, err = pcall(manual and released or flickReleased, pawn, hc, t)
             if not ok then
                 U.log("manual holster: %s: %s", t.name, tostring(err))
                 if U.same(U.get(w, "WeaponOwner"), pawn) then U.call(hc, "LerpObjectBackToHolsterSlot", w) end
@@ -923,17 +971,19 @@ local function disable()
 end
 
 function M.reset()
-    held, dropped, candidates, zone, kinds, watching, samples, passing, flying = {}, {}, {}, {}, {}, {}, {}, {}, {}
+    held, dropped, candidates, zone, kinds, watching, samples, passing, flying, flicks = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
 end
 
 function M.tick(pawn, now)
     local on = C.get("manual_holster") == true
+    local flick = not on and C.get("flick_drop") == true
     if not on then
         if wasOn then disable() end
         wasOn = false
-        return
+        if not flick then held, flicks = {}, {}; return end
     end
-    wasOn = true
+    wasOn = on
+    manual = on
     local addr = pawn:GetAddress()
     if addr ~= lastPawn then lastPawn = addr; M.reset() end
     local hc = U.get(pawn, "HolstersComponent")
@@ -947,6 +997,7 @@ function M.tick(pawn, now)
     watchTick()
     followDropped(pawn)
     passingTick(pawn, now)
+    if not on then return end         -- the game's holsters: only flicks are the mod's
     adoptSlots(pawn, hc)
     prepareWorld(pawn, hc)
     zoneTaps(pawn, hc, now)

@@ -26,6 +26,8 @@ internal sealed class ModConfig
         new("grab_aim", "Grab what you point at", OptionKind.Bool, "true", Section: "Grabbing"),
         new("manual_holster", "Manual holsters", OptionKind.Bool, "true", Section: "Grabbing"),
         new("holster_store_distance", "Put away distance (cm)", OptionKind.Float, "30", 10, 50, 1, Section: "Grabbing"),
+        new("flick_drop", "Flick to drop", OptionKind.Bool, "true", Section: "Grabbing"),
+        new("flick_drop_speed", "Flick speed (cm/s)", OptionKind.Float, "250", 100, 500, 10, Section: "Grabbing"),
         new("grenade_row", "All grenades on chest", OptionKind.Bool, "true", Section: "Grabbing"),
         new("grenade_row_scale", "Chest grenade size", OptionKind.Float, "0.75", 0.4, 1.0, 0.05, Section: "Grabbing"),
         new("body_grab_distance", "Inventory grab distance (cm)", OptionKind.Float, "10", 5, 30, 1, Section: "Grabbing"),
