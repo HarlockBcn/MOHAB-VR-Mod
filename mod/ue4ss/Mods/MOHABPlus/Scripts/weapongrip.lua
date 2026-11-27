@@ -215,7 +215,7 @@ local function prioritiseGrip(free, weapon)
 end
 
 -- No reserve ammo: when the free hand presses grip at the weapon's magazine pouch (the holster slot the game takes a
--- new magazine from) and there is no ammo left for this weapon, two taps tell the player the pouch is empty.
+-- new magazine from) and there is no ammo left for this weapon, three taps tell the player the pouch is empty.
 local pouchGripDown = false
 local pouchLogged = false
 
@@ -242,7 +242,7 @@ local function checkPouch(pawn, weapon, free, freeHeld, left)
         U.dlog("ammo pouch check: call ok=%s slot=%s wanted=%s", tostring(ok), tostring(slot), tostring(wanted))
     end
     if ok and slot ~= nil and slot == wanted then
-        U.log("no ammo left for %s: two taps", weapon:GetFName():ToString())
+        U.log("no ammo left for %s: three taps", weapon:GetFName():ToString())
         Haptics.noAmmoBuzz(U.now(pawn), side == "Left" and 0 or 1)
     end
 end

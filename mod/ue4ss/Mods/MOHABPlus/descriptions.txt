@@ -94,7 +94,7 @@ Only used with "Vibrate on damage" on.
 Feel magazines, clips, shells and bullets going in, and break-action shotguns opening and closing.
 
 [haptics_no_ammo]
-Two taps on the hand that presses grip at your magazine pouch when you have no ammo left for your weapon.
+Three short taps on the hand that presses grip at your magazine pouch when you have no ammo left for your weapon.
 
 [haptics_holster_zone]
 A light tap when your empty hand is close enough to take a holstered weapon or something you carry (grenades, objects, syringes).

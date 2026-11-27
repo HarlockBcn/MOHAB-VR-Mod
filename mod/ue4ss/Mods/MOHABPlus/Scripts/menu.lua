@@ -80,7 +80,7 @@ local advancedTabs = {
         { key = "haptics_weapons", label = "Vibrate when reloading", kind = "bool",
           help = "Magazines, shells and opening / closing the sawed-off" },
         { key = "haptics_no_ammo", label = "Vibrate when out of ammo", kind = "bool",
-          help = "Two taps when you reach for the magazine pouch with no ammo left" },
+          help = "Three taps when you reach for the magazine pouch with no ammo left" },
         { key = "haptics_holster_zone", label = "Vibrate at grab zones", kind = "bool",
           help = "Light tap when your empty hand can take a weapon or item you carry" },
     } },

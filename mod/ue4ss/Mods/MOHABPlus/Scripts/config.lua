@@ -26,7 +26,7 @@ M.defaults = {
     haptics_duration = 0.35,
     haptics_directional = true,
     haptics_weapons = true,
-    haptics_no_ammo = true,       -- two taps when pressing grip at the magazine pouch with no ammo left
+    haptics_no_ammo = true,       -- three taps when pressing grip at the magazine pouch with no ammo left
     haptics_holster_zone = true,  -- light tap when an empty hand can take something you carry
 
     crouch_stick = true,

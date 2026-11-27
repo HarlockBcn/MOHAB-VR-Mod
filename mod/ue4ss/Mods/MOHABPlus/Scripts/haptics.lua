@@ -54,12 +54,13 @@ end
 -- Queued pulse patterns: { t =, hand =, amp =, dur = } started when their time comes (see M.tick).
 local queue = {}
 
--- "No ammo left": two taps on one hand (EControllerHand: 0 left, 1 right).
+-- "No ammo left": three taps on one hand (EControllerHand: 0 left, 1 right).
 function M.noAmmoBuzz(now, hand)
     if not C.get("haptics_no_ammo") then return end
     local k = U.clamp(C.get("haptics_intensity"), 0, 1)
-    queue[#queue + 1] = { t = now, hand = hand, amp = 0.7 * k, dur = 0.05 }
-    queue[#queue + 1] = { t = now + 0.18, hand = hand, amp = 0.7 * k, dur = 0.05 }
+    for n = 0, 2 do
+        queue[#queue + 1] = { t = now + n * 0.3, hand = hand, amp = 0.7 * k, dur = 0.05 }
+    end
 end
 
 -- A hand with nothing in it entered the grab zone of something you carry: one light tap.
