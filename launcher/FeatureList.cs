@@ -12,9 +12,11 @@ internal static class FeatureCatalog
 {
     private static readonly Regex ItemRx = new(@"^[-*]\s+\*\*(?<t>.+?)\*\*\s*(?:[-–—:]\s*)?(?<d>.*)$", RegexOptions.Compiled);
 
-    public static List<FeatureGroup> Load()
+    /// <summary>FEATURES.&lt;language&gt;.md if the launcher has it (e.g. FEATURES.es.md), else FEATURES.md (English).</summary>
+    public static List<FeatureGroup> Load(string language)
     {
-        using var s = typeof(FeatureCatalog).Assembly.GetManifestResourceStream("MOHABPlus.FEATURES.md");
+        var asm = typeof(FeatureCatalog).Assembly;
+        using var s = asm.GetManifestResourceStream($"MOHABPlus.FEATURES.{language}.md") ?? asm.GetManifestResourceStream("MOHABPlus.FEATURES.md");
         return s == null ? new() : Parse(new StreamReader(s).ReadToEnd());
     }
 

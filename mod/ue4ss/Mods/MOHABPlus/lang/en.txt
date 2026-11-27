@@ -1,6 +1,5 @@
 # MOHAB Plus texts, English (the reference language: any key missing from another language is taken from here).
-# Format: key = text. {0}, {1}... are filled in by the program. 
- starts a new line. Lines starting with # are comments.
+# Format: key = text. {0}, {1}... are filled in by the program. \n starts a new line. Lines starting with # are comments.
 # Shared by the in-game menu (Scripts/lang.lua) and the launcher (launcher/Lang.cs). Keep the keys, translate the texts.
 
 # ===== Language =====

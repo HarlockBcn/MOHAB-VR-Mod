@@ -64,7 +64,7 @@ M.defaults = {
     skip_hold_time = 1.0,
     skip_speed = 12,               -- fast-forward speed for dialogue scenes
 
-    language = "auto",              -- "auto" (in game: the game's language) | "en" | "es" | ... (lang/<code>.txt)
+    language = "auto",              -- "auto" (in game: the game's language) | "en" | "es" (lang/<code>.txt)
     menu_view = "basic",            -- "basic" (the main options) | "advanced" (every option); in-game menu and launcher
     menu_hold_time = 1.5,
     debug_log = false,
@@ -111,28 +111,36 @@ local function fmt(v)
     return tostring(v)
 end
 
--- Detailed option descriptions (descriptions.txt next to config.ini, shared with the launcher):
--- "[key]" followed by one paragraph per line. Returns key -> list of paragraphs; re-read when the file changes.
-local descText, descs = nil, {}
-function M.descriptions()
-    if not M.dir then return descs end
-    local f = io.open(M.dir .. "\\descriptions.txt", "r")
-    if not f then return descs end
+-- Detailed option descriptions (lang/descriptions.<language>.txt next to config.ini, shared with the launcher):
+-- "[key]" followed by one paragraph per line. Returns key -> list of paragraphs, English for an option the language's
+-- file does not describe; re-read when a file changes.
+local function readDescriptions(path, into)
+    local f = io.open(path, "r")
+    if not f then return "" end
     local text = f:read("*a")
     f:close()
-    if text == descText then return descs end
-    descText, descs = text, {}
     local cur = nil
     for raw in text:gmatch("[^\r\n]+") do
         local line = raw:match("^%s*(.-)%s*$")
+        if line:sub(1, 3) == "\239\187\191" then line = line:sub(4) end   -- UTF-8 BOM
         local k = line:match("^%[([%w_]+)%]$")
         if k then
             cur = {}
-            descs[k] = cur
+            into[k] = cur
         elseif cur and line ~= "" and line:sub(1, 1) ~= "#" then
             cur[#cur + 1] = line
         end
     end
+    return text
+end
+local descSig, descs = nil, {}
+function M.descriptions(lang)
+    if not M.dir then return descs end
+    lang = lang or "en"
+    local t = {}
+    local sig = lang .. "|" .. readDescriptions(M.dir .. "\\lang\\descriptions.en.txt", t)
+    if lang ~= "en" then sig = sig .. readDescriptions(M.dir .. "\\lang\\descriptions." .. lang .. ".txt", t) end
+    if sig ~= descSig then descSig, descs = sig, t end
     return descs
 end
 

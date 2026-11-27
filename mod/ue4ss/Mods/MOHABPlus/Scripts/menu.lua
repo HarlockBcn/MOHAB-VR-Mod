@@ -7,7 +7,7 @@
 --   Left column:  stick up/down = choose, A / trigger / stick right = open the category (or flip the master / view
 --                 switch), B = close the menu.
 --   Right column: stick up/down = choose, A / trigger = switch an ON/OFF option or start editing any other one,
---                 X = detailed description of the option (descriptions.txt; X / B / stick left = back to the list),
+--                 X = detailed description of the option (lang/descriptions.*.txt; X / B / stick left = back to the list),
 --                 B / stick left = back to the categories. The stick alone never changes a value.
 --   Editing:      stick left/right = change (applied live), A / trigger = confirm, B = cancel. Nothing else works;
 --                 closing the menu cancels too.
@@ -301,12 +301,15 @@ local function content()
         local it = detailItem
         out.heading = { L.upper(label(it)), COLOR_HEADER }
         local lines = {}
-        local paras = C.descriptions()[it.key] or { L.t("opt." .. it.key .. ".help") }
+        local paras = C.descriptions(L.language())[it.key] or { L.t("opt." .. it.key .. ".help") }
         for i, p in ipairs(paras) do
             if i > 1 then lines[#lines + 1] = "" end
             wrap(p, DETAIL_WIDTH, lines)
         end
-        local tail = { "", L.t("menu.now_default", valueText(it), valueText(it, C.defaults[it.key])) }
+        local tail = { "" }   -- current and default value (one or more lines, depending on the language)
+        for line in (L.t("menu.now_default", valueText(it), valueText(it, C.defaults[it.key])) .. "\n"):gmatch("(.-)\n") do
+            tail[#tail + 1] = line
+        end
         -- Drop the blank lines between paragraphs if the text does not fit, then cut it.
         if #lines + #tail > ROWS then
             local packed = {}
@@ -316,7 +319,7 @@ local function content()
         while #lines + #tail > ROWS do table.remove(lines) end
         for _, l in ipairs(tail) do lines[#lines + 1] = l end
         for r = 1, ROWS do
-            out["R" .. r] = { lines[r] or "", r == #lines and COLOR_HELP or COLOR_NORMAL }
+            out["R" .. r] = { lines[r] or "", r > #lines - (#tail - 1) and r <= #lines and COLOR_HELP or COLOR_NORMAL }
             out["V" .. r] = { "", COLOR_NORMAL }
         end
         out.help = { helpText(it), COLOR_HELP }

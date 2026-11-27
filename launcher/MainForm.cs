@@ -197,7 +197,7 @@ internal sealed class MainForm : Form
         // Pages
         var content = new Panel { Dock = DockStyle.Fill, BackColor = Theme.Bg };
         var play = BuildPlayPage();
-        var featuresPage = new FeatureListView(FeatureCatalog.Load()) { Dock = DockStyle.Fill, Visible = false };
+        var featuresPage = new FeatureListView(FeatureCatalog.Load(Lang.Code)) { Dock = DockStyle.Fill, Visible = false };
         var settingsPage = BuildSettingsPage();
         settingsPage.Visible = false;
         content.Controls.Add(play);
@@ -553,7 +553,7 @@ internal sealed class MainForm : Form
 
         var card = new Card { Dock = DockStyle.Fill, Padding = new Padding(Theme.S(4)) };
         _optionGrid.Dock = DockStyle.Fill;
-        _descriptions = ModConfig.LoadDescriptions(_config.Path);
+        _descriptions = ModConfig.LoadDescriptions(_config.Path, Lang.Code);
         PopulateOptionGrid();
         card.Controls.Add(_optionGrid);
         outer.Controls.Add(card);

@@ -88,7 +88,7 @@ internal sealed class ModConfig
 
         // Not shown as options: the language picker (launcher top bar) and the BASIC / ADVANCED selector of the settings
         // page (and of the in-game menu). "auto": the launcher follows Windows, the in-game menu the game's language.
-        new("language", OptionKind.Choice, "auto", Choices: new[] { "auto", "en", "es", "fr", "it", "de" }, Section: "Menu"),
+        new("language", OptionKind.Choice, "auto", Choices: new[] { "auto", "en", "es" }, Section: "Menu"),
         new("menu_view", OptionKind.Choice, "basic", Choices: new[] { "basic", "advanced" }, Section: "Menu"),
         new("menu_hold_time", OptionKind.Float, "1.5", 0.3, 2.0, 0.1, Section: "Menu"),
 
@@ -112,32 +112,40 @@ internal sealed class ModConfig
     };
 
     /// <summary>
-    /// Detailed descriptions (paragraphs) per option, from descriptions.txt: the file installed next to config.ini if
-    /// there is one (same text the in-game menu shows), else the copy embedded in the launcher.
+    /// Detailed descriptions (paragraphs) per option in a language, from lang/descriptions.&lt;code&gt;.txt (same text the
+    /// in-game menu shows): the file installed next to config.ini if there is one, else the copy embedded in the launcher.
+    /// Options the language's file does not describe keep the English text.
     /// </summary>
-    public static Dictionary<string, List<string>> LoadDescriptions(string configPath)
+    public static Dictionary<string, List<string>> LoadDescriptions(string configPath, string language)
     {
+        var result = new Dictionary<string, List<string>>();
+        ReadDescriptions(configPath, "en", result);
+        if (language != "en") ReadDescriptions(configPath, language, result);
+        return result;
+    }
+
+    private static void ReadDescriptions(string configPath, string language, Dictionary<string, List<string>> result)
+    {
+        string name = $"descriptions.{language}.txt";
         string? text = null;
         try
         {
-            var file = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(configPath)!, "descriptions.txt");
+            var file = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(configPath)!, "lang", name);
             if (File.Exists(file)) text = File.ReadAllText(file);
         }
         catch { }
         if (text == null)
         {
-            using var s = typeof(ModConfig).Assembly.GetManifestResourceStream("MOHABPlus.descriptions.txt");
+            using var s = typeof(ModConfig).Assembly.GetManifestResourceStream("MOHABPlus.lang." + name);
             if (s != null) using (var r = new StreamReader(s)) text = r.ReadToEnd();
         }
-        var result = new Dictionary<string, List<string>>();
         List<string>? cur = null;
         foreach (var raw in (text ?? "").Split('\n'))
         {
-            var line = raw.Trim();
+            var line = raw.Trim().TrimStart('\uFEFF');
             if (line.Length > 2 && line[0] == '[' && line[^1] == ']') { cur = new List<string>(); result[line[1..^1]] = cur; }
             else if (cur != null && line.Length > 0 && line[0] != '#') cur.Add(line);
         }
-        return result;
     }
 
     /// <summary>Text shown for a value: the choice label, ON/OFF, or the number.</summary>

@@ -113,7 +113,7 @@ Without an internet connection the launcher works as usual. You can also update 
 * **Language**: chosen at the top right of the launcher (`language` in `config.ini`). *Automatic* means Windows'
   language for the launcher and the game's language for the in-game menu (English when there is no file for it). The
   texts are in `ue4ss\Mods\MOHABPlus\lang\<code>.txt` (`key = text`, shared by the launcher and the menu); a text
-  missing from a language is shown in English.
+  missing from a language is shown in English. Option descriptions: `lang\descriptions.<code>.txt`; features list: `FEATURES.<code>.md`. Languages: English and Spanish.
 
 ## How it works (technical summary)
 

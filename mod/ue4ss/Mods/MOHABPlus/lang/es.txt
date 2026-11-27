@@ -1,0 +1,335 @@
+# Textos de MOHAB Plus en español. Las claves que falten aquí se muestran en inglés (en.txt).
+# Formato: clave = texto. {0}, {1}... los rellena el programa. \n empieza una línea nueva. Las líneas con # son comentarios.
+
+# ===== Idioma =====
+lang.name = Español
+lang.auto = Automático ({0})
+
+# ===== Opciones: nombre, línea de ayuda (menú del juego), valores =====
+# opt.CLAVE = nombre (menú del juego y launcher). opt.CLAVE.long = nombre en el launcher, cuando cambia (unidades).
+
+# --- Jeringuillas ---
+opt.syringe_require_trigger = Gatillo para inyectar
+opt.syringe_require_trigger.help = Aprieta el gatillo de la mano con la jeringuilla para inyectarla
+opt.syringe_trigger_threshold = Umbral del gatillo
+opt.syringe_trigger_threshold.help = Cuánto hay que apretar el gatillo para inyectar
+opt.syringe_small_holstered = Más pequeñas en la manga
+opt.syringe_small_holstered.help = Las jeringuillas de la manga se ven más pequeñas (tamaño real en la mano)
+opt.syringe_holster_scale = Tamaño en la manga
+opt.syringe_holster_scale.help = Tamaño de las jeringuillas en la manga
+
+# --- Agarrar ---
+opt.auto_holster = Fundas automáticas
+opt.auto_holster.help = SÍ: las armas vuelven solas a su funda.  NO: al soltarlas caen al suelo
+opt.holster_store_distance = Distancia para guardar
+opt.holster_store_distance.long = Distancia para guardar (cm)
+opt.holster_store_distance.help = Sin fundas automáticas: a qué distancia de la funda se guarda el arma al soltarla
+opt.flick_drop = Tirar con un golpe de mano
+opt.flick_drop.help = Fundas automáticas: suelta el arma con un golpe seco de mano para tirarla
+opt.flick_drop_speed = Velocidad del golpe
+opt.flick_drop_speed.long = Velocidad del golpe (cm/s)
+opt.flick_drop_speed.help = Tirar con un golpe: lo rápido que debe ir la mano. Más alto: más difícil
+opt.holster_nearest = Funda más cercana
+opt.holster_nearest.help = Fundas automáticas: el arma va a la funda libre más cercana a tu mano
+opt.grenade_row = Granadas en el pecho
+opt.grenade_row.help = Todas las granadas que llevas se ven en el pecho; coge la que quieras
+opt.grenade_row_scale = Tamaño granadas pecho
+opt.grenade_row_scale.help = Tamaño de las granadas del pecho (tamaño real en la mano)
+opt.body_grab_distance = Distancia inventario
+opt.body_grab_distance.long = Distancia para coger del inventario (cm)
+opt.body_grab_distance.help = A qué distancia coge la mano las granadas, objetos o jeringuillas que llevas
+opt.holster_grab_distance = Distancia fundas
+opt.holster_grab_distance.long = Distancia para coger de las fundas (cm)
+opt.holster_grab_distance.help = A qué distancia coge la mano un arma de su funda (no las de la espalda)
+opt.grab_aim = Coger lo que señalas
+opt.grab_aim.help = El objeto iluminado en azul es al que apunta la guía de tu mano
+opt.weapon_grip_reach = Alcance segunda mano
+opt.weapon_grip_reach.long = Alcance de la segunda mano (cm)
+opt.weapon_grip_reach.help = A qué distancia coge la segunda mano la empuñadura delantera del arma
+opt.grenade_physics = Lanzamientos realistas
+opt.grenade_physics.help = Las granadas vuelan a la velocidad de tu mano y rebotan según su peso (juego: x2, se clavan)
+opt.grenade_throw_strength = Fuerza de lanzamiento
+opt.grenade_throw_strength.long = Fuerza de lanzamiento (x velocidad de la mano)
+opt.grenade_throw_strength.help = Lanzamientos realistas: x la velocidad de tu mano (1.0 = igual de rápido que tu mano)
+opt.teeth_pin_distance = Anilla con los dientes
+opt.teeth_pin_distance.long = Quitar la anilla con los dientes (cm, 0 = nunca)
+opt.teeth_pin_distance.help = A qué distancia de la boca sale la anilla de una granada (juego: 10, 0 = nunca)
+opt.cocking = Montar el arma
+opt.cocking.help = Manual: tira tú del cerrojo o la corredera.  Automático: lo hace el juego (original)
+opt.cocking.choice.manual = Manual
+opt.cocking.choice.auto = Automático
+opt.cocking.choice.manual.help = Manual: tras recargar, tira tú del cerrojo o la corredera
+opt.cocking.choice.auto.help = Automático: al coger la empuñadura delantera se monta el arma (juego original)
+opt.holster_below_eyes = Sin fundas sobre los ojos
+opt.holster_below_eyes.help = Una mano por encima de los ojos coge gorras y cascos, no las armas de la espalda
+
+# --- Vibración ---
+opt.haptics_damage = Vibrar al recibir daño
+opt.haptics_damage.help = Los dos mandos vibran cuando te dan
+opt.haptics_intensity = Intensidad de vibración
+opt.haptics_intensity.help = Fuerza de todas las vibraciones del mod
+opt.haptics_duration = Duración por daño
+opt.haptics_duration.long = Duración de la vibración por daño (s)
+opt.haptics_duration.help = Duración de la vibración al recibir daño (más larga con golpes fuertes)
+opt.haptics_directional = Más fuerte en el lado
+opt.haptics_directional.help = El mando del lado del que viene el golpe vibra más fuerte
+opt.haptics_weapons = Vibrar al recargar
+opt.haptics_weapons.help = Cargadores, cartuchos y abrir / cerrar la escopeta recortada
+opt.haptics_no_ammo = Vibrar sin munición
+opt.haptics_no_ammo.help = Tres toques al buscar en la cartuchera sin munición
+opt.haptics_holster_zone = Vibrar en las fundas
+opt.haptics_holster_zone.help = Toque suave en una funda llena con la mano vacía, o en una libre con un arma
+
+# --- Movimiento ---
+opt.crouch_stick = Agacharse con el stick
+opt.crouch_stick.help = Stick de giro abajo: agacharse.  Arriba: levantarse
+opt.crouch_stick_threshold = Umbral del stick
+opt.crouch_stick_threshold.long = Umbral del stick para agacharse
+opt.crouch_stick_threshold.help = Cuánto hay que mover el stick de giro para agacharse o levantarse
+opt.crouch_speed = Velocidad agachado
+opt.crouch_speed.long = Velocidad agachado (x al andar)
+opt.crouch_speed.help = Velocidad al andar agachado, de verdad o con el stick (1x = andar normal)
+opt.sprint_mode = Correr
+opt.sprint_mode.help = Cómo corres: clic en el stick, braceo, ambos o siempre
+opt.sprint_mode.choice.stick = Clic en el stick
+opt.sprint_mode.choice.arms = Braceo
+opt.sprint_mode.choice.both = Stick + braceo
+opt.sprint_mode.choice.always = Correr siempre
+opt.sprint_mode.choice.stick.help = Clic en el stick: pulsa el stick de movimiento para correr (juego original)
+opt.sprint_mode.choice.arms.help = Braceo: mueve los brazos como al correr; cuanto más rápido, más corres
+opt.sprint_mode.choice.both.help = Stick + braceo: pulsa el stick o mueve los brazos para correr
+opt.sprint_mode.choice.always.help = Correr siempre: solo andas mientras apuntas, alzas una granada o disparas
+opt.sprint_arm_sensitivity = Sensibilidad del braceo
+opt.sprint_arm_sensitivity.help = Más alto: hace falta bracear menos para correr
+opt.sprint_speed_multiplier = Velocidad al correr
+opt.sprint_speed_multiplier.long = Velocidad al correr (x original)
+opt.sprint_speed_multiplier.help = Velocidad máxima al correr (1x = original)
+opt.sprint_turn_slowdown = Frenar en giros bruscos
+opt.sprint_turn_slowdown.long = Frenar en giros bruscos (0 = no)
+opt.sprint_turn_slowdown.help = Velocidad que se pierde al girar bruscamente corriendo (0 = nada)
+opt.stairs_steady_speed = Velocidad fija en escaleras
+opt.stairs_steady_speed.help = Las escaleras y rampas ya no te aceleran (en el juego original sí)
+opt.slide_enabled = Deslizarse
+opt.slide_enabled.help = Agáchate mientras corres (con el stick o de verdad) para deslizarte
+opt.slide_strength = Distancia del deslizamiento
+opt.slide_strength.help = Hasta dónde te lleva el deslizamiento
+opt.slide_sound = Sonido al deslizarse
+opt.slide_sound.help = Sonido que suena mientras te deslizas
+opt.slide_sound.choice.body = Cuerpo
+opt.slide_sound.choice.wood = Roce de madera
+opt.slide_sound.choice.metal = Roce de metal
+opt.slide_sound.choice.off = Ninguno
+opt.slide_sound.choice.body.help = Tu cuerpo rozando el suelo
+opt.slide_sound.choice.wood.help = Un roce de madera al deslizarte
+opt.slide_sound.choice.metal.help = Un roce de metal al deslizarte
+opt.slide_sound.choice.off.help = Sin sonido al deslizarte
+
+# --- Salto ---
+opt.jump_enabled = Saltar (experimental)
+opt.jump_enabled.help = Stick de giro arriba estando de pie para saltar
+opt.jump_stick_threshold = Umbral para saltar
+opt.jump_stick_threshold.long = Umbral del stick para saltar
+opt.jump_stick_threshold.help = Cuánto hay que subir el stick de giro para saltar
+opt.jump_height = Altura del salto
+opt.jump_height.long = Altura del salto (cm)
+opt.jump_height.help = Lo alto que saltas
+opt.jump_sound = Sonidos del salto
+opt.jump_sound.help = Voz de esfuerzo y roce de ropa al saltar
+opt.jump_sound.choice.all = Voz + ropa
+opt.jump_sound.choice.cloth = Solo ropa
+opt.jump_sound.choice.off = Ninguno
+opt.jump_sound.choice.all.help = Voz de esfuerzo y roce de ropa al saltar
+opt.jump_sound.choice.cloth.help = Solo el roce de la ropa al saltar
+opt.jump_sound.choice.off.help = Sin sonido al saltar
+opt.jump_guard = No salir del nivel
+opt.jump_guard.help = Los saltos no te llevan por encima de las barreras invisibles del nivel
+opt.land_crouch = Aterrizajes duros
+opt.land_crouch.help = Las caídas grandes te hacen agacharte al aterrizar, con un gruñido y una sacudida
+opt.land_crouch_height = Aterrizaje duro desde
+opt.land_crouch_height.long = Aterrizaje duro desde (m)
+opt.land_crouch_height.help = Caídas desde esta altura o más (desde lo alto de un salto)
+
+# --- Daño por caída ---
+opt.fall_damage_custom = Daño por caída propio
+opt.fall_damage_custom.help = NO: las reglas del juego (duele desde unos 3,3 m, mata desde 10 m)
+opt.fall_safe_height = Altura segura
+opt.fall_safe_height.long = Altura segura (m)
+opt.fall_safe_height.help = Las caídas más cortas no hacen daño (contando desde lo alto de un salto)
+opt.fall_fatal_height = Altura mortal
+opt.fall_fatal_height.long = Altura mortal (m)
+opt.fall_fatal_height.help = Las caídas más largas te matan
+opt.fall_damage_progressive = Daño según la altura
+opt.fall_damage_progressive.help = Las caídas pequeñas duelen poco y las grandes mucho (juego: siempre igual)
+opt.fall_damage_scale = Cantidad de daño
+opt.fall_damage_scale.long = Cantidad de daño (x la del juego)
+opt.fall_damage_scale.help = Daño de una caída no mortal (1x = el del juego)
+
+# --- Cinemáticas ---
+opt.skip_cutscenes = Saltar cinemáticas
+opt.skip_cutscenes.help = Mantén los dos gatillos y los dos grips un segundo para saltar
+opt.skip_speed = Acelerar diálogos
+opt.skip_speed.long = Acelerar diálogos (x)
+opt.skip_speed.help = Velocidad de las escenas de diálogo en las que solo esperas
+
+# --- Solo en el launcher ---
+opt.skip_hold_time = Tiempo para saltar (s)
+opt.language = Idioma
+opt.menu_view = Vista del menú
+opt.menu_view.choice.basic = básica
+opt.menu_view.choice.advanced = avanzada
+opt.menu_hold_time = Tiempo para abrir el menú (s)
+opt.debug_log = Registro detallado en UE4SS.log
+
+# ===== Categorías (menú del juego y launcher) =====
+section.syringes = Jeringuillas
+section.grabbing = Agarrar
+section.haptics = Vibración
+section.crouch = Agacharse
+section.jump_experimental = Salto (experimental)
+section.fall_damage = Daño por caída
+section.sprint = Correr
+section.slide = Deslizarse
+section.cutscenes = Cinemáticas
+section.menu = Menú
+section.debug = Depuración
+section.movement = Movimiento
+section.jump = Salto
+section.weapons = Armas
+section.comfort = Comodidad
+
+# ===== Valores =====
+value.on = SÍ
+value.off = NO
+
+# ===== Menú del juego =====
+menu.title = MOHAB PLUS
+menu.title_off = MOHAB PLUS  -  SIN MOD (juego original)
+menu.mod_on = MOD: SÍ
+menu.mod_off = MOD: NO
+menu.view_basic = VISTA: BÁSICA
+menu.view_advanced = VISTA: AVANZADA
+menu.master_heading = TODOS LOS CAMBIOS DEL MOD
+menu.view_heading = VISTA DEL MENÚ
+menu.master_info = Activa o desactiva a la vez todos los\ncambios del mod, para compararlo con el\njuego original.\n\nTus ajustes se conservan. Este interruptor\nno se guarda: el mod siempre está activo\nal empezar.\n\nAtajo en cualquier parte de este menú:\nmantén pulsado un stick.
+menu.view_info = BÁSICA: las opciones principales, en\ntres categorías.\n\nAVANZADA: todas las opciones, incluidas\nlas de ajuste fino (distancias, tamaños,\nsonidos).\n\nLas opciones ocultas en la vista básica\nsiguen funcionando con sus valores.\n\nTambién está en el launcher.
+menu.master_turn_off = A o gatillo: DESACTIVAR todo el mod
+menu.master_turn_on = A o gatillo: volver a ACTIVAR todo el mod
+menu.view_to_basic = A o gatillo: pasar a la vista básica (solo las opciones principales)
+menu.view_to_advanced = A o gatillo: pasar a la vista avanzada (todas las opciones)
+menu.heading_off = {0}   (mod desactivado)
+menu.open_tab = A o stick a la derecha: abrir {0}
+menu.now_default = Ahora: {0}\nPor defecto: {1}
+menu.footer_left = Stick: elegir   A: abrir   B: cerrar   Grips: categoría   Mantener clic de stick: mod sí/no
+menu.footer_right = Stick: elegir   A: cambiar   X: detalles   B: atrás   Grips: categoría   Mantener clic: mod sí/no
+menu.footer_details = DETALLES   Stick arriba/abajo: otra opción   A: cambiar   X o B: volver a la lista
+menu.footer_edit = EDITANDO (antes {0})   Stick izq./der.: cambiar   A: confirmar   B: cancelar
+
+# ===== Launcher =====
+ui.window_title = MOHAB Plus {0} {1}  -  launcher del mod de Medal of Honor: Above and Beyond
+ui.banner_tagline = Mejoras de juego en RV  ·  sin modificar archivos del juego
+ui.footer = MOHAB Plus {0} {1}  ·  Mod hecho por fans, sin relación con Respawn Entertainment ni Electronic Arts
+ui.tab_play = JUGAR
+ui.tab_features = FUNCIONES
+ui.tab_settings = AJUSTES DEL MOD
+ui.tab_about = ACERCA DE
+ui.language_tip = Idioma del launcher y del menú del juego. Automático: el launcher sigue a Windows y el menú del juego sigue al juego.
+ui.tray_open = Abrir MOHAB Plus
+ui.tray_exit = Salir
+ui.tray_hint_title = MOHAB Plus sigue funcionando en la bandeja
+ui.tray_hint = Cargará el mod cuando empieces el juego. Haz clic en el icono para abrirlo, o clic derecho y Salir.
+ui.just_updated = MOHAB Plus actualizado a {0}.
+ui.ue4ss_missing = AVISO: falta {0}. La carpeta ue4ss tiene que estar junto al launcher.
+ui.game_not_found = No se ha encontrado la carpeta del juego. Selecciónala.
+
+# Página Jugar
+ui.game_folder = Carpeta del juego
+ui.browse = Buscar...
+ui.browse_description = Selecciona la carpeta de Medal of Honor Above and Beyond (la que contiene Mohab.exe)
+ui.recommended = Recomendado
+ui.vd_title = Jugar desde Virtual Desktop o Meta Quest Link
+ui.vd_step1 = Deja esta ventana abierta o minimizada (espera en la bandeja del sistema).
+ui.vd_step2 = Inicia el juego como siempre desde Virtual Desktop o la app de Meta Quest Link / Air Link.
+ui.vd_step3 = El mod se carga solo unos segundos después de que aparezca el juego.
+ui.auto_watch = Cargar el mod automáticamente al iniciar el juego
+ui.auto_watch_tip = Si está marcado, el launcher vigila el juego y carga el mod unos 5 s después de que aparezca su ventana.
+ui.auto_watch_disabled = Carga automática desactivada.
+ui.watch_on = ●  Listo: esperando a que inicies el juego
+ui.watch_off = ○  La carga automática está desactivada: marca la casilla de arriba para usar esta opción
+ui.launch_caption = O inícialo desde aquí
+ui.launch_text = Inicia el juego directamente (igual que Virtual Desktop) y carga el mod.
+ui.launch = ▶   INICIAR JUEGO
+ui.invalid_game_folder = Carpeta del juego no válida.
+ui.activity = Actividad
+ui.open_log = Abrir log de UE4SS
+ui.open_mod_folder = Abrir carpeta del mod
+ui.ingame_help = Menú en el juego: mantén Y IZQUIERDO  ·  stick = elegir  ·  A / gatillo = cambiar  ·  B = cerrar
+ui.not_found = No encontrado: {0}
+ui.launcher_ini_error = No se ha podido guardar launcher.ini: {0}
+
+# Página Acerca de
+ui.disclaimer = Aviso
+ui.disclaimer_text = MOHAB Plus es un proyecto personal y sin ánimo de lucro, hecho por Harlock como fan del juego.\n\nPara hacer este mod he usado herramientas de inteligencia artificial (IA): buena parte de la investigación y del código se ha hecho junto a un asistente de IA.\n\nMi intención es puramente práctica: jugar a Medal of Honor: Above and Beyond de una forma que a mí me resulta más fluida y divertida, y compartirlo con quien piense lo mismo.\n\nEste mod no tiene nada que ver con Respawn Entertainment, el estudio que creó el juego, ni con Electronic Arts o Meta. No está afiliado, respaldado ni apoyado por ellos, así que por favor no les contactes por problemas con el mod.\n\nMedal of Honor y el arte y las marcas del juego pertenecen a sus respectivos propietarios. El mod no modifica ningún archivo del juego. Úsalo bajo tu propia responsabilidad.
+ui.project_github = Proyecto en GitHub
+ui.releases = Versiones
+
+# Página Ajustes
+ui.settings_intro = Los mismos ajustes que el menú del juego (mantén Y IZQUIERDO en el juego). Básica muestra las opciones principales, Avanzada todas. Pasa el ratón por (i) para ver detalles, haz clic para dejarlos abiertos. Los cambios guardados llegan al juego en marcha en un par de segundos.
+ui.basic = Básica
+ui.advanced = Avanzada
+ui.defaults = Por defecto
+ui.defaults_all = Por defecto (todas las opciones)
+ui.reload = Recargar
+ui.save = Guardar ajustes
+ui.saved = Ajustes guardados. Si el juego está en marcha, los aplica en un par de segundos.
+ui.more_in_advanced = Más opciones (distancias, tamaños, sonidos, vibraciones una a una...) en Avanzada. Las opciones que no se ven aquí conservan sus valores.
+ui.no_description = No hay descripción.
+ui.default_value = Por defecto: {0}
+
+# Actualizaciones
+ui.update_now = Actualizar ahora
+ui.whats_new = Novedades
+ui.later = Más tarde
+ui.checking = Buscando actualizaciones...
+ui.update_available_short = ⬆  {0} disponible
+ui.update_available = ⬆   Hay una versión nueva de MOHAB Plus: {0}   (tienes la {1})
+ui.update_to = Actualizar a {0}
+ui.download_page = Página de descarga
+ui.update_available_log = Nueva versión {0} disponible. Usa "{1}" en la parte de arriba de la ventana.
+ui.up_to_date_short = ✓  Actualizado ({0})  ·  comprobar otra vez
+ui.up_to_date = MOHAB Plus está actualizado ({0}).
+ui.no_releases_short = Aún no hay versiones publicadas  ·  comprobar otra vez
+ui.no_releases = Aún no hay versiones publicadas en GitHub.
+ui.check_failed_short = No se han podido buscar actualizaciones  ·  reintentar
+ui.check_failed = No se han podido buscar actualizaciones: {0}
+ui.update_title = Actualización de MOHAB Plus
+ui.update_close_game = Cierra el juego antes de actualizar MOHAB Plus.
+ui.update_confirm = ¿Actualizar MOHAB Plus de la {0} a la {1}?\n\nLa versión nueva se descarga de GitHub y el launcher se reinicia. Tus ajustes se conservan.
+ui.updating = Actualizando a {0}...
+ui.update_installed = Actualización instalada. Reiniciando...
+ui.update_failed_log = Ha fallado la actualización: {0}
+ui.update_failed_bar = ⬆   Ha fallado la actualización a {0}: {1}
+ui.update_failed = No se ha podido instalar la actualización:\n\n{0}\n\nNo se ha cambiado nada. También puedes descargarla a mano desde GitHub.
+ui.downloading = Descargando {0}... {1}%
+ui.downloading_kb = Descargando... {0} KB
+ui.updated_to = Actualizado a {0}.
+ui.extracting = Descomprimiendo...
+ui.installing = Instalando...
+ui.notes_title = Novedades de MOHAB Plus {0}
+ui.no_notes = Sin notas de la versión.
+ui.open_github = Abrir en GitHub
+ui.close = Cerrar
+
+# Registro de actividad (detección y carga del juego)
+svc.already_running = El juego ya está en marcha (PID {0}). Cargando el mod en él.
+svc.exe_not_found = No se encuentra el ejecutable del juego: {0}
+svc.starting = Iniciando {0} {1}
+svc.waiting_window = Esperando a la ventana del juego...
+svc.no_window = La ventana del juego no ha aparecido (o el juego se ha cerrado).
+svc.already_loaded = PID {0}: el mod ya está cargado.
+svc.injecting = PID {0}: cargando {1} ...
+svc.injecting_late = PID {0}: cargando {1} (el juego ya estaba en marcha) ...
+svc.loaded = PID {0}: mod cargado. Mantén Y IZQUIERDO en el juego para abrir el menú de MOHAB Plus.
+svc.inject_failed = PID {0}: no se ha podido cargar el mod: {1}
+svc.waiting_game = Esperando a que se inicie el juego (inícialo desde Virtual Desktop o Meta Quest Link)...
+svc.detected = Detectado el proceso del juego, PID {0}.
+svc.watcher_error = Error al vigilar el juego: {0}

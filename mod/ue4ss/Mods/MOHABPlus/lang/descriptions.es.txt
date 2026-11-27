@@ -1,0 +1,235 @@
+# Descripciones de las opciones de MOHAB Plus en español (las que falten aquí se muestran en inglés).
+# Las muestran el launcher (icono de información junto a cada opción) y el menú del juego (X sobre una opción).
+# Formato: "[clave_de_la_opción]" y luego un párrafo por línea. Que sean cortas: el menú del juego muestra unas
+# 13 líneas de 46 caracteres. El valor por defecto se añade solo.
+
+# --- Jeringuillas ---
+[syringe_require_trigger]
+Una jeringuilla solo se inyecta cuando la acercas al pecho Y aprietas el gatillo de la mano que la sujeta.
+Juego original: se inyecta en cuanto toca el pecho, cosa que también pasa sin querer al moverla.
+
+[syringe_trigger_threshold]
+Cuánto hay que apretar el gatillo para inyectar una jeringuilla (0.1 = apenas tocarlo, 1.0 = apretarlo del todo).
+Solo con "Gatillo para inyectar" activado.
+
+[syringe_small_holstered]
+Las jeringuillas guardadas en la manga se ven más pequeñas, para que no te tapen el brazo. Recuperan su tamaño normal en cuanto coges una.
+
+[syringe_holster_scale]
+Tamaño de las jeringuillas en la manga (1.0 = tamaño normal).
+Solo con "Más pequeñas en la manga" activado.
+
+# --- Agarrar / armas ---
+[grab_aim]
+El objeto iluminado en azul, y el que coges, es al que apunta la guía de tu mano, también a distancia. La anilla de la granada de tu otra mano se coge en cuanto tu mano llega a ella. Con la mano cerca de un arma enfundada (cadera u hombro, dentro de la distancia de las fundas), coges esa arma y no una del suelo a la que apunte tu mano.
+Juego original: iluminaba el objeto más cercano a un punto delante de la mano, a menudo no el que señalabas.
+
+[auto_holster]
+SÍ: un arma que sueltas vuelve sola a su funda, como en el juego original (con "Tirar con un golpe de mano" y "Funda más cercana").
+NO: al soltar un arma cae al suelo. Para guardarla, llévala a una funda libre donde quepa y suéltala: pistolas en la cadera, armas largas en cualquier hombro, granadas en el pecho.
+
+[holster_store_distance]
+A qué distancia de una funda tiene que estar tu mano para que el arma que sueltas se guarde en vez de caer. Un toque suave te avisa cuando estás lo bastante cerca: llega cuando la mano se detiene en la funda (no al pasar por ella), una vez mientras está ahí.
+Las granadas no la usan: se guardan en la fila de granadas del pecho, 5 cm más lejos que la distancia del inventario.
+Solo con "Fundas automáticas" desactivado.
+
+[flick_drop]
+Con "Fundas automáticas" activado, las armas que sueltas vuelven a su funda, pero si las sueltas con un golpe seco de mano, como si tiraras el arma, caen al suelo. Funciona con cualquier mano, con pistolas, fusiles y otras armas largas, y con granadas (con la anilla puesta; sin anilla se lanzan como siempre).
+Juego original: no hay forma de tirar un arma.
+
+[flick_drop_speed]
+Lo rápido que debe moverse tu mano (respecto a tu cuerpo, así que correr no cuenta) al soltar para que cuente como golpe.
+Consejo: súbelo si las armas caen cuando solo querías guardarlas; bájalo si tus golpes no las tiran.
+Solo con "Tirar con un golpe de mano" y "Fundas automáticas" activados.
+
+[holster_nearest]
+Con "Fundas automáticas" activado, un arma que sueltas va a la funda libre más cercana a la última mano que la soltó: tu mano del arma si la sujetabas con ella o con las dos, tu otra mano si solo la sujetaba esa. En la práctica decide a qué hombro va un fusil; pistolas y granadas tienen un solo sitio.
+Juego original: el arma vuelve a la funda que se le asignó al cogerla, primero la del lado de tu mano del arma.
+
+[grenade_row]
+Todas las granadas que llevas (hasta 3) se ven en fila en el pecho. Coge la que quieras: la más cercana crece y notas un toque suave.
+Juego original: solo se ve una granada a la vez.
+
+[grenade_row_scale]
+Tamaño de las granadas del pecho (1.0 = tamaño normal). Recuperan su tamaño normal al cogerlas.
+Solo con "Granadas en el pecho" activado.
+
+[body_grab_distance]
+A qué distancia tiene que estar tu mano para coger las granadas, objetos de misión y jeringuillas que llevas. Más pequeña: menos agarres sin querer al pasar las manos cerca del cuerpo.
+Consejo: súbela si a menudo no coges lo que buscas.
+
+[holster_grab_distance]
+A qué distancia tiene que estar tu mano para sacar un arma de una funda (la pistola de la cadera y similares). Las armas de la espalda y los hombros mantienen la distancia del juego.
+Consejo: bájala si sacas armas sin querer.
+
+[weapon_grip_reach]
+A qué distancia de la empuñadura delantera de un arma tiene que estar tu mano libre para sujetarla con las dos manos.
+Juego original: hasta unos dos metros, así que la segunda mano cogía la empuñadura desde lejos.
+
+[grenade_physics]
+La granada vuela con la velocidad y el giro de tu mano y rebota según su peso: la granada metálica rueda, la de mango algo menos y la bolsa Gammon casi nada.
+Juego original: se lanza al doble de rápido que tu mano y las granadas se quedan clavadas en el suelo.
+
+[grenade_throw_strength]
+Velocidad del lanzamiento, multiplicada por la de tu mano (1.0 = igual de rápido que tu mano).
+Consejo: 1.2 se siente mejor jugando; súbelo si tus lanzamientos se quedan cortos.
+Solo con "Lanzamientos realistas" activado.
+
+[teeth_pin_distance]
+A qué distancia de la boca tiene que llegar una granada que tienes en la mano para quitarle la anilla con los dientes (0 = nunca).
+Juego original: 10 cm, así que la anilla sale a menudo sin querer al coger una granada del pecho.
+
+[cocking]
+Manual: tras recargar tiras tú del cerrojo o la corredera, y soltar un cerrojo a medias ya no termina el ciclo por ti.
+Automático: lo hace el juego al coger la empuñadura delantera (juego original).
+
+[holster_below_eyes]
+Con la mano por encima de los ojos (tocando el casco o la gorra) no se saca ningún arma de su funda.
+Juego original: al agarrar cerca de la cabeza se cogía un arma de la espalda en vez del casco.
+
+# --- Vibración ---
+[haptics_damage]
+Los dos mandos vibran cuando te hieren, más fuerte con los golpes grandes.
+
+[haptics_intensity]
+Fuerza de todas las vibraciones que añade el mod (daño, recarga, zonas de agarre, sin munición, aterrizajes duros).
+Consejo: bájala si las vibraciones te parecen demasiado fuertes.
+
+[haptics_duration]
+Cuánto dura la vibración por daño. Los golpes grandes duran algo más.
+Solo con "Vibrar al recibir daño" activado.
+
+[haptics_directional]
+Vibra más fuerte el mando del lado del que viene el golpe, para que sepas desde dónde te disparan.
+Solo con "Vibrar al recibir daño" activado.
+
+[haptics_weapons]
+Nota cómo entran cargadores, peines, cartuchos y balas, y cómo se abren y cierran las escopetas de cañones abatibles.
+
+[haptics_no_ammo]
+Tres toques cortos en la mano que pulsa el grip en la cartuchera cuando no te queda munición para tu arma.
+
+[haptics_holster_zone]
+Un toque suave cuando tu mano vacía está lo bastante cerca para coger un arma enfundada o algo que llevas (granadas, objetos, jeringuillas). Sin toque en una funda cuya arma tienes en la otra mano.
+Con "Fundas automáticas" desactivado, también cuando un arma en tu mano se detiene en una funda libre donde cabe (al soltarla se guarda), una vez cada vez que la llevas ahí. No mientras sujetas el arma con las dos manos o apuntas con un arma larga, para que apuntar con la mano cerca del hombro no vibre.
+
+# --- Agacharse ---
+[crouch_stick]
+Baja el stick de giro para agacharte y súbelo para levantarte, sin agacharte de verdad.
+Juego original: solo puedes agacharte de verdad.
+
+[crouch_stick_threshold]
+Cuánto hay que mover el stick de giro para agacharse o levantarse (0.3 = un toque suave, 0.95 = hasta el fondo).
+Consejo: súbelo si te agachas sin querer al girar.
+
+[crouch_speed]
+Velocidad al andar agachado, de verdad o con el stick (1.0 = velocidad normal al andar).
+Juego original: agacharse no te frena.
+
+# --- Salto ---
+[jump_enabled]
+Sube el stick de giro estando de pie para saltar. Puedes subirte a mesas, rocas y cajas. No bajo un techo bajo, nadando ni esquiando.
+Experimental: los niveles no se diseñaron para saltar.
+
+[jump_stick_threshold]
+Cuánto hay que subir el stick de giro para saltar (0.3 = un toque suave, 0.95 = hasta el fondo).
+Con "Agacharse con el stick" activado, subirlo estando agachado te levanta en vez de saltar.
+
+[jump_height]
+Lo alto que saltas. 100 cm basta para mesas y cajas.
+
+[jump_sound]
+Sonidos al saltar: un gruñido de esfuerzo y roce de ropa, solo la ropa, o nada.
+
+[jump_guard]
+Los saltos no te llevan por encima de las barreras invisibles del nivel, así que no puedes salir de la zona jugable. Todo lo que ves se puede seguir escalando.
+Consejo: déjalo activado salvo que quieras explorar.
+
+[land_crouch]
+Tras una caída grande te agachas al aterrizar y vuelves a levantarte, con un gruñido de esfuerzo y una sacudida en los dos mandos. Cuanto mayor la caída, más te agachas.
+Si la caída hace daño, suena la reacción de dolor del propio juego.
+
+[land_crouch_height]
+Las caídas desde al menos esta altura (contando desde lo alto de un salto) son aterrizajes duros.
+Solo con "Aterrizajes duros" activado.
+
+# --- Daño por caída ---
+[fall_damage_custom]
+Las caídas por debajo de la altura segura no hacen daño y el daño crece con la altura, de un rasguño a un golpe fuerte.
+Juego original: el mismo gran golpe de vida en cualquier caída desde unos 3,3 m, y muerte desde 10 m.
+
+[fall_safe_height]
+Las caídas más cortas que esto no hacen daño (contando desde lo alto de un salto).
+Solo con "Daño por caída propio" activado.
+
+[fall_fatal_height]
+Las caídas más largas que esto te matan.
+Solo con "Daño por caída propio" activado.
+
+[fall_damage_progressive]
+Las caídas pequeñas duelen poco y las grandes mucho.
+NO: toda caída que hace daño quita la cantidad fija del juego.
+Solo con "Daño por caída propio" activado.
+
+[fall_damage_scale]
+Daño de una caída que no te mata, multiplicado por el del juego (0 = las caídas nunca duelen, 2 = el doble).
+Solo con "Daño por caída propio" activado.
+
+# --- Correr / movimiento ---
+[sprint_mode]
+Clic en el stick: pulsa el stick de movimiento para correr (juego original).
+Braceo: mueve los brazos como al correr; cuanto más rápido, más corres.
+Stick + braceo: funcionan los dos.
+Correr siempre: corres con solo mover el stick y solo andas mientras apuntas un arma, alzas una granada o disparas.
+
+[sprint_arm_sensitivity]
+Cuánto tienes que mover los brazos para correr. Más alto: hace falta bracear menos.
+Solo con los modos "Braceo" y "Stick + braceo".
+
+[sprint_speed_multiplier]
+Velocidad máxima al correr (1.0 = la del juego original).
+Consejo: 1.3 hace los niveles largos menos pesados sin que parezca poco natural.
+
+[sprint_turn_slowdown]
+Girar bruscamente mientras corres te hace perder velocidad, que recuperas en un segundo; un giro completo te deja a paso de andar (0 = nada, 1 = efecto completo).
+
+[stairs_steady_speed]
+Subir o bajar escaleras y rampas ya no te acelera.
+Juego original: por las escaleras vas bastante más rápido que en llano.
+
+# --- Deslizarse ---
+[slide_enabled]
+Agáchate mientras corres (con el stick o de verdad) para deslizarte por el suelo, con un sonido de roce.
+
+[slide_strength]
+Hasta dónde te lleva un deslizamiento (1.0 = uno corto, 2.0 = uno largo).
+Solo con "Deslizarse" activado.
+
+[slide_sound]
+Sonido al deslizarte: el cuerpo contra el suelo, un roce de madera o de metal, o nada.
+Solo con "Deslizarse" activado.
+
+# --- Cinemáticas ---
+[skip_cutscenes]
+Mantén los dos gatillos y los dos grips para saltar una cinemática. El mismo gesto acelera las escenas de diálogo en las que solo esperas.
+Juego original: muchas escenas no se pueden saltar.
+
+[skip_hold_time]
+Cuánto tiempo hay que mantener los dos gatillos y los dos grips para saltar una cinemática.
+Solo con "Saltar cinemáticas" activado.
+
+[skip_speed]
+Velocidad de las escenas de diálogo que aceleras con el gesto de saltar (x velocidad normal).
+Solo con "Saltar cinemáticas" activado.
+
+# --- Menú / depuración ---
+[menu_view]
+Básica: las opciones más importantes en tres categorías.
+Avanzada: todas las opciones, incluidas las de ajuste fino.
+Las opciones ocultas en la vista básica siguen funcionando con sus valores.
+
+[menu_hold_time]
+Cuánto tiempo hay que mantener el botón Y izquierdo para abrir o cerrar el menú del juego.
+
+[debug_log]
+Escribe mucho más detalle en UE4SS.log. Solo sirve para informar de un problema.

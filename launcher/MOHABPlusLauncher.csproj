@@ -26,10 +26,11 @@
     <EmbeddedResource Include="Resources\logo.png" LogicalName="MOHABPlus.logo.png" />
     <EmbeddedResource Include="Resources\app.ico" LogicalName="MOHABPlus.app.ico" />
     <!-- Player-facing feature list shown in the FEATURES tab (single source: FEATURES.md at the repo root). -->
-    <EmbeddedResource Include="..\FEATURES.md" LogicalName="MOHABPlus.FEATURES.md" Link="Resources\FEATURES.md" />
-    <!-- Option descriptions (fallback when the installed mod folder has none; same file the in-game menu reads). -->
-    <EmbeddedResource Include="..\mod\ue4ss\Mods\MOHABPlus\lang\*.txt" LogicalName="MOHABPlus.lang.%(Filename).txt" Link="Resources\lang\%(Filename).txt" />
-    <EmbeddedResource Include="..\mod\ue4ss\Mods\MOHABPlus\descriptions.txt" LogicalName="MOHABPlus.descriptions.txt" Link="Resources\descriptions.txt" />
+    <EmbeddedResource Include="..\FEATURES*.md" LogicalName="MOHABPlus.%(Filename).md" Link="Resources\%(Filename).md" WithCulture="false" />
+    <!-- Texts and option descriptions per language (lang/<code>.txt, lang/descriptions.<code>.txt): fallback when the
+         installed mod folder has none; the same files the in-game menu reads. -->
+    <EmbeddedResource Include="..\mod\ue4ss\Mods\MOHABPlus\lang\*.txt" LogicalName="MOHABPlus.lang.%(Filename).txt" Link="Resources\lang\%(Filename).txt" WithCulture="false" />
+
   </ItemGroup>
 
 </Project>

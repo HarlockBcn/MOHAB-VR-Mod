@@ -50,6 +50,14 @@ if ($range -ne 'HEAD' -and ($groups['New'].Count + $groups['Fixes'].Count) -gt 0
     if (-not $featuresChanged) {
         Write-Warning "There are feat/fix commits since $prevTag but FEATURES.md was not updated. Review it before releasing."
     }
+    # Translations of the feature list (FEATURES.<code>.md) must follow the English one.
+    if ($featuresChanged) {
+        foreach ($f in Get-ChildItem (Join-Path $root 'FEATURES.*.md')) {
+            if (-not (Invoke-GitQuiet diff --name-only $prevTag HEAD -- $f.Name)) {
+                Write-Warning "FEATURES.md changed since $prevTag but $($f.Name) did not. Update the translation before releasing."
+            }
+        }
+    }
 }
 $date = Get-Date -Format 'yyyy-MM-dd'
 $header = "## $tag - $date"

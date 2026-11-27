@@ -1,7 +1,7 @@
 # MOHAB Plus option descriptions.
 # Shown by the launcher (info icon next to each option) and by the in-game menu (X on an option).
-# Format: "[option_key]" and then one paragraph per line. Keep it plain ASCII (the in-game font has no accents) and
-# short: the in-game menu shows about 13 lines of 46 characters. The default value is added automatically.
+# Format: "[option_key]" and then one paragraph per line. Keep it short: the in-game menu shows about 13 lines of
+# 46 characters. The default value is added automatically. Translations: descriptions.<code>.txt (same keys).
 
 # --- Syringes ---
 [syringe_require_trigger]
