@@ -29,7 +29,7 @@ internal sealed class ModConfig
         new("grenade_row", "All grenades on chest", OptionKind.Bool, "true", Section: "Grabbing"),
         new("grenade_row_scale", "Chest grenade size", OptionKind.Float, "0.75", 0.4, 1.0, 0.05, Section: "Grabbing"),
         new("body_grab_distance", "Inventory grab distance (cm)", OptionKind.Float, "10", 5, 30, 1, Section: "Grabbing"),
-        new("holster_grab_distance", "Holster grab distance (cm)", OptionKind.Float, "25", 5, 30, 1, Section: "Grabbing"),
+        new("holster_grab_distance", "Holster grab distance (cm)", OptionKind.Float, "20", 5, 30, 1, Section: "Grabbing"),
         new("weapon_grip_reach", "Second hand reach (cm)", OptionKind.Float, "10", 5, 40, 1, Section: "Grabbing"),
         new("grenade_physics", "Realistic grenade throws", OptionKind.Bool, "true", Section: "Grabbing"),
         new("grenade_throw_strength", "Grenade throw strength (x hand speed)", OptionKind.Float, "1.2", 0.5, 2.0, 0.1, Section: "Grabbing"),

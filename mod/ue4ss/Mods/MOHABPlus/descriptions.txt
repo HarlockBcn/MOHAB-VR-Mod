@@ -21,7 +21,7 @@ Only used with "Smaller on the sleeve" on.
 
 # --- Grabbing / weapons ---
 [grab_aim]
-The object lit in blue, and the one you take, is the one your hand's guide points at, also from a distance. The pin of the grenade in your other hand is taken as soon as your hand is at it.
+The object lit in blue, and the one you take, is the one your hand's guide points at, also from a distance. The pin of the grenade in your other hand is taken as soon as your hand is at it. With your hand close to a weapon in a holster (hip or shoulder, within the holster grab distance), you take that weapon, not one on the floor your hand points at.
 Original game: it lit the object nearest to a point in front of your hand, often not the one you pointed at.
 
 [manual_holster]

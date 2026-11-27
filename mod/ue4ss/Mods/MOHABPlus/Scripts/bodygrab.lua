@@ -157,6 +157,21 @@ end
 -- The EHolsterSlot the game would take from now with that hand, or nil.
 function M.zoneOf(side) return zone[side] ~= NONE and zone[side] or nil end
 
+-- The hand's distance (cm) to a body holster slot (0-5), measured by the game now for that hand.
+local INDEX_OF = {}
+for i, s in pairs(SLOT_OF_INDEX) do INDEX_OF[s] = i end
+function M.slotDistance(pawn, ctrl, slot)
+    local i = INDEX_OF[slot]
+    if not i or not U.call(pawn, "GetNearestHolsterSlot", ctrl, false, {}) then return nil end
+    local d = nil
+    pcall(function()
+        local v = pawn.HolsterDistanceSquaredFromHand[i + 1]
+        if type(v) ~= "number" and v and v.get then v = v:get() end
+        if type(v) == "number" then d = math.sqrt(math.max(v, 0)) end
+    end)
+    return d
+end
+
 local function logMiss(pawn, side)
     local dist, lee = {}, {}
     local best, bestD = nil, 1e9

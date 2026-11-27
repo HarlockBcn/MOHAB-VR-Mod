@@ -18,7 +18,9 @@
 -- game would rather take an object in the middle of the capsule, a metre away along the guide, than the pin you touch.
 --
 -- While a hand is where it would take something from the chest (grenades, objects) or a sleeve, nothing loose is lit: the
--- game grabs the lit object first, and the thing on the body would not be taken.
+-- game grabs the lit object first, and the thing on the body would not be taken. The same with the hand close to a
+-- weapon in a holster (hips, shoulders: within holster_grab_distance; the game's own reach at the shoulders is 45 cm,
+-- too wide to keep the floor out), even when the hand points at a weapon on the floor.
 --
 -- Colours of the game: strong blue = what the weapon hand would take, light blue = the other hand, orange = important
 -- things nearby, grey = other things nearby, red = can't be used.
@@ -48,6 +50,8 @@ local PART_NEAR = 12           -- cm from the hand: the held grenade's pin this 
 local PART_KEEP = 20           -- ... and stays lit until the hand is this far from it
 
 local CHEST_AND_SLEEVES = { [1] = true, [4] = true, [7] = true, [8] = true }   -- EHolsterSlot
+local WEAPON_HOLSTERS = { [0] = true, [2] = true, [3] = true, [5] = true }       -- hips and shoulders
+local HOLSTER_NEAR = 20        -- cm: weapon holsters come first this close (holster_grab_distance off: its default)
 
 local hands = {}               -- "Left" / "Right" -> { next =, target = address, cleared = true: nothing lit, hand at the body, off = true: ..., nothing in the guide's direction }
 local shapes = {}              -- actor address -> { name =, t =, comps = { { comp =, origin =, extent = } } }
@@ -469,13 +473,18 @@ local function addressOf(o)
     return U.valid(o) and o:GetAddress() or 0
 end
 
--- The hand would take something from the chest or a sleeve.
-local function atBody(side, other)
+-- The hand would take something from the chest or a sleeve, or a weapon from a holster it is close to.
+local function atBody(side, hand, other, pawn)
     if Row.isAt(side) then return true end
     local slot = BodyGrab.zoneOf(side)
-    if not slot or not CHEST_AND_SLEEVES[slot] then return false end
+    if not slot or not (CHEST_AND_SLEEVES[slot] or WEAPON_HOLSTERS[slot]) then return false end
     local w = U.get(other, "AttachedObject")       -- its magazine pouch has a longer reach
-    return not (U.valid(w) and U.get(w, "MagazineHolsterSlot") == slot)
+    if U.valid(w) and U.get(w, "MagazineHolsterSlot") == slot then return false end
+    if CHEST_AND_SLEEVES[slot] then return true end
+    local near = C.get("holster_grab_distance")
+    if type(near) ~= "number" or near < 0 then near = HOLSTER_NEAR end
+    local d = BodyGrab.slotDistance(pawn, hand, slot)
+    return d ~= nil and d <= near
 end
 
 -- Nothing loose is lit for this hand.
@@ -518,7 +527,7 @@ function M.tick(pawn, now)
             if not ok then warnOnce("pin error", "%s", tostring(r)) end
             pin = ok and r
         end
-        local body = free and not pin and atBody(side, other)
+        local body = free and not pin and atBody(side, hand, other, pawn)
         if not free then
             st.cleared, st.off, st.pin = nil, nil, nil   -- holding something: the game starts afresh when the hand is empty again
         elseif pin then

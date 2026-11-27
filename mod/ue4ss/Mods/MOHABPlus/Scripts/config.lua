@@ -15,7 +15,7 @@ M.defaults = {
     grab_aim = true,              -- an empty hand takes what its guide points at (game: see grabaim.lua)
     weapon_grip_reach = 10,       -- cm from the free hand to a weapon's off-hand grip
     body_grab_distance = 10,      -- cm: taking things you carry (grenades, objects, syringes on the sleeves)
-    holster_grab_distance = 25,   -- cm: taking a weapon from a holster (not back / shoulder weapons: game's distance)
+    holster_grab_distance = 20,   -- cm: taking a weapon from a holster (not back / shoulder weapons: game's distance)
     grenade_physics = true,       -- realistic throws and bounces (game: twice the hand speed, sticky floors)
     grenade_throw_strength = 1.2, -- x the hand's speed when a grenade is let go of (1.0 = real; 1.2 feels better in play)
     teeth_pin_distance = 5,       -- cm: a held grenade this close to the mouth loses its pin (game: 10; 0 = never)
