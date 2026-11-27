@@ -15,6 +15,7 @@
 -- While the menu is open the pawn's input is disabled (no walking/turning/shooting).
 local U = require("util")
 local C = require("config")
+local L = require("lang")
 
 local M = {}
 
@@ -25,147 +26,79 @@ local OPEN_KEY = "OculusTouch_Left_Y_Click"
 -- Menu items ---------------------------------------------------------------------------------
 local function fmtNum(v, digits) return string.format("%." .. (digits or 2) .. "f", v) end
 
+-- Option structure. Names, help lines and choice names are in lang/<code>.txt ("opt.KEY", "opt.KEY.help",
+-- "opt.KEY.choice.VALUE", "opt.KEY.choice.VALUE.help"); category names are "section.*" (see lang.lua).
 local advancedTabs = {
     { name = "Syringes", items = {
-        { key = "syringe_require_trigger", label = "Trigger to inject", kind = "bool",
-          help = "Hold the trigger of the hand with the syringe to inject it" },
-        { key = "syringe_trigger_threshold", label = "Trigger threshold", kind = "num", min = 0.1, max = 1.0, step = 0.05,
-          help = "How far the trigger must be pulled to inject" },
-        { key = "syringe_small_holstered", label = "Smaller on the sleeve", kind = "bool",
-          help = "Syringes on the sleeve are drawn smaller (full size in the hand)" },
-        { key = "syringe_holster_scale", label = "Sleeve scale", kind = "num", min = 0.25, max = 1.0, step = 0.05,
-          help = "Size of the syringes on the sleeve" },
+        { key = "syringe_require_trigger", kind = "bool" },
+        { key = "syringe_trigger_threshold", kind = "num", min = 0.1, max = 1.0, step = 0.05 },
+        { key = "syringe_small_holstered", kind = "bool" },
+        { key = "syringe_holster_scale", kind = "num", min = 0.25, max = 1.0, step = 0.05 },
     } },
     { name = "Grabbing", items = {
-        { key = "auto_holster", label = "Automatic holsters", kind = "bool",
-          help = "ON: weapons fly back to their holster.  OFF: letting go drops them" },
-        { key = "holster_store_distance", label = "Put away distance", kind = "num", min = 10, max = 50, step = 1, digits = 0, suffix = " cm",
-          help = "Automatic holsters off: how close to the holster the hand must be to put a weapon away" },
-        { key = "flick_drop", label = "Flick to drop", kind = "bool",
-          help = "Automatic holsters: let go with a sharp flick to drop a weapon" },
-        { key = "flick_drop_speed", label = "Flick speed", kind = "num", min = 100, max = 500, step = 10, digits = 0, suffix = " cm/s",
-          help = "Flick to drop: how fast the hand must move. Higher: harder" },
-        { key = "holster_nearest", label = "Nearest holster", kind = "bool",
-          help = "Automatic holsters: a weapon flies to the free holster nearest your hand" },
-        { key = "grenade_row", label = "All grenades on chest", kind = "bool",
-          help = "Every grenade you carry is shown on your chest; take the one you want" },
-        { key = "grenade_row_scale", label = "Chest grenade size", kind = "num", min = 0.4, max = 1.0, step = 0.05,
-          help = "Size of the grenades on the chest (full size in the hand)" },
-        { key = "body_grab_distance", label = "Inventory grab distance", kind = "num", min = 5, max = 30, step = 1, digits = 0, suffix = " cm",
-          help = "How close the hand must be to take grenades, objects or syringes you carry" },
-        { key = "holster_grab_distance", label = "Holster grab distance", kind = "num", min = 5, max = 30, step = 1, digits = 0, suffix = " cm",
-          help = "How close the hand must be to take a weapon from a holster (not back weapons)" },
-        { key = "grab_aim", label = "Grab what you point at", kind = "bool",
-          help = "The object lit in blue is the one your hand's guide points at" },
-        { key = "weapon_grip_reach", label = "Second hand reach", kind = "num", min = 5, max = 40, step = 1, digits = 0, suffix = " cm",
-          help = "How close the second hand must be to grab a weapon's front grip" },
-        { key = "grenade_physics", label = "Realistic grenade throws", kind = "bool",
-          help = "Grenades fly at your hand's speed and bounce by their weight (game: 2x, stop dead)" },
-        { key = "grenade_throw_strength", label = "Grenade throw strength", kind = "num", min = 0.5, max = 2.0, step = 0.1,
-          help = "Realistic grenade throws: x your hand's speed (1.0 = exactly as fast as your hand)" },
-        { key = "teeth_pin_distance", label = "Pull pin with teeth", kind = "num", min = 0, max = 15, step = 1, digits = 0, suffix = " cm",
-          help = "How close a grenade must get to your mouth to pull its pin (game: 10, 0 = never)" },
-        { key = "cocking", label = "Cocking", kind = "choice",
-          choices = { "manual", "auto" },
-          names = { manual = "Manual", auto = "Automatic" },
-          helps = { manual = "Manual: after a reload, pull the bolt or slide yourself",
-                    auto = "Automatic: grabbing the front grip cocks the weapon (original game)" },
-          help = "Manual: work the bolt or slide yourself.  Automatic: the game does it (original)" },
-        { key = "holster_below_eyes", label = "No holster grab above eyes", kind = "bool",
-          help = "A hand above your eyes grabs hats and helmets, not back weapons" },
+        { key = "auto_holster", kind = "bool" },
+        { key = "holster_store_distance", kind = "num", min = 10, max = 50, step = 1, digits = 0, suffix = " cm" },
+        { key = "flick_drop", kind = "bool" },
+        { key = "flick_drop_speed", kind = "num", min = 100, max = 500, step = 10, digits = 0, suffix = " cm/s" },
+        { key = "holster_nearest", kind = "bool" },
+        { key = "grenade_row", kind = "bool" },
+        { key = "grenade_row_scale", kind = "num", min = 0.4, max = 1.0, step = 0.05 },
+        { key = "body_grab_distance", kind = "num", min = 5, max = 30, step = 1, digits = 0, suffix = " cm" },
+        { key = "holster_grab_distance", kind = "num", min = 5, max = 30, step = 1, digits = 0, suffix = " cm" },
+        { key = "grab_aim", kind = "bool" },
+        { key = "weapon_grip_reach", kind = "num", min = 5, max = 40, step = 1, digits = 0, suffix = " cm" },
+        { key = "grenade_physics", kind = "bool" },
+        { key = "grenade_throw_strength", kind = "num", min = 0.5, max = 2.0, step = 0.1 },
+        { key = "teeth_pin_distance", kind = "num", min = 0, max = 15, step = 1, digits = 0, suffix = " cm" },
+        { key = "cocking", kind = "choice", choices = { "manual", "auto" } },
+        { key = "holster_below_eyes", kind = "bool" },
     } },
     { name = "Haptics", items = {
-        { key = "haptics_damage", label = "Vibrate on damage", kind = "bool",
-          help = "Both controllers vibrate when you are hit" },
-        { key = "haptics_intensity", label = "Vibration intensity", kind = "num", min = 0.1, max = 1.0, step = 0.1, digits = 1,
-          help = "Strength of all the mod's vibrations" },
-        { key = "haptics_duration", label = "Damage duration", kind = "num", min = 0.05, max = 1.0, step = 0.05, suffix = " s",
-          help = "Length of the damage vibration (longer on big hits)" },
-        { key = "haptics_directional", label = "Stronger on hit side", kind = "bool",
-          help = "The controller on the side the hit came from vibrates harder" },
-        { key = "haptics_weapons", label = "Vibrate when reloading", kind = "bool",
-          help = "Magazines, shells and opening / closing the sawed-off" },
-        { key = "haptics_no_ammo", label = "Vibrate when out of ammo", kind = "bool",
-          help = "Three taps when you reach for the magazine pouch with no ammo left" },
-        { key = "haptics_holster_zone", label = "Vibrate at holsters", kind = "bool",
-          help = "Light tap at a full holster with an empty hand, or a free one with a weapon" },
+        { key = "haptics_damage", kind = "bool" },
+        { key = "haptics_intensity", kind = "num", min = 0.1, max = 1.0, step = 0.1, digits = 1 },
+        { key = "haptics_duration", kind = "num", min = 0.05, max = 1.0, step = 0.05, suffix = " s" },
+        { key = "haptics_directional", kind = "bool" },
+        { key = "haptics_weapons", kind = "bool" },
+        { key = "haptics_no_ammo", kind = "bool" },
+        { key = "haptics_holster_zone", kind = "bool" },
     } },
     { name = "Movement", items = {
-        { key = "crouch_stick", label = "Crouch with turn stick", kind = "bool",
-          help = "Turn stick down: crouch.  Up: stand up" },
-        { key = "crouch_stick_threshold", label = "Crouch stick threshold", kind = "num", min = 0.3, max = 0.95, step = 0.05,
-          help = "How far the turn stick must be pushed to crouch or stand up" },
-        { key = "crouch_speed", label = "Crouched speed", kind = "num", min = 0.3, max = 1.0, step = 0.05, digits = 2, suffix = "x",
-          help = "Walking speed while crouched, for real or with the stick (1x = normal walking)" },
-        { key = "sprint_mode", label = "Sprint", kind = "choice",
-          choices = { "stick", "arms", "both", "always" },
-          names = { stick = "Stick click", arms = "Arm swing", both = "Stick + arms", always = "Always sprint" },
-          helps = { stick = "Stick click: click the movement stick to sprint (original game)",
-                    arms = "Arm swing: swing your arms like a runner; faster swing, faster run",
-                    both = "Stick + arms: click the stick or swing your arms to sprint",
-                    always = "Always sprint: you only walk while you aim, raise a grenade or shoot" },
-          help = "How you sprint: stick click, arm swing, both, or always" },
-        { key = "sprint_arm_sensitivity", label = "Arm swing sensitivity", kind = "num", min = 0.3, max = 2.0, step = 0.1, digits = 1,
-          help = "Higher: less arm swinging needed to sprint" },
-        { key = "sprint_speed_multiplier", label = "Sprint speed", kind = "num", min = 1.0, max = 1.5, step = 0.05, digits = 2, suffix = "x",
-          help = "Top sprint speed (1x = original)" },
-        { key = "sprint_turn_slowdown", label = "Slow down on sharp turns", kind = "num", min = 0.0, max = 1.0, step = 0.1, digits = 1,
-          help = "Speed lost when turning hard while sprinting (0 = off)" },
-        { key = "stairs_steady_speed", label = "Steady speed on stairs", kind = "bool",
-          help = "Stairs and slopes no longer speed you up (the original game does)" },
-        { key = "slide_enabled", label = "Slide", kind = "bool",
-          help = "Crouch while sprinting (stick or for real) to slide" },
-        { key = "slide_strength", label = "Slide length", kind = "num", min = 0.5, max = 2.0, step = 0.1, digits = 1, suffix = "x",
-          help = "How far the slide takes you" },
-        { key = "slide_sound", label = "Slide sound", kind = "choice",
-          choices = { "body", "wood", "metal", "off" },
-          names = { body = "Body", wood = "Wood scrape", metal = "Metal scrape", off = "Off" },
-          helps = { body = "Your body scraping along the floor", wood = "A wooden scrape while sliding",
-                    metal = "A metal scrape while sliding", off = "No sound while sliding" },
-          help = "Sound played while sliding" },
+        { key = "crouch_stick", kind = "bool" },
+        { key = "crouch_stick_threshold", kind = "num", min = 0.3, max = 0.95, step = 0.05 },
+        { key = "crouch_speed", kind = "num", min = 0.3, max = 1.0, step = 0.05, digits = 2, suffix = "x" },
+        { key = "sprint_mode", kind = "choice", choices = { "stick", "arms", "both", "always" } },
+        { key = "sprint_arm_sensitivity", kind = "num", min = 0.3, max = 2.0, step = 0.1, digits = 1 },
+        { key = "sprint_speed_multiplier", kind = "num", min = 1.0, max = 1.5, step = 0.05, digits = 2, suffix = "x" },
+        { key = "sprint_turn_slowdown", kind = "num", min = 0.0, max = 1.0, step = 0.1, digits = 1 },
+        { key = "stairs_steady_speed", kind = "bool" },
+        { key = "slide_enabled", kind = "bool" },
+        { key = "slide_strength", kind = "num", min = 0.5, max = 2.0, step = 0.1, digits = 1, suffix = "x" },
+        { key = "slide_sound", kind = "choice", choices = { "body", "wood", "metal", "off" } },
     } },
     { name = "Jump", items = {
-        { key = "jump_enabled", label = "Jump (experimental)", kind = "bool",
-          help = "Turn stick up while standing to jump" },
-        { key = "jump_stick_threshold", label = "Jump stick threshold", kind = "num", min = 0.3, max = 0.95, step = 0.05,
-          help = "How far the turn stick must be pushed up to jump" },
-        { key = "jump_height", label = "Jump height", kind = "num", min = 20, max = 120, step = 5, digits = 0, suffix = " cm",
-          help = "How high you jump" },
-        { key = "jump_sound", label = "Jump sounds", kind = "choice",
-          choices = { "all", "cloth", "off" },
-          names = { all = "Voice + cloth", cloth = "Cloth only", off = "Off" },
-          helps = { all = "Effort voice and cloth rustle when jumping", cloth = "Only the cloth rustle when jumping",
-                    off = "No sound when jumping" },
-          help = "Effort voice and cloth rustle when jumping" },
-        { key = "jump_guard", label = "Stay inside the level", kind = "bool",
-          help = "Jumps can't take you over the level's invisible barriers" },
-        { key = "land_crouch", label = "Hard landings", kind = "bool",
-          help = "Big falls make you bend down on landing, with a grunt and a jolt" },
-        { key = "land_crouch_height", label = "Hard landing from", kind = "num", min = 1.0, max = 6.0, step = 0.5, digits = 1, suffix = " m",
-          help = "Falls from this high or more (from the top of a jump)" },
+        { key = "jump_enabled", kind = "bool" },
+        { key = "jump_stick_threshold", kind = "num", min = 0.3, max = 0.95, step = 0.05 },
+        { key = "jump_height", kind = "num", min = 20, max = 120, step = 5, digits = 0, suffix = " cm" },
+        { key = "jump_sound", kind = "choice", choices = { "all", "cloth", "off" } },
+        { key = "jump_guard", kind = "bool" },
+        { key = "land_crouch", kind = "bool" },
+        { key = "land_crouch_height", kind = "num", min = 1.0, max = 6.0, step = 0.5, digits = 1, suffix = " m" },
     } },
     { name = "Fall damage", items = {
-        { key = "fall_damage_custom", label = "Custom fall damage", kind = "bool",
-          help = "OFF: the game's rules (hurts from about 3.3 m, kills from 10 m)" },
-        { key = "fall_safe_height", label = "Safe height", kind = "num", min = 1.0, max = 10.0, step = 0.5, digits = 1, suffix = " m",
-          help = "Shorter falls don't hurt (counted from the top of a jump)" },
-        { key = "fall_fatal_height", label = "Fatal height", kind = "num", min = 4, max = 30, step = 1, digits = 0, suffix = " m",
-          help = "Longer falls kill you" },
-        { key = "fall_damage_progressive", label = "Damage grows with height", kind = "bool",
-          help = "Small drops hurt a little, big ones a lot (game: always the same)" },
-        { key = "fall_damage_scale", label = "Damage amount", kind = "num", min = 0.0, max = 2.0, step = 0.1, digits = 1, suffix = "x",
-          help = "Damage of a non-fatal fall (1x = the game's)" },
+        { key = "fall_damage_custom", kind = "bool" },
+        { key = "fall_safe_height", kind = "num", min = 1.0, max = 10.0, step = 0.5, digits = 1, suffix = " m" },
+        { key = "fall_fatal_height", kind = "num", min = 4, max = 30, step = 1, digits = 0, suffix = " m" },
+        { key = "fall_damage_progressive", kind = "bool" },
+        { key = "fall_damage_scale", kind = "num", min = 0.0, max = 2.0, step = 0.1, digits = 1, suffix = "x" },
     } },
     { name = "Cutscenes", items = {
-        { key = "skip_cutscenes", label = "Skip cutscenes", kind = "bool",
-          help = "Hold both triggers and both grips for a second to skip" },
-        { key = "skip_speed", label = "Dialogue fast-forward", kind = "num", min = 2, max = 15, step = 1, digits = 0, suffix = "x",
-          help = "Speed of dialogue scenes where you just stand and wait" },
+        { key = "skip_cutscenes", kind = "bool" },
+        { key = "skip_speed", kind = "num", min = 2, max = 15, step = 1, digits = 0, suffix = "x" },
     } },
 }
 
 -- Basic view: the main options (what is on and how you play), grouped in three categories. The items are the ones of
--- the advanced view, so labels, ranges and help texts are shared. Keep in sync with ModConfig.BasicLayout (launcher).
+-- the advanced view, so ranges and texts are shared. Keep in sync with ModConfig.BasicLayout (launcher).
 local basicLayout = {
     { name = "Movement", keys = { "sprint_mode", "crouch_stick", "slide_enabled", "jump_enabled" } },
     { name = "Weapons", keys = { "cocking", "auto_holster", "grenade_row", "grenade_physics", "syringe_require_trigger" } },
@@ -189,31 +122,9 @@ end
 local function isAdvanced() return C.raw("menu_view") == "advanced" end
 local function tabs() return isAdvanced() and advancedTabs or basicTabs end
 
--- Text shown in the right column while the master switch is selected.
-local MASTER_INFO = {
-    "Turns every change of the mod on or off",
-    "at once, to compare with the original game.",
-    "",
-    "Your settings are kept. This switch is not",
-    "saved: the mod is on every time you start.",
-    "",
-    "Shortcut anywhere in this menu:",
-    "hold a thumbstick click.",
-}
-
--- Text shown in the right column while the view switch is selected.
-local VIEW_INFO = {
-    "BASIC: the main options, in three",
-    "categories.",
-    "",
-    "ADVANCED: every option, including the",
-    "fine-tuning ones (distances, sizes, sounds).",
-    "",
-    "Options hidden in the basic view keep",
-    "working with their values.",
-    "",
-    "Also available in the launcher.",
-}
+-- Texts of an option and a category in the current language.
+local function label(it) return L.t("opt." .. it.key) end
+local function tabName(t) return L.section(t.name) end
 
 -- Rows of both columns: enough for the longest category and for the left column (master switch, view switch, gap,
 -- categories).
@@ -226,7 +137,7 @@ local function wrap(text, width, out)
     local line = ""
     for word in text:gmatch("%S+") do
         if line == "" then line = word
-        elseif #line + 1 + #word <= width then line = line .. " " .. word
+        elseif L.len(line) + 1 + L.len(word) <= width then line = line .. " " .. word
         else
             out[#out + 1] = line
             line = word
@@ -237,19 +148,19 @@ end
 
 local function valueText(it, v)
     if v == nil then v = C.raw(it.key) end
-    if it.kind == "bool" then return v and "ON" or "OFF" end
+    if it.kind == "bool" then return v and L.t("value.on") or L.t("value.off") end
     if it.kind == "num" then return fmtNum(v, it.digits) .. (it.suffix or "") end
-    if it.kind == "choice" then return (it.names and it.names[v]) or tostring(v) end
+    if it.kind == "choice" then return L.find("opt." .. it.key .. ".choice." .. tostring(v)) or tostring(v) end
     return ""
 end
 
 -- Help line of an option: for choices with one text per value, the one of the current value.
 local function helpText(it)
-    if it.helps then
-        local h = it.helps[C.raw(it.key)]
+    if it.choices then
+        local h = L.find("opt." .. it.key .. ".choice." .. tostring(C.raw(it.key)) .. ".help")
         if h then return h end
     end
-    return it.help or ""
+    return L.t("opt." .. it.key .. ".help")
 end
 
 local function change(it, dir)
@@ -344,23 +255,19 @@ addSlot("help", 0, 3 + ROWS + 0.6, ALIGN_CENTER, 0.85)
 addSlot("footer", 0, 3 + ROWS + 1.6, ALIGN_CENTER, 0.75)
 local TOTAL_LINES = 3 + ROWS + 1.6
 
-local FOOTER_LEFT = "Stick: choose   A: open   B: close   Grips: category   Hold stick click: mod on/off"
-local FOOTER_RIGHT = "Stick: choose   A: change   X: details   B: back   Grips: category   Hold stick click: mod on/off"
-local FOOTER_DETAILS = "DETAILS   Stick up/down: other option   A: change   X or B: back to the list"
-local FOOTER_EDIT = "EDITING (was %s)   Stick left/right: change   A: confirm   B: cancel"
 
 -- Text and colour of every slot for the current state.
 local function content()
     local out = {}
     local on = C.enabled
-    out.title = on and { "MOHAB PLUS", COLOR_TITLE } or { "MOHAB PLUS  -  MOD OFF (original game)", COLOR_OFF }
+    out.title = on and { L.t("menu.title"), COLOR_TITLE } or { L.t("menu.title_off"), COLOR_OFF }
 
     -- Left column: master switch, view switch, a gap, the categories.
     local list = tabs()
     local mSel = focus == "left" and leftSel == LEFT_MASTER
-    out.L1 = { (mSel and "> " or "") .. (on and "MOD: ON" or "MOD: OFF"), mSel and COLOR_SELECTED or (on and COLOR_ON or COLOR_OFF) }
+    out.L1 = { (mSel and "> " or "") .. L.t(on and "menu.mod_on" or "menu.mod_off"), mSel and COLOR_SELECTED or (on and COLOR_ON or COLOR_OFF) }
     local vSel = focus == "left" and leftSel == LEFT_VIEW
-    out.L2 = { (vSel and "> " or "") .. (isAdvanced() and "VIEW: ADVANCED" or "VIEW: BASIC"), vSel and COLOR_SELECTED or COLOR_HEADER }
+    out.L2 = { (vSel and "> " or "") .. L.t(isAdvanced() and "menu.view_advanced" or "menu.view_basic"), vSel and COLOR_SELECTED or COLOR_HEADER }
     out.L3 = { "", COLOR_NORMAL }
     -- Rows below the last category: empty (a text render left alone shows the engine's default "Text").
     for r = #list + 4, ROWS do out["L" .. r] = { "", COLOR_NORMAL } end
@@ -372,35 +279,34 @@ local function content()
                 prefix = "> "
                 color = focus == "left" and COLOR_SELECTED or COLOR_CURRENT
             end
-            out["L" .. r] = { prefix .. t.name, color }
+            out["L" .. r] = { prefix .. tabName(t), color }
         end
     end
 
     -- Right column
     local detailItem = details and focus == "right" and not editing and currentTab().items[sel] or nil
     if leftSel == LEFT_MASTER or leftSel == LEFT_VIEW then
-        local info = leftSel == LEFT_MASTER and MASTER_INFO or VIEW_INFO
-        out.heading = { leftSel == LEFT_MASTER and "ALL MOD CHANGES" or "MENU VIEW", COLOR_HEADER }
+        local info = L.lines(leftSel == LEFT_MASTER and "menu.master_info" or "menu.view_info")
+        out.heading = { L.t(leftSel == LEFT_MASTER and "menu.master_heading" or "menu.view_heading"), COLOR_HEADER }
         for r = 1, ROWS do
             out["R" .. r] = { info[r] or "", COLOR_NORMAL }
             out["V" .. r] = { "", COLOR_NORMAL }
         end
         if leftSel == LEFT_MASTER then
-            out.help = { on and "A or trigger: turn the whole mod OFF" or "A or trigger: turn the whole mod back ON", COLOR_HELP }
+            out.help = { L.t(on and "menu.master_turn_off" or "menu.master_turn_on"), COLOR_HELP }
         else
-            out.help = { isAdvanced() and "A or trigger: switch to the basic view (main options only)"
-                or "A or trigger: switch to the advanced view (every option)", COLOR_HELP }
+            out.help = { L.t(isAdvanced() and "menu.view_to_basic" or "menu.view_to_advanced"), COLOR_HELP }
         end
     elseif detailItem then
         local it = detailItem
-        out.heading = { it.label:upper(), COLOR_HEADER }
+        out.heading = { L.upper(label(it)), COLOR_HEADER }
         local lines = {}
-        local paras = C.descriptions()[it.key] or { it.help or "" }
+        local paras = C.descriptions()[it.key] or { L.t("opt." .. it.key .. ".help") }
         for i, p in ipairs(paras) do
             if i > 1 then lines[#lines + 1] = "" end
             wrap(p, DETAIL_WIDTH, lines)
         end
-        local tail = { "", "Now: " .. valueText(it) .. "     Default: " .. valueText(it, C.defaults[it.key]) }
+        local tail = { "", L.t("menu.now_default", valueText(it), valueText(it, C.defaults[it.key])) }
         -- Drop the blank lines between paragraphs if the text does not fit, then cut it.
         if #lines + #tail > ROWS then
             local packed = {}
@@ -416,7 +322,8 @@ local function content()
         out.help = { helpText(it), COLOR_HELP }
     else
         local tab = currentTab()
-        out.heading = { tab.name:upper() .. (on and "" or "   (mod off: not applied)"), on and COLOR_HEADER or COLOR_DIM }
+        local heading = L.upper(tabName(tab))
+        out.heading = { on and heading or L.t("menu.heading_off", heading), on and COLOR_HEADER or COLOR_DIM }
         for r = 1, ROWS do
             local it = tab.items[r]
             if it then
@@ -432,7 +339,7 @@ local function content()
                 elseif s then
                     vc, lc = COLOR_SELECTED, COLOR_SELECTED
                 end
-                out["R" .. r] = { (s and "> " or "") .. it.label, lc }
+                out["R" .. r] = { (s and "> " or "") .. label(it), lc }
                 out["V" .. r] = { v, vc }
             else
                 out["R" .. r] = { "", COLOR_NORMAL }
@@ -443,15 +350,15 @@ local function content()
         if it then
             out.help = { helpText(it), COLOR_HELP }
         else
-            out.help = { "A or stick right: open " .. tab.name, COLOR_HELP }
+            out.help = { L.t("menu.open_tab", tabName(tab)), COLOR_HELP }
         end
     end
     if editing then
-        out.footer = { string.format(FOOTER_EDIT, valueText(editing.item, editing.old)), COLOR_EDIT }
+        out.footer = { L.t("menu.footer_edit", valueText(editing.item, editing.old)), COLOR_EDIT }
     elseif detailItem then
-        out.footer = { FOOTER_DETAILS, COLOR_FOOTER }
+        out.footer = { L.t("menu.footer_details"), COLOR_FOOTER }
     else
-        out.footer = { focus == "left" and FOOTER_LEFT or FOOTER_RIGHT, COLOR_FOOTER }
+        out.footer = { L.t(focus == "left" and "menu.footer_left" or "menu.footer_right"), COLOR_FOOTER }
     end
     return out
 end

@@ -27,12 +27,12 @@ internal sealed class ModInjectorService : IDisposable
         var running = FindGameProcesses();
         if (running.Length > 0)
         {
-            Say($"The game is already running (PID {running[0].Id}). Injecting into it.");
+            Say(Lang.T("svc.already_running", running[0].Id));
             await Task.Run(() => TryInject(running[0], lateInjection: true));
             return;
         }
         string exe = GameLocator.ShippingExe(gameDir);
-        if (!File.Exists(exe)) { Say("Game executable not found: " + exe); return; }
+        if (!File.Exists(exe)) { Say(Lang.T("svc.exe_not_found", exe)); return; }
 
         var psi = new ProcessStartInfo(exe)
         {
@@ -40,14 +40,14 @@ internal sealed class ModInjectorService : IDisposable
             UseShellExecute = true,   // do not inherit our console/pipe handles
             Arguments = extraArgs ?? string.Empty,
         };
-        Say("Starting " + exe + " " + psi.Arguments);
+        Say(Lang.T("svc.starting", exe, psi.Arguments));
         var p = Process.Start(psi);
         if (p == null) { Say("Process.Start returned null."); return; }
         lock (_lock) _handled.Add(p.Id);
         await Task.Run(() =>
         {
-            Say("Waiting for the game window...");
-            if (!Injector.WaitForGameWindow(p, 180000, 3000)) { Say("The game window did not appear (or the game exited)."); return; }
+            Say(Lang.T("svc.waiting_window"));
+            if (!Injector.WaitForGameWindow(p, 180000, 3000)) { Say(Lang.T("svc.no_window")); return; }
             TryInject(p, lateInjection: false);
         });
     }
@@ -58,16 +58,16 @@ internal sealed class ModInjectorService : IDisposable
         {
             if (Injector.IsModuleLoaded(p.Id, Ue4ssDllName))
             {
-                Say($"PID {p.Id}: mod already loaded.");
+                Say(Lang.T("svc.already_loaded", p.Id));
                 return;
             }
-            Say($"PID {p.Id}: injecting {Ue4ssDll}{(lateInjection ? " (game already running)" : "")} ...");
+            Say(Lang.T(lateInjection ? "svc.injecting_late" : "svc.injecting", p.Id, Ue4ssDll));
             Injector.Inject(p.Id, Ue4ssDll);
-            Say($"PID {p.Id}: mod loaded. Hold LEFT Y in-game to open the MOHAB Plus menu.");
+            Say(Lang.T("svc.loaded", p.Id));
         }
         catch (Exception ex)
         {
-            Say($"PID {p.Id}: injection failed: {ex.Message}");
+            Say(Lang.T("svc.inject_failed", p.Id, ex.Message));
         }
     }
 
@@ -75,7 +75,7 @@ internal sealed class ModInjectorService : IDisposable
     public void StartWatching()
     {
         if (_watchTimer != null) return;
-        Say("Waiting for the game to start (start it from Virtual Desktop or Meta Quest Link)...");
+        Say(Lang.T("svc.waiting_game"));
         _watchTimer = new System.Threading.Timer(_ => WatchTick(), null, 0, 250);
     }
 
@@ -100,12 +100,12 @@ internal sealed class ModInjectorService : IDisposable
                     if (_handled.Contains(p.Id)) continue;
                     _handled.Add(p.Id);
                 }
-                Say($"Detected game process PID {p.Id}.");
-                if (!Injector.WaitForGameWindow(p, 180000, 3000)) { Say("The game window did not appear (or the game exited)."); continue; }
+                Say(Lang.T("svc.detected", p.Id));
+                if (!Injector.WaitForGameWindow(p, 180000, 3000)) { Say(Lang.T("svc.no_window")); continue; }
                 TryInject(p, lateInjection: (DateTime.Now - SafeStartTime(p)).TotalSeconds > 30);
             }
         }
-        catch (Exception ex) { Say("Watcher error: " + ex.Message); }
+        catch (Exception ex) { Say(Lang.T("svc.watcher_error", ex.Message)); }
         finally { Interlocked.Exchange(ref _ticking, 0); }
     }
 

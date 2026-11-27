@@ -316,7 +316,7 @@ internal sealed class BannerPanel : Control
             if (byX - Theme.S(10) > px + Theme.S(8)) g.DrawLine(pen, px + Theme.S(6), lineY, byX - Theme.S(10), lineY);
             y += TextRenderer.MeasureText(g, "P", plusFont, Size.Empty, TextFormatFlags.NoPadding).Height + Theme.S(6);
         }
-        TextRenderer.DrawText(g, "VR gameplay enhancements  ·  no game files modified", Theme.Body, new Point(x, y), Color.FromArgb(215, Theme.Text), TextFormatFlags.NoPadding);
+        TextRenderer.DrawText(g, Lang.T("ui.banner_tagline"), Theme.Body, new Point(x, y), Color.FromArgb(215, Theme.Text), TextFormatFlags.NoPadding);
 
         // Version pill (top right)
         if (VersionText.Length > 0)

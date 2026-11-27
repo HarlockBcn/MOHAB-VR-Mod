@@ -1,0 +1,329 @@
+# MOHAB Plus texts, English (the reference language: any key missing from another language is taken from here).
+# Format: key = text. {0}, {1}... are filled in by the program. 
+ starts a new line. Lines starting with # are comments.
+# Shared by the in-game menu (Scripts/lang.lua) and the launcher (launcher/Lang.cs). Keep the keys, translate the texts.
+
+# ===== Options: name, help line (in-game menu), choices =====
+# opt.KEY = name (in-game menu and launcher). opt.KEY.long = name in the launcher, where it differs (units).
+
+# --- Syringes ---
+opt.syringe_require_trigger = Trigger to inject
+opt.syringe_require_trigger.help = Hold the trigger of the hand with the syringe to inject it
+opt.syringe_trigger_threshold = Trigger threshold
+opt.syringe_trigger_threshold.help = How far the trigger must be pulled to inject
+opt.syringe_small_holstered = Smaller on the sleeve
+opt.syringe_small_holstered.help = Syringes on the sleeve are drawn smaller (full size in the hand)
+opt.syringe_holster_scale = Sleeve scale
+opt.syringe_holster_scale.help = Size of the syringes on the sleeve
+
+# --- Grabbing ---
+opt.auto_holster = Automatic holsters
+opt.auto_holster.help = ON: weapons fly back to their holster.  OFF: letting go drops them
+opt.holster_store_distance = Put away distance
+opt.holster_store_distance.long = Put away distance (cm)
+opt.holster_store_distance.help = Automatic holsters off: how close to the holster the hand must be to put a weapon away
+opt.flick_drop = Flick to drop
+opt.flick_drop.help = Automatic holsters: let go with a sharp flick to drop a weapon
+opt.flick_drop_speed = Flick speed
+opt.flick_drop_speed.long = Flick speed (cm/s)
+opt.flick_drop_speed.help = Flick to drop: how fast the hand must move. Higher: harder
+opt.holster_nearest = Nearest holster
+opt.holster_nearest.help = Automatic holsters: a weapon flies to the free holster nearest your hand
+opt.grenade_row = All grenades on chest
+opt.grenade_row.help = Every grenade you carry is shown on your chest; take the one you want
+opt.grenade_row_scale = Chest grenade size
+opt.grenade_row_scale.help = Size of the grenades on the chest (full size in the hand)
+opt.body_grab_distance = Inventory grab distance
+opt.body_grab_distance.long = Inventory grab distance (cm)
+opt.body_grab_distance.help = How close the hand must be to take grenades, objects or syringes you carry
+opt.holster_grab_distance = Holster grab distance
+opt.holster_grab_distance.long = Holster grab distance (cm)
+opt.holster_grab_distance.help = How close the hand must be to take a weapon from a holster (not back weapons)
+opt.grab_aim = Grab what you point at
+opt.grab_aim.help = The object lit in blue is the one your hand's guide points at
+opt.weapon_grip_reach = Second hand reach
+opt.weapon_grip_reach.long = Second hand reach (cm)
+opt.weapon_grip_reach.help = How close the second hand must be to grab a weapon's front grip
+opt.grenade_physics = Realistic grenade throws
+opt.grenade_physics.help = Grenades fly at your hand's speed and bounce by their weight (game: 2x, stop dead)
+opt.grenade_throw_strength = Grenade throw strength
+opt.grenade_throw_strength.long = Grenade throw strength (x hand speed)
+opt.grenade_throw_strength.help = Realistic grenade throws: x your hand's speed (1.0 = exactly as fast as your hand)
+opt.teeth_pin_distance = Pull pin with teeth
+opt.teeth_pin_distance.long = Pull pin with teeth (cm, 0 = never)
+opt.teeth_pin_distance.help = How close a grenade must get to your mouth to pull its pin (game: 10, 0 = never)
+opt.cocking = Cocking
+opt.cocking.help = Manual: work the bolt or slide yourself.  Automatic: the game does it (original)
+opt.cocking.choice.manual = Manual
+opt.cocking.choice.auto = Automatic
+opt.cocking.choice.manual.help = Manual: after a reload, pull the bolt or slide yourself
+opt.cocking.choice.auto.help = Automatic: grabbing the front grip cocks the weapon (original game)
+opt.holster_below_eyes = No holster grab above eyes
+opt.holster_below_eyes.help = A hand above your eyes grabs hats and helmets, not back weapons
+
+# --- Haptics ---
+opt.haptics_damage = Vibrate on damage
+opt.haptics_damage.help = Both controllers vibrate when you are hit
+opt.haptics_intensity = Vibration intensity
+opt.haptics_intensity.help = Strength of all the mod's vibrations
+opt.haptics_duration = Damage duration
+opt.haptics_duration.long = Damage duration (s)
+opt.haptics_duration.help = Length of the damage vibration (longer on big hits)
+opt.haptics_directional = Stronger on hit side
+opt.haptics_directional.help = The controller on the side the hit came from vibrates harder
+opt.haptics_weapons = Vibrate when reloading
+opt.haptics_weapons.help = Magazines, shells and opening / closing the sawed-off
+opt.haptics_no_ammo = Vibrate when out of ammo
+opt.haptics_no_ammo.help = Three taps when you reach for the magazine pouch with no ammo left
+opt.haptics_holster_zone = Vibrate at holsters
+opt.haptics_holster_zone.help = Light tap at a full holster with an empty hand, or a free one with a weapon
+
+# --- Movement ---
+opt.crouch_stick = Crouch with turn stick
+opt.crouch_stick.help = Turn stick down: crouch.  Up: stand up
+opt.crouch_stick_threshold = Crouch stick threshold
+opt.crouch_stick_threshold.help = How far the turn stick must be pushed to crouch or stand up
+opt.crouch_speed = Crouched speed
+opt.crouch_speed.long = Crouched speed (x walking)
+opt.crouch_speed.help = Walking speed while crouched, for real or with the stick (1x = normal walking)
+opt.sprint_mode = Sprint
+opt.sprint_mode.help = How you sprint: stick click, arm swing, both, or always
+opt.sprint_mode.choice.stick = Stick click
+opt.sprint_mode.choice.arms = Arm swing
+opt.sprint_mode.choice.both = Stick + arms
+opt.sprint_mode.choice.always = Always sprint
+opt.sprint_mode.choice.stick.help = Stick click: click the movement stick to sprint (original game)
+opt.sprint_mode.choice.arms.help = Arm swing: swing your arms like a runner; faster swing, faster run
+opt.sprint_mode.choice.both.help = Stick + arms: click the stick or swing your arms to sprint
+opt.sprint_mode.choice.always.help = Always sprint: you only walk while you aim, raise a grenade or shoot
+opt.sprint_arm_sensitivity = Arm swing sensitivity
+opt.sprint_arm_sensitivity.help = Higher: less arm swinging needed to sprint
+opt.sprint_speed_multiplier = Sprint speed
+opt.sprint_speed_multiplier.long = Sprint speed (x original)
+opt.sprint_speed_multiplier.help = Top sprint speed (1x = original)
+opt.sprint_turn_slowdown = Slow down on sharp turns
+opt.sprint_turn_slowdown.long = Slow down on sharp turns (0 = off)
+opt.sprint_turn_slowdown.help = Speed lost when turning hard while sprinting (0 = off)
+opt.stairs_steady_speed = Steady speed on stairs
+opt.stairs_steady_speed.help = Stairs and slopes no longer speed you up (the original game does)
+opt.slide_enabled = Slide
+opt.slide_enabled.help = Crouch while sprinting (stick or for real) to slide
+opt.slide_strength = Slide length
+opt.slide_strength.help = How far the slide takes you
+opt.slide_sound = Slide sound
+opt.slide_sound.help = Sound played while sliding
+opt.slide_sound.choice.body = Body
+opt.slide_sound.choice.wood = Wood scrape
+opt.slide_sound.choice.metal = Metal scrape
+opt.slide_sound.choice.off = Off
+opt.slide_sound.choice.body.help = Your body scraping along the floor
+opt.slide_sound.choice.wood.help = A wooden scrape while sliding
+opt.slide_sound.choice.metal.help = A metal scrape while sliding
+opt.slide_sound.choice.off.help = No sound while sliding
+
+# --- Jump ---
+opt.jump_enabled = Jump (experimental)
+opt.jump_enabled.help = Turn stick up while standing to jump
+opt.jump_stick_threshold = Jump stick threshold
+opt.jump_stick_threshold.help = How far the turn stick must be pushed up to jump
+opt.jump_height = Jump height
+opt.jump_height.long = Jump height (cm)
+opt.jump_height.help = How high you jump
+opt.jump_sound = Jump sounds
+opt.jump_sound.help = Effort voice and cloth rustle when jumping
+opt.jump_sound.choice.all = Voice + cloth
+opt.jump_sound.choice.cloth = Cloth only
+opt.jump_sound.choice.off = Off
+opt.jump_sound.choice.all.help = Effort voice and cloth rustle when jumping
+opt.jump_sound.choice.cloth.help = Only the cloth rustle when jumping
+opt.jump_sound.choice.off.help = No sound when jumping
+opt.jump_guard = Stay inside the level
+opt.jump_guard.help = Jumps can't take you over the level's invisible barriers
+opt.land_crouch = Hard landings
+opt.land_crouch.help = Big falls make you bend down on landing, with a grunt and a jolt
+opt.land_crouch_height = Hard landing from
+opt.land_crouch_height.long = Hard landing from (m)
+opt.land_crouch_height.help = Falls from this high or more (from the top of a jump)
+
+# --- Fall damage ---
+opt.fall_damage_custom = Custom fall damage
+opt.fall_damage_custom.help = OFF: the game's rules (hurts from about 3.3 m, kills from 10 m)
+opt.fall_safe_height = Safe height
+opt.fall_safe_height.long = Safe height (m)
+opt.fall_safe_height.help = Shorter falls don't hurt (counted from the top of a jump)
+opt.fall_fatal_height = Fatal height
+opt.fall_fatal_height.long = Fatal height (m)
+opt.fall_fatal_height.help = Longer falls kill you
+opt.fall_damage_progressive = Damage grows with height
+opt.fall_damage_progressive.help = Small drops hurt a little, big ones a lot (game: always the same)
+opt.fall_damage_scale = Damage amount
+opt.fall_damage_scale.long = Damage amount (x the game's)
+opt.fall_damage_scale.help = Damage of a non-fatal fall (1x = the game's)
+
+# --- Cutscenes ---
+opt.skip_cutscenes = Skip cutscenes
+opt.skip_cutscenes.help = Hold both triggers and both grips for a second to skip
+opt.skip_speed = Dialogue fast-forward
+opt.skip_speed.long = Dialogue fast-forward (x)
+opt.skip_speed.help = Speed of dialogue scenes where you just stand and wait
+
+# --- Launcher only ---
+opt.skip_hold_time = Skip hold time (s)
+opt.menu_view = Menu view
+opt.menu_view.choice.basic = basic
+opt.menu_view.choice.advanced = advanced
+opt.menu_hold_time = Menu hold time to open (s)
+opt.debug_log = Verbose logging to UE4SS.log
+
+# ===== Categories (in-game menu and launcher) =====
+section.syringes = Syringes
+section.grabbing = Grabbing
+section.haptics = Haptics
+section.crouch = Crouch
+section.jump_experimental = Jump (experimental)
+section.fall_damage = Fall damage
+section.sprint = Sprint
+section.slide = Slide
+section.cutscenes = Cutscenes
+section.menu = Menu
+section.debug = Debug
+section.movement = Movement
+section.jump = Jump
+section.weapons = Weapons
+section.comfort = Comfort
+
+# ===== Values =====
+value.on = ON
+value.off = OFF
+
+# ===== In-game menu =====
+menu.title = MOHAB PLUS
+menu.title_off = MOHAB PLUS  -  MOD OFF (original game)
+menu.mod_on = MOD: ON
+menu.mod_off = MOD: OFF
+menu.view_basic = VIEW: BASIC
+menu.view_advanced = VIEW: ADVANCED
+menu.master_heading = ALL MOD CHANGES
+menu.view_heading = MENU VIEW
+menu.master_info = Turns every change of the mod on or off\nat once, to compare with the original game.\n\nYour settings are kept. This switch is not\nsaved: the mod is on every time you start.\n\nShortcut anywhere in this menu:\nhold a thumbstick click.
+menu.view_info = BASIC: the main options, in three\ncategories.\n\nADVANCED: every option, including the\nfine-tuning ones (distances, sizes, sounds).\n\nOptions hidden in the basic view keep\nworking with their values.\n\nAlso available in the launcher.
+menu.master_turn_off = A or trigger: turn the whole mod OFF
+menu.master_turn_on = A or trigger: turn the whole mod back ON
+menu.view_to_basic = A or trigger: switch to the basic view (main options only)
+menu.view_to_advanced = A or trigger: switch to the advanced view (every option)
+menu.heading_off = {0}   (mod off: not applied)
+menu.open_tab = A or stick right: open {0}
+menu.now_default = Now: {0}     Default: {1}
+menu.footer_left = Stick: choose   A: open   B: close   Grips: category   Hold stick click: mod on/off
+menu.footer_right = Stick: choose   A: change   X: details   B: back   Grips: category   Hold stick click: mod on/off
+menu.footer_details = DETAILS   Stick up/down: other option   A: change   X or B: back to the list
+menu.footer_edit = EDITING (was {0})   Stick left/right: change   A: confirm   B: cancel
+
+# ===== Launcher =====
+ui.window_title = MOHAB Plus {0} {1}  -  Medal of Honor: Above and Beyond mod launcher
+ui.banner_tagline = VR gameplay enhancements  ·  no game files modified
+ui.footer = MOHAB Plus {0} {1}  ·  Fan-made mod, not affiliated with Respawn Entertainment or Electronic Arts
+ui.tab_play = PLAY
+ui.tab_features = FEATURES
+ui.tab_settings = MOD SETTINGS
+ui.tab_about = ABOUT
+ui.tray_open = Open MOHAB Plus
+ui.tray_exit = Exit
+ui.tray_hint_title = MOHAB Plus keeps running in the tray
+ui.tray_hint = It will load the mod when you start the game. Click the icon to open it, or right-click it and choose Exit.
+ui.just_updated = MOHAB Plus updated to {0}.
+ui.ue4ss_missing = WARNING: {0} is missing. The ue4ss folder must be next to the launcher.
+ui.game_not_found = Game folder not found automatically. Please select it.
+
+# Play page
+ui.game_folder = Game folder
+ui.browse = Browse...
+ui.browse_description = Select the Medal of Honor Above and Beyond folder (the one containing Mohab.exe)
+ui.recommended = Recommended
+ui.vd_title = Play from Virtual Desktop or Meta Quest Link
+ui.vd_step1 = Leave this window open or minimised (it waits in the system tray).
+ui.vd_step2 = Start the game as usual from Virtual Desktop or the Meta Quest Link / Air Link app.
+ui.vd_step3 = The mod loads by itself a few seconds after the game appears.
+ui.auto_watch = Load the mod automatically when the game starts
+ui.auto_watch_tip = When ticked, the launcher watches for the game and loads the mod about 5 s after its window appears.
+ui.auto_watch_disabled = Auto-load disabled.
+ui.watch_on = ●  Ready: waiting for you to start the game
+ui.watch_off = ○  Auto-load is off: tick the box above to use this way
+ui.launch_caption = Or launch it from here
+ui.launch_text = Starts the game directly (the same way Virtual Desktop does) and loads the mod.
+ui.launch = ▶   LAUNCH GAME
+ui.invalid_game_folder = Invalid game folder.
+ui.activity = Activity
+ui.open_log = Open UE4SS log
+ui.open_mod_folder = Open mod folder
+ui.ingame_help = In game: hold LEFT Y to open the menu  ·  stick = select / change  ·  A / trigger = toggle  ·  B = close
+ui.not_found = Not found: {0}
+ui.launcher_ini_error = Could not save launcher.ini: {0}
+
+# About page
+ui.disclaimer = Disclaimer
+ui.disclaimer_text = MOHAB Plus is a personal, non-commercial fan project made by Harlock.\n\nI have used artificial intelligence (AI) tools to make this mod: much of the research and code was done together with an AI assistant.\n\nMy purpose is purely practical: to play Medal of Honor: Above and Beyond in a way that I personally find smoother and more fun, and to share it with anyone who feels the same.\n\nThis mod has nothing to do with Respawn Entertainment, the studio that created the game, nor with Electronic Arts or Meta. It is not affiliated with, endorsed or supported by them, so please do not contact them about problems with the mod.\n\nMedal of Honor and the game's artwork and trademarks belong to their respective owners. The mod does not modify any game file. Use it at your own risk.
+ui.project_github = Project on GitHub
+ui.releases = Releases
+
+# Settings page
+ui.settings_intro = Same settings as the in-game menu (hold LEFT Y in game). Basic shows the main options, Advanced every option. Point at (i) for details, click it to keep them open. Saved changes reach a running game within a couple of seconds.
+ui.basic = Basic
+ui.advanced = Advanced
+ui.defaults = Defaults
+ui.defaults_all = Defaults (all options)
+ui.reload = Reload
+ui.save = Save settings
+ui.saved = Settings saved. A running game picks them up within a couple of seconds.
+ui.more_in_advanced = More options (distances, sizes, sounds, haptics one by one...) in Advanced. Options not shown here keep their values.
+ui.no_description = No description available.
+ui.default_value = Default: {0}
+
+# Updates
+ui.update_now = Update now
+ui.whats_new = What's new
+ui.later = Later
+ui.checking = Checking for updates...
+ui.update_available_short = ⬆  {0} available
+ui.update_available = ⬆   A new version of MOHAB Plus is available: {0}   (you have {1})
+ui.update_to = Update to {0}
+ui.download_page = Download page
+ui.update_available_log = New version {0} available. Use "{1}" at the top of the window.
+ui.up_to_date_short = ✓  Up to date ({0})  ·  check again
+ui.up_to_date = MOHAB Plus is up to date ({0}).
+ui.no_releases_short = No releases published yet  ·  check again
+ui.no_releases = No releases published on GitHub yet.
+ui.check_failed_short = Could not check for updates  ·  retry
+ui.check_failed = Could not check for updates: {0}
+ui.update_title = MOHAB Plus update
+ui.update_close_game = Close the game before updating MOHAB Plus.
+ui.update_confirm = Update MOHAB Plus from {0} to {1}?\n\nThe new version is downloaded from GitHub and the launcher restarts. Your settings are kept.
+ui.updating = Updating to {0}...
+ui.update_installed = Update installed. Restarting...
+ui.update_failed_log = Update failed: {0}
+ui.update_failed_bar = ⬆   Update to {0} failed: {1}
+ui.update_failed = The update could not be installed:\n\n{0}\n\nNothing was changed. You can also download it manually from GitHub.
+ui.downloading = Downloading {0}... {1}%
+ui.downloading_kb = Downloading... {0} KB
+ui.updated_to = Updated to {0}.
+ui.extracting = Extracting...
+ui.installing = Installing...
+ui.notes_title = What's new in MOHAB Plus {0}
+ui.no_notes = No release notes.
+ui.open_github = Open on GitHub
+ui.close = Close
+
+# Activity log (game detection and loading)
+svc.already_running = The game is already running (PID {0}). Injecting into it.
+svc.exe_not_found = Game executable not found: {0}
+svc.starting = Starting {0} {1}
+svc.waiting_window = Waiting for the game window...
+svc.no_window = The game window did not appear (or the game exited).
+svc.already_loaded = PID {0}: mod already loaded.
+svc.injecting = PID {0}: injecting {1} ...
+svc.injecting_late = PID {0}: injecting {1} (game already running) ...
+svc.loaded = PID {0}: mod loaded. Hold LEFT Y in-game to open the MOHAB Plus menu.
+svc.inject_failed = PID {0}: injection failed: {1}
+svc.waiting_game = Waiting for the game to start (start it from Virtual Desktop or Meta Quest Link)...
+svc.detected = Detected game process PID {0}.
+svc.watcher_error = Watcher error: {0}

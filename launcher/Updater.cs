@@ -119,13 +119,13 @@ internal static class Updater
                 await dst.WriteAsync(buf.AsMemory(0, read), ct);
                 done += read;
                 int pct = total > 0 ? (int)(done * 100 / total) : -1;
-                if (pct != lastPct) { lastPct = pct; progress.Report(pct >= 0 ? $"Downloading {AppInfo.Format(release.Version)}... {pct}%" : $"Downloading... {done / 1024} KB"); }
+                if (pct != lastPct) { lastPct = pct; progress.Report(pct >= 0 ? Lang.T("ui.downloading", AppInfo.Format(release.Version), pct) : Lang.T("ui.downloading_kb", done / 1024)); }
             }
         }
 
         InstallFromZip(zipPath, baseDir, progress, ct);
         try { Directory.Delete(work, true); } catch { /* temp, not critical */ }
-        progress.Report($"Updated to {AppInfo.Format(release.Version)}.");
+        progress.Report(Lang.T("ui.updated_to", AppInfo.Format(release.Version)));
     }
 
     /// <summary>Installs a release zip over <paramref name="baseDir"/> (user settings kept). Throws on failure, rolling back.</summary>
@@ -140,14 +140,14 @@ internal static class Updater
     private static void InstallFromZipCore(string zipPath, string work, string baseDir, IProgress<string> progress, CancellationToken ct)
     {
         // Extract (ExtractToDirectory rejects entries that would land outside the folder)
-        progress.Report("Extracting...");
+        progress.Report(Lang.T("ui.extracting"));
         string extracted = Path.Combine(work, "files");
         ZipFile.ExtractToDirectory(zipPath, extracted);
         string newRoot = FindPackageRoot(extracted)
             ?? throw new InvalidDataException("The downloaded zip does not look like a MOHAB Plus release.");
 
         // Install with rollback
-        progress.Report("Installing...");
+        progress.Report(Lang.T("ui.installing"));
         var replaced = new List<string>();   // targets that were renamed to *.old
         var created = new List<string>();    // targets that did not exist before
         try

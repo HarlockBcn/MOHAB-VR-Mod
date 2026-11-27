@@ -45,6 +45,8 @@ internal static class Program
         using var showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
 
         ApplicationConfiguration.Initialize();
+        Lang.Init(Path.Combine(baseDir, "ue4ss", "Mods", "MOHABPlus", "lang"));
+        Lang.SetLanguage("en");
         var form = new MainForm(baseDir, settings, justUpdated);
         var listener = new Thread(() =>
         {

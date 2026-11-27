@@ -26,6 +26,9 @@ local TeethPin = require("teethpin")
 local Respawn = require("respawn")
 
 C.init(modDir)
+local Lang = require("lang")
+Lang.init(modDir)
+Lang.setLanguage("en")
 U.debug = C.get("debug_log") == true
 U.log("v%s loaded (mod dir: %s)", VERSION, modDir)
 

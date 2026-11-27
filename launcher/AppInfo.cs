@@ -13,15 +13,8 @@ internal static class AppInfo
     public const string Author = "Harlock";
     public const string Credit = "by " + Author;
 
-    /// <summary>Disclaimer shown in the launcher's ABOUT tab (keep in sync with the README "Disclaimer" section).</summary>
-    public static readonly string[] Disclaimer =
-    {
-        "MOHAB Plus is a personal, non-commercial fan project made by Harlock.",
-        "I have used artificial intelligence (AI) tools to make this mod: much of the research and code was done together with an AI assistant.",
-        "My purpose is purely practical: to play Medal of Honor: Above and Beyond in a way that I personally find smoother and more fun, and to share it with anyone who feels the same.",
-        "This mod has nothing to do with Respawn Entertainment, the studio that created the game, nor with Electronic Arts or Meta. It is not affiliated with, endorsed or supported by them, so please do not contact them about problems with the mod.",
-        "Medal of Honor and the game's artwork and trademarks belong to their respective owners. The mod does not modify any game file. Use it at your own risk.",
-    };
+    // The disclaimer shown in the ABOUT tab is ui.disclaimer_text in the lang files (keep it in sync with the README
+    // "Disclaimer" section).
 
     /// <summary>Mod version (x.y.z), taken from the VERSION file at build time.</summary>
     public static readonly Version Version = Normalize(Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(0, 0, 0));
