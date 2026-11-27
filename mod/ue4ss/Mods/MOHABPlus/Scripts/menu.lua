@@ -81,8 +81,8 @@ local advancedTabs = {
           help = "Magazines, shells and opening / closing the sawed-off" },
         { key = "haptics_no_ammo", label = "Vibrate when out of ammo", kind = "bool",
           help = "Three taps when you reach for the magazine pouch with no ammo left" },
-        { key = "haptics_holster_zone", label = "Vibrate at grab zones", kind = "bool",
-          help = "Light tap when your empty hand can take a weapon or item you carry" },
+        { key = "haptics_holster_zone", label = "Vibrate at holsters", kind = "bool",
+          help = "Light tap at a full holster with an empty hand, or a free one with a weapon" },
     } },
     { name = "Movement", items = {
         { key = "crouch_stick", label = "Crouch with turn stick", kind = "bool",
@@ -163,7 +163,7 @@ local advancedTabs = {
 local basicLayout = {
     { name = "Movement", keys = { "sprint_mode", "crouch_stick", "slide_enabled", "jump_enabled" } },
     { name = "Weapons", keys = { "cocking", "manual_holster", "grenade_row", "grenade_physics", "syringe_require_trigger" } },
-    { name = "Comfort", keys = { "haptics_intensity", "fall_damage_custom", "skip_cutscenes" } },
+    { name = "Comfort", keys = { "haptics_intensity", "haptics_holster_zone", "fall_damage_custom", "skip_cutscenes" } },
 }
 local basicTabs = {}
 do

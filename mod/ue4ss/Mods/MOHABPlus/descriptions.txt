@@ -97,8 +97,8 @@ Feel magazines, clips, shells and bullets going in, and break-action shotguns op
 Three short taps on the hand that presses grip at your magazine pouch when you have no ammo left for your weapon.
 
 [haptics_holster_zone]
-A light tap when your empty hand is close enough to take a holstered weapon or something you carry (grenades, objects, syringes).
-With "Manual holsters" on, also when a weapon in your hand reaches a holster: a light tap if it is free (letting go puts it away). Not while you hold the weapon with both hands or aim a long weapon, so aiming with a hand near the shoulder doesn't vibrate.
+A light tap when your empty hand is close enough to take a holstered weapon or something you carry (grenades, objects, syringes). No tap at a holster whose weapon is in your other hand.
+With "Manual holsters" on, also when a weapon in your hand stops at a free holster where it fits (letting go puts it away), once each time you bring it there. Not while you hold the weapon with both hands or aim a long weapon, so aiming with a hand near the shoulder doesn't vibrate.
 
 # --- Crouch ---
 [crouch_stick]

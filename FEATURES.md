@@ -42,7 +42,7 @@
 ### Haptics
 - **Damage vibration** - The controllers vibrate when you get hurt, stronger for big hits and on the side of the impact.
 - **Weapon handling vibration** - Feel magazines, clips, shells and bullets going in, and break-action shotguns opening and closing.
-- **Grab zone vibration** - A light tap tells you when your empty hand is close enough to take a holstered weapon or something you carry (grenades, objects, syringes).
+- **Grab zone vibration** - A light tap tells you when your empty hand is close enough to take a holstered weapon or something you carry (grenades, objects, syringes). No tap at a holster whose weapon is in your other hand: an empty hand only feels full holsters, a hand holding a weapon only free ones.
 - **Out of ammo vibration** - Pressing grip at your magazine pouch when you have no ammo left gives three short taps on that hand.
 
 ### Cutscenes

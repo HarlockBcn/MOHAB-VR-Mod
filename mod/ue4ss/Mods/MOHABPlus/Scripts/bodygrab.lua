@@ -15,6 +15,7 @@ local U = require("util")
 local C = require("config")
 local Haptics = require("haptics")
 local Row = require("grenaderow")
+local H = require("holsters")
 
 local M = {}
 
@@ -196,6 +197,21 @@ local function logMiss(pawn, side)
         side, best, bestD, table.concat(dist, ","), table.concat(lee, ","))
 end
 
+-- A weapon holster whose weapon is in a hand right now: the game keeps the slot reserved for it (its proxy stays
+-- registered), so GetNearestHolsterSlot still offers it, but the holster is empty. No tap there.
+local function heldElsewhere(pawn, s)
+    local o = H.occupant(U.get(pawn, "HolstersComponent"), s)
+    if not isWeapon(o) then return false end
+    if U.get(o, "IsGripped") == true or U.get(o, "HoldingWeaponWithOffhand") == true
+        or U.same(U.get(pawn, "WeaponHeldWithOffhand"), o) then return true end
+    for _, side in ipairs({ "LeftController", "RightController" }) do
+        if U.same(U.get(U.get(pawn, side), "AttachedObject"), o) then return true end
+    end
+    return false
+end
+
+-- Taps only for an empty hand at a holster that really holds something (a hand holding a weapon gets its taps from
+-- manualholster.lua, at a free holster where it fits).
 function M.handTick(pawn, now)
     local hapticsOn = C.get("haptics_holster_zone")
     for i, side in ipairs({ "Left", "Right" }) do
@@ -205,7 +221,8 @@ function M.handTick(pawn, now)
         s = s or NONE
         if s ~= NONE and Row.ownsSlot(pawn, s) then s = NONE end    -- the row of grenades has its own taps
         if s ~= zone[side] then
-            if s ~= NONE and hapticsOn then Haptics.zoneTap(now, i - 1) end
+            local full = s ~= NONE and not heldElsewhere(pawn, s)
+            if full and hapticsOn then Haptics.zoneTap(now, i - 1) end
             zone[side] = s
         end
         local down = U.axis("OculusTouch_" .. side .. "_Grip_Axis") > 0.6

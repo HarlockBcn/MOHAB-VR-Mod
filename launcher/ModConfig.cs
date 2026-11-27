@@ -44,7 +44,7 @@ internal sealed class ModConfig
         new("haptics_directional", "Stronger on hit side", OptionKind.Bool, "true", Section: "Haptics"),
         new("haptics_weapons", "Vibrate when reloading", OptionKind.Bool, "true", Section: "Haptics"),
         new("haptics_no_ammo", "Vibrate when out of ammo", OptionKind.Bool, "true", Section: "Haptics"),
-        new("haptics_holster_zone", "Vibrate at grab zones", OptionKind.Bool, "true", Section: "Haptics"),
+        new("haptics_holster_zone", "Vibrate at holsters", OptionKind.Bool, "true", Section: "Haptics"),
 
         new("crouch_stick", "Crouch with turn stick", OptionKind.Bool, "true", Section: "Crouch"),
         new("crouch_stick_threshold", "Crouch stick threshold", OptionKind.Float, "0.7", 0.3, 0.95, 0.05, Section: "Crouch"),
@@ -98,7 +98,7 @@ internal sealed class ModConfig
     {
         ("Movement", new[] { "sprint_mode", "crouch_stick", "slide_enabled", "jump_enabled" }),
         ("Weapons", new[] { "cocking", "manual_holster", "grenade_row", "grenade_physics", "syringe_require_trigger" }),
-        ("Comfort", new[] { "haptics_intensity", "fall_damage_custom", "skip_cutscenes" }),
+        ("Comfort", new[] { "haptics_intensity", "haptics_holster_zone", "fall_damage_custom", "skip_cutscenes" }),
     };
 
     /// <summary>

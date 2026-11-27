@@ -64,8 +64,8 @@ local FORCED_GRIP = 0.9                 -- grip still pressed this much: the pla
 local STEP_IN = 30                      -- cm in front of the head: where a weapon released behind a wall falls
 local GRENADE_STORE_EXTRA = 5            -- cm beyond body_grab_distance: a held grenade at the chest row is put away
 local SLOW_SPEED = 35                   -- cm/s (relative to the body): a hand this slow at a holster has stopped there
-local EXIT_MARGIN = 10                  -- cm beyond the holster's reach before the hand counts as gone from it
-local REARM = 1.0                       -- s gone from a holster before it may vibrate again
+local EXIT_MARGIN = 3                   -- cm beyond the holster's reach before the hand counts as gone from it
+local REARM = 0.5                       -- s gone from a holster before it may vibrate again
 local AIM_COS = 0.82                    -- cos 35 deg: a long gun pointing this close to where the player looks is aimed
 
 -- ---------------------------------------------------------------------------------------------
