@@ -7,6 +7,7 @@
 --                          navigate it;  master   all mod changes on / off
 --   crouch | stand         virtual crouch on / off
 --   haptic                 test vibration;   damage   remove 40 health
+--   haptictest             the same 0.5 s vibration on the right hand sent 5 ways, 2.5 s apart (see hapticSteps)
 --   simwalk | simgesture   pretend the movement stick is pushed / the arms are swinging
 --   set <key> <value>      change a setting in memory (not saved)
 --   openlevel <path>       open a map, e.g. /Game/R6/Maps/100_BasicTraining/P_100_BasicTraining
@@ -46,10 +47,90 @@ function M.install(context)
     U.log("devtools enabled (write commands to %s)", cmdPath)
 end
 
+-- ---------------------------------------------------------------------------------------------
+-- Vibration test: does one SetHapticsByValue last its duration, does sending it again every tick keep it going, or
+-- only a change of value, and how does the engine's own way (PlayHapticEffect with one of the game's effects) feel?
+-- ---------------------------------------------------------------------------------------------
+local RIGHT = 1                 -- EControllerHand
+local TEST_LEN, TEST_GAP = 0.5, 2.5
+local hapticTest = nil          -- { t0, step, started, n, effect }
+
+local function findEffect()
+    local best, names = nil, {}
+    for _, cls in ipairs({ "HapticFeedbackEffect_Curve", "HapticFeedbackEffect_Buffer", "HapticFeedbackEffect_SoundWave" }) do
+        for _, e in ipairs(FindAllOf(cls) or {}) do
+            if U.valid(e) then
+                local ok, d = U.call(e, "GetDuration")
+                d = (ok and type(d) == "number") and d or 0
+                if #names < 15 then names[#names + 1] = string.format("%s (%.2f s)", e:GetFName():ToString(), d) end
+                local score = (cls == "HapticFeedbackEffect_Curve" and 10 or 0) + ((d >= 0.1 and d <= 3) and 5 or 0)
+                if not best or score > best.score then best = { e = e, d = d, score = score, name = e:GetFName():ToString() } end
+            end
+        end
+    end
+    U.log("haptic test: effects loaded: %s", #names > 0 and table.concat(names, ", ") or "none")
+    return best
+end
+
+local function set(pc, amp) U.call(pc, "SetHapticsByValue", amp > 0 and 1.0 or 0, amp, RIGHT) end
+
+-- start(pc, test), tick(pc, n) every tick while it lasts, stop(pc)
+local hapticSteps = {
+    { name = "one SetHapticsByValue for 0.5 s",
+      start = function(pc) set(pc, 0.8) end, tick = function() end, stop = function(pc) set(pc, 0) end },
+    { name = "the same value sent again every tick",
+      start = function(pc) set(pc, 0.8) end, tick = function(pc) set(pc, 0.8) end, stop = function(pc) set(pc, 0) end },
+    { name = "alternating 0.8 / 0.6 every tick (never off)",
+      start = function(pc) set(pc, 0.8) end, tick = function(pc, n) set(pc, n % 2 == 0 and 0.8 or 0.6) end,
+      stop = function(pc) set(pc, 0) end },
+    { name = "pulses: on one tick, off the next (the occupied-holster buzz)",
+      start = function(pc) set(pc, 0.8) end, tick = function(pc, n) set(pc, n % 2 == 0 and 0.8 or 0) end,
+      stop = function(pc) set(pc, 0) end },
+    { name = "the game's own effect, looped (PlayHapticEffect)",
+      start = function(pc, test)
+          if not test.effect then U.log("haptic test: no effect found, step skipped"); return end
+          local ok, err = U.call(pc, "PlayHapticEffect", test.effect.e, RIGHT, 1.0, true)
+          if not ok then U.log("haptic test: PlayHapticEffect failed: %s", tostring(err)) end
+      end,
+      tick = function() end, stop = function(pc) U.call(pc, "StopHapticEffect", RIGHT) end },
+}
+
+local function hapticTick(pc, now)
+    local test = hapticTest
+    if not test then return end
+    local i = math.floor((now - test.t0) / TEST_GAP) + 1
+    local step = hapticSteps[test.step]
+    if step and test.started and now - test.started >= TEST_LEN then
+        step.stop(pc)
+        test.started = nil
+        if test.step >= #hapticSteps then
+            U.log("haptic test: done")
+            hapticTest = nil
+            return
+        end
+    end
+    if i > test.step and not test.started then
+        test.step = i
+        step = hapticSteps[i]
+        if not step then hapticTest = nil; return end
+        U.log("haptic test %d/%d: %s%s", i, #hapticSteps, step.name,
+            i == #hapticSteps and test.effect and string.format(" [%s, %.2f s]", test.effect.name, test.effect.d) or "")
+        test.started, test.n = now, 0
+        step.start(pc, test)
+    elseif test.started then
+        test.n = test.n + 1
+        step.tick(pc, test.n)
+    end
+end
+
 -- Called every frame after the regular tick.
 M.gestureIntensity = 0
 M.slideTrace = nil
 function M.afterTick()
+    if hapticTest then
+        local pawn, pc = ctx.getPlayer()
+        if U.valid(pawn) and U.valid(pc) then pcall(hapticTick, pc, U.now(pawn)) end
+    end
     -- Trace the speed during a test slide (every ~0.1 s)
     if M.slideTrace then
         local pawn = ctx.getPlayer()
@@ -138,6 +219,9 @@ function M.process()
         Crouch.setCrouched(pawn, cmd == "crouch")
     elseif cmd == "haptic" then
         Haptics.pulse(pc, U.now(pawn), 1.0, 0.5, 0.5)
+    elseif cmd == "haptictest" then
+        hapticTest = { t0 = U.now(pawn) + 1.0, step = 0, effect = findEffect() }
+        U.log("haptic test: %d vibrations on the right hand, one every %.1f s, each %.1f s long", #hapticSteps, TEST_GAP, TEST_LEN)
     elseif cmd == "damage" then
         local hc = U.get(pawn, "VRPlayerCharacterHealthAndDamageComponent")
         local h = U.get(hc, "Health")

@@ -62,6 +62,10 @@ local PAWN_FREE_TIME = 0.5              -- s a dropped weapon passes through the
 local ECC_PAWN = 2
 local FORCED_GRIP = 0.9                 -- grip still pressed this much: the player did not let go
 local STEP_IN = 30                      -- cm in front of the head: where a weapon released behind a wall falls
+local GRENADE_STORE_EXTRA = 5            -- cm beyond body_grab_distance: a held grenade at the chest row is put away
+local SLOW_SPEED = 35                   -- cm/s (relative to the body): a hand this slow at a holster has stopped there
+local EXIT_MARGIN = 10                  -- cm beyond the holster's reach before the hand counts as gone from it
+local REARM = 1.0                       -- s gone from a holster before it may vibrate again
 local AIM_COS = 0.82                    -- cos 35 deg: a long gun pointing this close to where the player looks is aimed
 
 -- ---------------------------------------------------------------------------------------------
@@ -69,7 +73,7 @@ local AIM_COS = 0.82                    -- cos 35 deg: a long gun pointing this 
 -- ---------------------------------------------------------------------------------------------
 local held = {}        -- address -> { w, name, side, kind, how, ammo, canFire }  weapons in the player's hands
 local dropped = {}     -- address -> { w, name, ammo, canFire }  dropped weapons still on the floor
-local zone = {}        -- side -> slot the held weapon would go to now
+local zone = {}        -- side -> { z = slot the held weapon is at, fired = true, gone = time it left }
 local samples = {}     -- side -> list of { t, p } hand positions (the last VEL_WINDOW or so)
 local passing = {}     -- address -> { w, name, t0, resp }  dropped weapons ignoring the player's body for a moment
 local lastPawn = nil
@@ -177,30 +181,41 @@ local function holsterDistances(pawn, ctrl)
     return d
 end
 
+-- A held grenade is measured against the row on the chest (grenaderow.lua: the grenades drawn there, the empty places
+-- next to them, and the game's chest point, which is the middle of the row), not against the game's chest point alone
+-- with the weapons' distance: that zone was far wider than the one where a grenade of the row grows to be taken.
+local function grenadeAtRow(pawn, w)
+    return kindOf(w) == "grenade" and Row.active
+end
+
+local function reachOf(pawn, w, s)
+    if grenadeAtRow(pawn, w) and s == U.get(pawn, "GrenadeHolsterSlot") then
+        local take = tonumber(C.get("body_grab_distance")) or 10
+        return math.max(take + GRENADE_STORE_EXTRA, 8)
+    end
+    return C.get("holster_store_distance")
+end
+
 -- The free holster a weapon would go to if the hand let go of it now.
 local function storeSlot(pawn, hc, w, ctrl)
     local d = U.valid(ctrl) and holsterDistances(pawn, ctrl) or nil
     if not d then return nil, d end
-    local reach = C.get("holster_store_distance")
+    if grenadeAtRow(pawn, w) then
+        local gs = U.get(pawn, "GrenadeHolsterSlot")
+        local okH, h = U.call(U.get(ctrl, "MotionController"), "K2_GetComponentLocation")
+        local hand = (okH and h) and U.vec(h) or nil
+        if type(gs) == "number" and hand then
+            for _, p in ipairs(Row.rowPoints()) do
+                local dist = U.vlen(U.vsub(p, hand))
+                if d[gs] == nil or dist < d[gs] then d[gs] = dist end
+            end
+        end
+    end
     local best = nil
     for _, s in ipairs(freeSlots(pawn, hc, w)) do
-        if d[s] and d[s] <= reach and (best == nil or d[s] < d[best]) then best = s end
+        if d[s] and d[s] <= reachOf(pawn, w, s) and (best == nil or d[s] < d[best]) then best = s end
     end
     return best, d
-end
-
--- The nearest holster within reach where the weapon would fit but another one is already stored (the chest full of
--- grenades), or nil. Free ones are not counted (its own holster is free).
-local function blockedSlot(pawn, hc, w, d)
-    if not d then return nil end
-    local reach = C.get("holster_store_distance")
-    local free = {}
-    for _, s in ipairs(freeSlots(pawn, hc, w)) do free[s] = true end
-    local best = nil
-    for _, s in ipairs(fittingSlots(pawn, kindOf(w))) do
-        if not free[s] and d[s] and d[s] <= reach and (best == nil or d[s] < d[best]) then best = s end
-    end
-    return best
 end
 
 local function distText(d)
@@ -229,16 +244,27 @@ end
 -- the floor to the hand, and one held by the off hand hangs from an actor that can be far from the hand (see below),
 -- so its estimate turned a drop into a throw.
 local function sampleHands(pawn, t)
+    local body = location(pawn, "K2_GetActorLocation")
     for _, side in ipairs({ "Left", "Right" }) do
         local mc = U.get(U.get(pawn, side .. "Controller"), "MotionController")
         local p = U.valid(mc) and location(mc, "K2_GetComponentLocation") or nil
         local list = samples[side] or {}
         if p then
-            list[#list + 1] = { t = t, p = p }
+            list[#list + 1] = { t = t, p = p, r = body and U.vsub(p, body) or nil }
             while #list > 2 and t - list[2].t >= VEL_WINDOW do table.remove(list, 1) end
         end
         samples[side] = list
     end
+end
+
+-- The hand's speed relative to the body (cm/s, walking does not count), or nil.
+local function bodySpeed(side)
+    local list = samples[side]
+    if not list or #list < 2 then return nil end
+    local a, b = list[1], list[#list]
+    local dt = b.t - a.t
+    if dt <= 0.005 or dt > 0.5 or not a.r or not b.r then return nil end
+    return U.vlen(U.vsub(b.r, a.r)) / dt
 end
 
 local function handVelocity(side)
@@ -800,14 +826,17 @@ local function handling(pawn, t)
     return nil
 end
 
--- A light tap when letting go would put the weapon into a holster; a longer buzz at a holster where it would fit but
--- that already holds another one (letting go drops it). Once on entering the zone; none while the weapon is handled.
+-- A light tap when letting go would put the weapon into a holster. None while the weapon is handled. When:
+--   * the hand slows down at the holster (SLOW_SPEED): putting a weapon away ends with the hand stopping there, a hand
+--     passing by is fast;
+--   * once per visit: the hand counts as gone only beyond the reach + EXIT_MARGIN for REARM, so a hand resting by a
+--     holster, swaying across its edge, does not vibrate again and again.
 local function zoneTaps(pawn, hc, now)
     local tap = C.get("haptics_holster_zone")
-    local cur, info = {}, {}
+    local cur = {}
     for _, t in pairs(held) do
         local s, d = storeSlot(pawn, hc, t.w, U.get(pawn, t.side .. "Controller"))
-        local why = (s or blockedSlot(pawn, hc, t.w, d)) and handling(pawn, t) or nil
+        local why = s and handling(pawn, t) or nil
         if why then
             if t.quiet ~= why then U.dlog("manual holster: %s near a holster, no feedback (%s)", t.name, why) end
             t.quiet = why
@@ -815,29 +844,33 @@ local function zoneTaps(pawn, hc, now)
         else
             t.quiet = nil
         end
-        if s then
-            cur[t.side] = s
-        else
-            local b = blockedSlot(pawn, hc, t.w, d)
-            if b then
-                cur[t.side] = "busy " .. b
-                info[t.side] = { name = t.name, slot = b, dist = d[b], by = occupant(hc, b) }
-            end
+        -- Still at the holster it was at, within the margin: the same visit.
+        local st = zone[t.side]
+        if not s and st and d then
+            local slot = st.z
+            if slot and d[slot] and d[slot] <= reachOf(pawn, t.w, slot) + EXIT_MARGIN then s = slot end
         end
+        if s then cur[t.side] = s end
     end
     for i, side in ipairs({ "Left", "Right" }) do
         local z = cur[side]
-        if z and z ~= zone[side] then
-            if type(z) == "string" then
-                local f = info[side]
-                U.log("manual holster: %s at holster %d (%.0f cm), which holds %s: %s", f.name, f.slot, f.dist or -1,
-                    f.by and fname(f.by) or "?", tap and "long buzz" or "no buzz (haptics_holster_zone off)")
-                if tap then Haptics.busyBuzz(now, i - 1) end
-            elseif tap then
-                Haptics.zoneTap(now, i - 1)
+        local st = zone[side]
+        if z then
+            if not st or st.z ~= z then
+                st = { z = z }
+                zone[side] = st
             end
+            st.gone = nil
+        elseif st then
+            st.gone = st.gone or now
+            if now - st.gone >= REARM then zone[side] = nil end
+            st = nil
         end
-        zone[side] = z
+        local speed = st and not st.fired and bodySpeed(side) or nil
+        if st and not st.fired and speed and speed <= SLOW_SPEED then
+            st.fired = true
+            if tap then Haptics.zoneTap(now, i - 1) end
+        end
     end
 end
 

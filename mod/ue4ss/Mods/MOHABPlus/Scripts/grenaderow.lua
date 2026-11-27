@@ -623,6 +623,23 @@ M.MAX_CARRIED = MAX_CARRIED
 -- Is that hand at one of the grenades?
 function M.isAt(side) return M.active and hover[side] ~= nil end
 
+-- World positions of the row: the grenades drawn now, and the empty places next to them when two places are known
+-- (the row is straight, SPACING apart). manualholster.lua also measures the game's chest point (the middle place).
+function M.rowPoints()
+    if not M.active then return {} end
+    local p = {}
+    for i = 1, MAX_CARRIED do
+        local v = visuals[i]
+        if v and row[i] and U.valid(v.actor) then p[i] = actorLoc(v.actor) end
+    end
+    if p[2] and p[1] and not p[3] then p[3] = U.vsub(U.vmul(p[2], 2), p[1]) end
+    if p[2] and p[3] and not p[1] then p[1] = U.vsub(U.vmul(p[2], 2), p[3]) end
+    if p[1] and p[3] and not p[2] then p[2] = U.vmul(U.vadd(p[1], p[3]), 0.5) end
+    local list = {}
+    for i = 1, MAX_CARRIED do if p[i] then list[#list + 1] = p[i] end end
+    return list
+end
+
 -- Is this the chest zone that the row handles? (bodygrab.lua's own tap is skipped there)
 function M.ownsSlot(pawn, slot) return M.active and slot == U.get(pawn, "GrenadeHolsterSlot") end
 

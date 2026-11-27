@@ -1,6 +1,11 @@
 -- Haptic feedback when the player takes damage.
 -- Polls the player's health component and vibrates both controllers when health drops.
 -- If the damage causer is known (HandleDamageLocationIndicator hook) the controller on the hit side vibrates harder.
+--
+-- How long a vibration lasts (tested in the headset, 2026-11-27, devtools "haptictest"): one SetHapticsByValue is felt
+-- as a short tap whatever the duration asked, and sending the same value again does not make it longer (it is
+-- ignored); a value that changes every tick is felt as one continuous vibration. So every vibration longer than a tap
+-- is kept going by alternating its strength with a slightly weaker one (HOLD_DIP) every tick until it ends.
 local U = require("util")
 local C = require("config")
 
@@ -14,19 +19,25 @@ local stopAt = { [HAND_LEFT] = nil, [HAND_RIGHT] = nil }
 local lastCauserLoc = nil
 local lastCauserTime = -100
 
+local HOLD_DIP = 0.75                -- every other tick a held vibration runs at this fraction of its strength
+local held = {}                      -- hand -> { amp, n } vibrations being kept going until stopAt[hand]
+
 local function setHaptics(pc, hand, freq, amp)
     U.call(pc, "SetHapticsByValue", freq, amp, hand)
 end
 
+-- Starts a vibration on one hand for `duration` seconds (kept going by M.tick).
+local function start(pc, hand, amp, duration, now)
+    amp = U.clamp(amp, 0, 1)
+    if amp <= 0 then return end
+    setHaptics(pc, hand, 1.0, amp)
+    stopAt[hand] = now + duration
+    held[hand] = { amp = amp, n = 0, t0 = now }
+end
+
 function M.pulse(pc, now, leftAmp, rightAmp, duration)
-    if leftAmp > 0 then
-        setHaptics(pc, HAND_LEFT, 1.0, U.clamp(leftAmp, 0, 1))
-        stopAt[HAND_LEFT] = now + duration
-    end
-    if rightAmp > 0 then
-        setHaptics(pc, HAND_RIGHT, 1.0, U.clamp(rightAmp, 0, 1))
-        stopAt[HAND_RIGHT] = now + duration
-    end
+    if leftAmp > 0 then start(pc, HAND_LEFT, leftAmp, duration, now) end
+    if rightAmp > 0 then start(pc, HAND_RIGHT, rightAmp, duration, now) end
 end
 
 -- Post-hook of BP_VRPlayerCharacter_C:HandleDamageLocationIndicator(DamageCauser)
@@ -57,34 +68,27 @@ function M.zoneTap(now, hand)
     queue[#queue + 1] = { t = now, hand = hand, amp = 0.3 * k, dur = 0.04 }
 end
 
--- A held weapon reached a holster where it fits but another one is stored: a long, stronger buzz, made of quick
--- pulses (on one tick, off the next). In play a single SetHapticsByValue lasts about as short as a tap whatever its
--- duration, and sending the same value again does not make it longer: only a change of value is felt.
-local BUSY_PULSES, BUSY_STEP = 6, 0.085
-function M.busyBuzz(now, hand)
-    local k = U.clamp(C.get("haptics_intensity"), 0, 1)
-    for i = 0, BUSY_PULSES - 1 do
-        queue[#queue + 1] = { t = now + i * BUSY_STEP, hand = hand, amp = 0.8 * k, dur = 0.04 }
-    end
-end
-
 function M.tick(pawn, pc, now)
     -- Start queued pulses
     for i = #queue, 1, -1 do
         local q = queue[i]
         if now >= q.t then
             table.remove(queue, i)
-            if q.amp > 0 then
-                setHaptics(pc, q.hand, 1.0, U.clamp(q.amp, 0, 1))
-                stopAt[q.hand] = now + q.dur
-            end
+            start(pc, q.hand, q.amp, q.dur, now)
         end
     end
-    -- Stop finished pulses
+    -- Stop finished vibrations, keep the others going
     for hand, t in pairs(stopAt) do
         if t and now >= t then
             setHaptics(pc, hand, 0, 0)
             stopAt[hand] = nil
+            held[hand] = nil
+        elseif held[hand] then
+            local h = held[hand]
+            if now > h.t0 then          -- not in the tick it started
+                h.n = h.n + 1
+                setHaptics(pc, hand, 1.0, h.n % 2 == 1 and h.amp * HOLD_DIP or h.amp)
+            end
         end
     end
 
@@ -160,6 +164,7 @@ function M.reset(pc)
     end
     stopAt = { [HAND_LEFT] = nil, [HAND_RIGHT] = nil }
     queue = {}
+    held = {}
 end
 
 return M
