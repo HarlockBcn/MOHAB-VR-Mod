@@ -29,7 +29,7 @@ Letting go of a weapon drops it to the floor. To put it away, take it to a free 
 Original game: a weapon you let go of flies back to its holster by itself.
 
 [holster_store_distance]
-How close to a holster your hand must be for a weapon you let go of to be put away instead of dropped. A light tap tells you when you are close enough.
+How close to a holster your hand must be for a weapon you let go of to be put away instead of dropped. A light tap tells you when you are close enough; a longer buzz tells you that holster already holds another weapon.
 Only used with "Manual holsters" on.
 
 [grenade_row]
@@ -97,6 +97,7 @@ Two taps on the hand that presses grip at your magazine pouch when you have no a
 
 [haptics_holster_zone]
 A light tap when your empty hand is close enough to take a holstered weapon or something you carry (grenades, objects, syringes).
+With "Manual holsters" on, also when a weapon in your hand reaches a holster: a light tap if it is free (letting go puts it away), a longer buzz if another weapon is already there (letting go drops it). Not while you hold the weapon with both hands or aim a long weapon, so aiming with a hand near the shoulder doesn't vibrate.
 
 # --- Crouch ---
 [crouch_stick]

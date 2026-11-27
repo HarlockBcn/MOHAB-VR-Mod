@@ -57,6 +57,17 @@ function M.zoneTap(now, hand)
     queue[#queue + 1] = { t = now, hand = hand, amp = 0.3 * k, dur = 0.04 }
 end
 
+-- A held weapon reached a holster where it fits but another one is stored: a long, stronger buzz, made of quick
+-- pulses (on one tick, off the next). In play a single SetHapticsByValue lasts about as short as a tap whatever its
+-- duration, and sending the same value again does not make it longer: only a change of value is felt.
+local BUSY_PULSES, BUSY_STEP = 6, 0.085
+function M.busyBuzz(now, hand)
+    local k = U.clamp(C.get("haptics_intensity"), 0, 1)
+    for i = 0, BUSY_PULSES - 1 do
+        queue[#queue + 1] = { t = now + i * BUSY_STEP, hand = hand, amp = 0.8 * k, dur = 0.04 }
+    end
+end
+
 function M.tick(pawn, pc, now)
     -- Start queued pulses
     for i = #queue, 1, -1 do

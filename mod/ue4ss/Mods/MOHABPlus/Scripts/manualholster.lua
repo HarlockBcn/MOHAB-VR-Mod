@@ -10,7 +10,8 @@
 --   * anywhere else: drops it (ThrowHolsteredWeaponInFrontOfOwner, what the game does with swapped weapons, without
 --     moving it in front of the player), keeping its ammo and the hand's speed.
 -- Releases the player did not ask for (cutscenes, the game taking the weapon away: the grip is still pressed) put the
--- weapon back in its holster, so it is never lost.
+-- weapon back in its holster, so it is never lost. A gun registered in its own holster flies back there with the
+-- game's animation (e.g. taking another weapon with the other hand: the game keeps one weapon at a time).
 --
 -- Fits: pistols only go to the hip; every other gun (also the sawed-off shotgun, which the game keeps at the hip) to
 -- either back slot; grenades to the chest. Free: empty, or the slot the weapon already has.
@@ -56,10 +57,12 @@ local INDEX_OF_SLOT = { [3] = 0, [0] = 1, [5] = 2, [2] = 3, [4] = 4, [1] = 5 }
 local MAX_DROP_SPEED = 600              -- cm/s
 local VEL_WINDOW = 0.1                  -- s of hand positions the drop speed is measured over
 local ROOT_GAP = 8                      -- cm between a weapon's model and where its actor should be before it is moved
+local POSE_RUNS = 4                     -- ticks in a row the off-hand pose may need fixing before the mod gives up
 local PAWN_FREE_TIME = 0.5              -- s a dropped weapon passes through the player's body
 local ECC_PAWN = 2
 local FORCED_GRIP = 0.9                 -- grip still pressed this much: the player did not let go
 local STEP_IN = 30                      -- cm in front of the head: where a weapon released behind a wall falls
+local AIM_COS = 0.82                    -- cos 35 deg: a long gun pointing this close to where the player looks is aimed
 
 -- ---------------------------------------------------------------------------------------------
 -- State
@@ -71,6 +74,7 @@ local samples = {}     -- side -> list of { t, p } hand positions (the last VEL_
 local passing = {}     -- address -> { w, name, t0, resp }  dropped weapons ignoring the player's body for a moment
 local lastPawn = nil
 local clock = 0         -- the tick's time (s)
+local flying = {}       -- address -> time its flight back was last logged
 local wasOn = false
 
 -- ---------------------------------------------------------------------------------------------
@@ -185,6 +189,20 @@ local function storeSlot(pawn, hc, w, ctrl)
     return best, d
 end
 
+-- The nearest holster within reach where the weapon would fit but another one is already stored (the chest full of
+-- grenades), or nil. Free ones are not counted (its own holster is free).
+local function blockedSlot(pawn, hc, w, d)
+    if not d then return nil end
+    local reach = C.get("holster_store_distance")
+    local free = {}
+    for _, s in ipairs(freeSlots(pawn, hc, w)) do free[s] = true end
+    local best = nil
+    for _, s in ipairs(fittingSlots(pawn, kindOf(w))) do
+        if not free[s] and d[s] and d[s] <= reach and (best == nil or d[s] < d[best]) then best = s end
+    end
+    return best
+end
+
 local function distText(d)
     if not d then return "?" end
     local t = {}
@@ -274,19 +292,34 @@ local function alignRoot(w, min)
     local model, mLoc, rot, target, gap = rootTarget(w)
     if not model or gap <= (min or 0) then return nil end
     U.call(w, "K2_SetActorLocationAndRotation", target, rot, false, {}, true)
-    -- A model attached to the actor has moved with it: back where it was. A falling one (physics) has not.
+    -- A model attached to the actor has moved / turned with it: back where it was. A falling one (physics) has not.
+    -- (Checking only the location let a model near the actor's origin turn again every tick: the weapon spun.)
     local now = location(model, "K2_GetComponentLocation")
-    if now and U.vlen(U.vsub(now, mLoc)) > 0.5 then
+    local okR, nr = U.call(model, "K2_GetComponentRotation")
+    local turned = okR and nr and (angleDiff(nr.Pitch, rot.Pitch) > 0.5 or angleDiff(nr.Yaw, rot.Yaw) > 0.5
+        or angleDiff(nr.Roll, rot.Roll) > 0.5)
+    if (now and U.vlen(U.vsub(now, mLoc)) > 0.5) or turned then
         U.call(model, "K2_SetWorldLocationAndRotation", mLoc, rot, false, {}, true)
     end
     return gap
 end
 
--- A rifle held by the off hand: its actor is kept under the model, so the release does not swing it.
-local function keepOffhandPose(t)
-    if t.kind ~= "long" or t.how ~= "off hand" then return end
+-- A rifle held by the off hand only: its actor is kept under the model, so the release does not swing it. Once the
+-- actor is under the model it stays there; if it has to be moved again tick after tick, something else (the game
+-- moving the weapon to the other hand...) places the model: the mod gives up for this hold rather than fight it.
+local function keepOffhandPose(pawn, t)
+    if t.kind ~= "long" or t.how ~= "off hand" or t.poseOff then return end
+    if U.get(t.w, "IsGripped") == true or U.same(U.get(U.get(pawn, "WeaponHandController"), "AttachedObject"), t.w) then
+        t.poseRuns = 0
+        return
+    end
     local gap = alignRoot(t.w, ROOT_GAP)
-    if gap and not t.aligned then
+    if not gap then t.poseRuns = 0; return end
+    t.poseRuns = (t.poseRuns or 0) + 1
+    if t.poseRuns >= POSE_RUNS then
+        t.poseOff = true
+        U.log("manual holster: %s in the off hand: actor moved %d ticks in a row, left alone", t.name, t.poseRuns)
+    elseif not t.aligned then
         t.aligned = true
         U.dlog("manual holster: %s in the off hand: actor moved %s under its model", t.name,
             gap >= 999 and "and turned" or string.format("%.0f cm", gap))
@@ -537,7 +570,22 @@ local function released(pawn, hc, t)
     if not slot and forced then
         how = "released by the game"
         local own = U.get(w, "HolsterSlot")
-        if not loose and U.same(occupant(hc, own), w) then slot = own else slot = freeSlots(pawn, hc, w)[1] end
+        if not loose and U.same(occupant(hc, own), w) then
+            -- Its own holster: the game's flight back (started by the release) is left to run. If the weapon is in
+            -- fact still in the hand nothing happens either (the game's flags can all be false for a moment).
+            if isGun(t.kind) then
+                local addr = w:GetAddress()
+                if clock - (flying[addr] or -10) > 2 then
+                    U.log("manual holster: %s flies back to holster %d (released by the game, %s hand, %s; grip %.2f)",
+                        t.name, own, t.side, t.how or "?", grip)
+                end
+                flying[addr] = clock
+                return
+            end
+            slot = own
+        else
+            slot = freeSlots(pawn, hc, w)[1]
+        end
     end
 
     if slot then
@@ -710,17 +758,86 @@ local function adoptSlots(pawn, hc)
     end
 end
 
--- A light tap when letting go would put the weapon into a holster.
+-- No holster feedback while the player handles the weapon rather than putting it away: aiming a rifle brings one
+-- hand to the shoulder.
+--   * Held with both hands: nobody puts a weapon away with both hands on it.
+--   * A long gun pointing where the player looks (barrel within 35 deg of the view): aimed. A weapon taken to the
+--     back points up / back. Not for pistols: putting one away at the hip, the player looks down at it.
+local function bothHands(pawn, w)
+    local n = 0
+    for _, side in ipairs({ "LeftController", "RightController" }) do
+        local o = U.get(U.get(pawn, side), "AttachedObject")
+        if U.valid(o) then
+            if U.same(o, w) then
+                n = n + 1
+            else
+                for _, fn in ipairs({ "GetParentActor", "GetAttachParentActor" }) do
+                    local ok, p = U.call(o, fn)
+                    if ok and U.same(p, w) then n = n + 1; break end
+                end
+            end
+        end
+    end
+    return n >= 2
+end
+
+local function aimed(pawn, t)
+    if t.kind ~= "long" then return false end
+    local arrow = U.get(t.w, "MuzzleDirectionArrow")
+    if not U.valid(arrow) then arrow = U.get(t.w, "MuzzleLocation") end
+    local okA, a = U.call(arrow, "GetForwardVector")
+    local okC, c = U.call(U.get(pawn, "VRReplicatedCamera"), "GetForwardVector")
+    if not okA or not a or not okC or not c then return false end
+    local va, vc = U.vec(a), U.vec(c)
+    local la, lc = U.vlen(va), U.vlen(vc)
+    if la < 0.01 or lc < 0.01 then return false end
+    return (va.X * vc.X + va.Y * vc.Y + va.Z * vc.Z) / (la * lc) >= AIM_COS
+end
+
+local function handling(pawn, t)
+    if bothHands(pawn, t.w) then return "both hands" end
+    if aimed(pawn, t) then return "aimed" end
+    return nil
+end
+
+-- A light tap when letting go would put the weapon into a holster; a longer buzz at a holster where it would fit but
+-- that already holds another one (letting go drops it). Once on entering the zone; none while the weapon is handled.
 local function zoneTaps(pawn, hc, now)
     local tap = C.get("haptics_holster_zone")
-    local cur = {}
+    local cur, info = {}, {}
     for _, t in pairs(held) do
-        local s = storeSlot(pawn, hc, t.w, U.get(pawn, t.side .. "Controller"))
-        if s then cur[t.side] = s end
+        local s, d = storeSlot(pawn, hc, t.w, U.get(pawn, t.side .. "Controller"))
+        local why = (s or blockedSlot(pawn, hc, t.w, d)) and handling(pawn, t) or nil
+        if why then
+            if t.quiet ~= why then U.dlog("manual holster: %s near a holster, no feedback (%s)", t.name, why) end
+            t.quiet = why
+            s, d = nil, nil
+        else
+            t.quiet = nil
+        end
+        if s then
+            cur[t.side] = s
+        else
+            local b = blockedSlot(pawn, hc, t.w, d)
+            if b then
+                cur[t.side] = "busy " .. b
+                info[t.side] = { name = t.name, slot = b, dist = d[b], by = occupant(hc, b) }
+            end
+        end
     end
     for i, side in ipairs({ "Left", "Right" }) do
-        if cur[side] and cur[side] ~= zone[side] and tap then Haptics.zoneTap(now, i - 1) end
-        zone[side] = cur[side]
+        local z = cur[side]
+        if z and z ~= zone[side] then
+            if type(z) == "string" then
+                local f = info[side]
+                U.log("manual holster: %s at holster %d (%.0f cm), which holds %s: %s", f.name, f.slot, f.dist or -1,
+                    f.by and fname(f.by) or "?", tap and "long buzz" or "no buzz (haptics_holster_zone off)")
+                if tap then Haptics.busyBuzz(now, i - 1) end
+            elseif tap then
+                Haptics.zoneTap(now, i - 1)
+            end
+        end
+        zone[side] = z
     end
 end
 
@@ -733,7 +850,7 @@ local function disable()
 end
 
 function M.reset()
-    held, dropped, candidates, zone, kinds, watching, samples, passing = {}, {}, {}, {}, {}, {}, {}, {}
+    held, dropped, candidates, zone, kinds, watching, samples, passing, flying = {}, {}, {}, {}, {}, {}, {}, {}, {}
 end
 
 function M.tick(pawn, now)
@@ -753,7 +870,7 @@ function M.tick(pawn, now)
     sampleHands(pawn, now)
     checkReleases(pawn, hc)
     trackHands(pawn)
-    for _, t in pairs(held) do keepOffhandPose(t) end
+    for _, t in pairs(held) do keepOffhandPose(pawn, t) end
     watchTick()
     followDropped(pawn)
     passingTick(pawn, now)
