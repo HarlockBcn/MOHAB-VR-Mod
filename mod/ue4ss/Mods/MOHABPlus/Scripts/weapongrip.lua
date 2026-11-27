@@ -247,6 +247,38 @@ local function checkPouch(pawn, weapon, free, freeHeld, left)
     end
 end
 
+-- Hip magazine: the game creates the magazine to take from the pouch (CreateHipMagazine, which itself checks there is
+-- ammo in reserve) only when the weapon is grabbed with its magazine out, when a magazine is ejected or when a held
+-- magazine is let go of. Ammo picked up (an ammo pack: AddAmmoByIndex) while the magazine is out and none could be made
+-- left the pouch empty until the weapon was put away and drawn again. Here: a held weapon with its magazine out, no
+-- magazine on the hip, none in the other hand, no rounds loaded and ammo in reserve gets one (not a sawed-off shotgun
+-- just loaded with its barrels still open: rounds in it, the game makes its next shells when it is opened again).
+-- Also logs every change of the held weapon's ammo state (reserve, magazine out, magazine on the hip).
+local hipTried = {}             -- weapon address -> time CreateHipMagazine was last called for it
+local ammoSeen = nil
+local function hipMagazine(pawn, weapon, now)
+    local onHip, out = U.get(weapon, "MagazineOnHip"), U.get(weapon, "MagazineEjected")
+    local reserve = reserveAmmo(weapon)
+    local name = weapon:GetFName():ToString()
+    local state = string.format("%s: rounds %s, reserve %s, magazine out %s, on the hip %s, magazine in hand %s", name,
+        tostring(U.get(weapon, "Ammo")), tostring(reserve), tostring(out), tostring(onHip), tostring(U.get(weapon, "HoldingAmmo")))
+    local key = string.format("%s|%s|%s|%s", name, tostring(reserve), tostring(out), tostring(onHip))
+    if key ~= ammoSeen then
+        ammoSeen = key
+        U.log("ammo: %s", state)
+    end
+    if onHip ~= false or out ~= true or U.get(weapon, "HoldingAmmo") == true or U.get(weapon, "IsGripped") ~= true then return end
+    local rounds = U.get(weapon, "Ammo")
+    if type(rounds) ~= "number" or rounds > 0 then return end
+    if type(reserve) ~= "number" or reserve <= 0 then return end
+    local addr = weapon:GetAddress()
+    if hipTried[addr] and now - hipTried[addr] < 1.0 and now >= hipTried[addr] then return end
+    hipTried[addr] = now
+    U.call(weapon, "CreateHipMagazine")
+    U.log("ammo: %s had no magazine on the hip with %d in reserve: one created (on the hip now: %s)", name, reserve,
+        tostring(U.get(weapon, "MagazineOnHip")))
+end
+
 local function scan()
     grips = {}
     for _, cls in ipairs(GRIP_CLASSES) do
@@ -400,6 +432,7 @@ function M.tick(pawn, now)
     if shrinking then pcall(prioritiseGrip, free, weapon) elseif next(blocked) then unblockAll() end
 
     if weapon then pcall(checkPouch, pawn, weapon, free, freeHeld, left) else pouchGripDown = false end
+    if weapon then pcall(hipMagazine, pawn, weapon, now) end
 
     -- Diagnostics (debug_log only, once per press): free hand presses grip while the other hand holds a weapon.
     if weapon then
