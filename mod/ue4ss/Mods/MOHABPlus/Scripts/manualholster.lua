@@ -553,7 +553,8 @@ local function drop(pawn, hc, t)
         end
         if type(slot) == "number" and occupant(hc, slot) == nil then U.call(w, "SpawnGrenadeIntoHolsterSlot", pawn, slot) end
     else
-        dropped[w:GetAddress()] = { w = w, name = t.name, ammo = t.ammo, canFire = t.canFire, ammoType = ammoType }
+        dropped[w:GetAddress()] = { w = w, name = t.name, ammo = t.ammo, canFire = t.canFire, ammoType = ammoType,
+            magOut = t.magOut, slideOut = t.slideOut }
     end
     watch(w, t)
     return moved
@@ -561,12 +562,7 @@ end
 
 -- Picking up a weapon from the floor makes the game load it from the player's reserve (LockAndLoadWeapon). A weapon
 -- the player dropped comes back as it was: dropping it and picking it up is not a reload.
-local function pickedUp(w)
-    local addr = w:GetAddress()
-    local d = dropped[addr]
-    if not d then return end
-    dropped[addr] = nil
-    if d.name ~= fname(w) or type(d.ammo) ~= "number" then return end
+local function restoreRounds(w, d)
     local now, state = U.get(w, "Ammo"), U.get(w, "MyPlayerStateOwner")
     if type(now) ~= "number" or now <= d.ammo then return end
     if not U.valid(state) or type(d.ammoType) ~= "number" then return end
@@ -577,6 +573,36 @@ local function pickedUp(w)
     if type(d.canFire) == "boolean" then w.CanFireNow = d.canFire end
     U.call(w, "UpdateAmmoCount")
     U.dlog("manual holster: %s picked up again with its %d rounds (not reloaded)", d.name, d.ammo)
+end
+
+-- The same load also puts the magazine back in (LockAndLoadWeapon: MagazineEjected = false, magazine shown) and may close
+-- the slide / bolt. A weapon dropped with its magazine out comes back without it, as the game leaves a weapon whose
+-- ammo it takes on a swap (ExtractAmmoForSwapping: grip off, magazine hidden, MagazineEjected), with the magazine on
+-- the hip again if there is ammo for it (CreateHipMagazine checks the reserve itself).
+local function restoreMagazine(w, d)
+    local fixed = {}
+    if d.magOut == true and U.get(w, "MagazineEjected") == false then
+        U.call(U.get(w, "Magazine"), "SetHiddenInGame", true, false)
+        w.MagazineEjected = true
+        U.call(w, "DisableGripGrabbing")
+        fixed[#fixed + 1] = "magazine out"
+    end
+    if d.magOut == true and d.slideOut == true and U.get(w, "SlideOut") == false then
+        U.call(w, "PlayerSetsSlideOut")
+        fixed[#fixed + 1] = "slide back"
+    end
+    if d.magOut == true and U.get(w, "MagazineOnHip") == false then U.call(w, "CreateHipMagazine") end
+    if #fixed > 0 then U.log("manual holster: %s picked up again as it was dropped (%s)", d.name, table.concat(fixed, ", ")) end
+end
+
+local function pickedUp(w)
+    local addr = w:GetAddress()
+    local d = dropped[addr]
+    if not d then return end
+    dropped[addr] = nil
+    if d.name ~= fname(w) or type(d.ammo) ~= "number" then return end
+    restoreRounds(w, d)
+    restoreMagazine(w, d)
 end
 
 -- ---------------------------------------------------------------------------------------------
@@ -673,6 +699,7 @@ local function track(w, side)
     t.how = U.get(w, "IsGripped") == true and "main grip" or (U.get(w, "HoldingWeaponWithOffhand") == true and "off hand"
         or "off hand (pistol)")
     t.ammo, t.canFire = U.get(w, "Ammo"), U.get(w, "CanFireNow")
+    t.magOut, t.slideOut = U.get(w, "MagazineEjected"), U.get(w, "SlideOut")
     if t.kind == "grenade" then
         local okA, n = U.call(U.get(w, "MyPlayerStateOwner"), "GetAmmoByIndex", U.get(w, "AmmoType"))
         t.reserve = okA and n or nil
