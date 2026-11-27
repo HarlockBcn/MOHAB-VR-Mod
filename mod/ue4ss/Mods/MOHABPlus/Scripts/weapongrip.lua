@@ -253,7 +253,7 @@ end
 -- left the pouch empty until the weapon was put away and drawn again. Here: a held weapon with its magazine out, no
 -- magazine on the hip, none in the other hand, no rounds loaded and ammo in reserve gets one (not a sawed-off shotgun
 -- just loaded with its barrels still open: rounds in it, the game makes its next shells when it is opened again).
--- Also logs every change of the held weapon's ammo state (reserve, magazine out, magazine on the hip).
+-- Also logs (debug_log) every change of the held weapon's ammo state (reserve, magazine out, magazine on the hip).
 local hipTried = {}             -- weapon address -> time CreateHipMagazine was last called for it
 local ammoSeen = nil
 local function hipMagazine(pawn, weapon, now)
@@ -265,7 +265,7 @@ local function hipMagazine(pawn, weapon, now)
     local key = string.format("%s|%s|%s|%s", name, tostring(reserve), tostring(out), tostring(onHip))
     if key ~= ammoSeen then
         ammoSeen = key
-        U.log("ammo: %s", state)
+        U.dlog("ammo: %s", state)
     end
     if onHip ~= false or out ~= true or U.get(weapon, "HoldingAmmo") == true or U.get(weapon, "IsGripped") ~= true then return end
     local rounds = U.get(weapon, "Ammo")
