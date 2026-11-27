@@ -42,6 +42,10 @@ How fast your hand must move (relative to your body, so running does not count) 
 Tip: raise it if weapons fall when you only meant to put them away; lower it if your flicks don't drop them.
 Only used with "Flick to drop" on and "Manual holsters" off.
 
+[holster_nearest]
+With "Manual holsters" off, a weapon you let go of flies to the free holster nearest to the hand that let go of it last: your weapon hand if you held it with that hand or with both, your other hand if only that one held it. In practice it decides which shoulder a rifle goes to; pistols and grenades have a single place.
+Original game: a weapon goes back to the holster it was given when you took it, your weapon hand's side first.
+
 [grenade_row]
 Every grenade you carry (up to 3) is shown in a row on your chest. Take the one you want: the closest one grows and you feel a light tap.
 Original game: only one grenade is shown at a time.

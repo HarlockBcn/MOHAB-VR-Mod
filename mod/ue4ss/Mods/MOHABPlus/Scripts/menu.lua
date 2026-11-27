@@ -45,6 +45,8 @@ local advancedTabs = {
           help = "Manual holsters off: let go with a sharp flick to drop a weapon" },
         { key = "flick_drop_speed", label = "Flick speed", kind = "num", min = 100, max = 500, step = 10, digits = 0, suffix = " cm/s",
           help = "Flick to drop: how fast the hand must move. Higher: harder" },
+        { key = "holster_nearest", label = "Nearest holster", kind = "bool",
+          help = "Manual holsters off: a weapon flies to the free holster nearest your hand" },
         { key = "grenade_row", label = "All grenades on chest", kind = "bool",
           help = "Every grenade you carry is shown on your chest; take the one you want" },
         { key = "grenade_row_scale", label = "Chest grenade size", kind = "num", min = 0.4, max = 1.0, step = 0.05,
