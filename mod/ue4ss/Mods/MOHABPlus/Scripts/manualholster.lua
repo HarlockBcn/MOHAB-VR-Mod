@@ -80,6 +80,7 @@ local lastPawn = nil
 local clock = 0         -- the tick's time (s)
 local flying = {}       -- address -> time its flight back was last logged
 local wasOn = false
+local offWas = nil      -- address of what the off hand held last tick
 
 -- ---------------------------------------------------------------------------------------------
 -- Helpers
@@ -590,7 +591,7 @@ local function released(pawn, hc, t)
 
     local ctrl = U.get(pawn, t.side .. "Controller")
     local grip = U.axis("OculusTouch_" .. t.side .. "_Grip_Axis")
-    local forced = grip > FORCED_GRIP or U.get(ctrl, "ForceDrop") == true
+    local forced = grip > FORCED_GRIP or U.get(ctrl, "ForceDrop") == true or t.putAway == true
     local slot, d = storeSlot(pawn, hc, w, ctrl)
     local how = "hand at the holster"
     if not slot and forced then
@@ -874,6 +875,43 @@ local function zoneTaps(pawn, hc, now)
     end
 end
 
+-- ---------------------------------------------------------------------------------------------
+-- The off hand takes a gun while the weapon hand holds another one
+-- ---------------------------------------------------------------------------------------------
+-- The game keeps one weapon at a time: BP_WeaponBase ReceiveTick drops what BOTH hands hold when the other hand of a
+-- gripped weapon holds another weapon, so both fly back to their holsters. Instead, right after the off hand takes
+-- the gun, the weapon hand lets go of its own: it flies back to its holster (released with the grip still pressed, see
+-- released) and the off hand keeps the new one. Grenades are not concerned (the game allows a weapon and a grenade).
+local function weaponOf(o)
+    if not U.valid(o) then return nil end
+    if kindOf(o) then return o end
+    for _, fn in ipairs({ "GetParentActor", "GetAttachParentActor" }) do
+        local ok, p = U.call(o, fn)
+        if ok and U.valid(p) and kindOf(p) then return p end
+    end
+    return nil
+end
+
+local function offhandTook(pawn, ctrl)
+    if C.get("manual_holster") ~= true or not U.valid(pawn) then return end
+    if not U.same(ctrl, U.get(pawn, "MovementHandController")) then return end
+    local o = U.get(ctrl, "AttachedObject")
+    if not U.valid(o) or not isGun(kindOf(o)) then return end
+    local main = U.get(pawn, "WeaponHandController")
+    local mw = weaponOf(U.get(main, "AttachedObject"))
+    if not mw or U.same(mw, o) or not isGun(kindOf(mw)) then return end
+    U.log("manual holster: the off hand took %s: %s leaves the weapon hand", fname(o), fname(mw))
+    local t = held[mw:GetAddress()]
+    if t then t.putAway = true end          -- released counts it as released by the game: back to its holster
+    U.call(main, "ReleaseActor")
+end
+
+-- Post-hook of BP_MotionController:GrabActor (a hand takes what it touches, e.g. a weapon on the floor).
+function M.onGrabActor(ctrl) offhandTook(U.get(ctrl, "PlayerCharacter"), ctrl) end
+
+-- Post-hook of NonWeaponHandControllerGrabPressed (the off hand may have taken a weapon from a holster).
+function M.onOffhandGrabPressed(pawn) offhandTook(pawn, U.get(pawn, "MovementHandController")) end
+
 -- Off (option or master switch): the game's behaviour again.
 local function disable()
     for addr, c in pairs(candidates) do
@@ -910,6 +948,14 @@ function M.tick(pawn, now)
     adoptSlots(pawn, hc)
     prepareWorld(pawn, hc)
     zoneTaps(pawn, hc, now)
+    -- In case the grab hooks ran before the attach: only when the off hand has just taken something.
+    local off = U.get(pawn, "MovementHandController")
+    local o = U.get(off, "AttachedObject")
+    local oa = U.valid(o) and o:GetAddress() or nil
+    if oa ~= offWas then
+        offWas = oa
+        if oa then offhandTook(pawn, off) end
+    end
 end
 
 return M

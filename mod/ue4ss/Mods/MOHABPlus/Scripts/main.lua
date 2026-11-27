@@ -210,9 +210,22 @@ for _, e in ipairs({ { "WeaponHandControllerGrabPressed", true }, { "NonWeaponHa
         path = "/Game/R6/Core/VR/BP_VRPlayerCharacter.BP_VRPlayerCharacter_C:" .. e[1],
         fn = function(ctx)
             pcall(function() GrenadeRow.onGrabPressed(ctx:get(), e[2]) end)
+            if not e[2] then
+                local ok, err = pcall(function() ManualHolster.onOffhandGrabPressed(ctx:get()) end)
+                if not ok then U.dlog("manual holster grab hook error: %s", tostring(err)) end
+            end
         end,
     }
 end
+
+-- A hand takes what it touches (see manualholster.lua: the off hand taking a gun).
+hooks[#hooks + 1] = {
+    path = "/Game/R6/Core/VR/BP_MotionController.BP_MotionController_C:GrabActor",
+    fn = function(ctx)
+        local ok, err = pcall(function() ManualHolster.onGrabActor(ctx:get()) end)
+        if not ok then U.dlog("manual holster grab hook error: %s", tostring(err)) end
+    end,
+}
 
 -- Developer tools (cmd.txt test channel), only with debug_log=true at start-up.
 local Dev = nil
