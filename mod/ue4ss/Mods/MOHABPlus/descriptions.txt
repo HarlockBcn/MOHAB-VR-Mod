@@ -167,7 +167,7 @@ Only used with "Custom fall damage" on.
 Stick click: click the movement stick to sprint (original game).
 Arm swing: swing your arms like a runner; faster swing, faster run.
 Stick + arms: both work.
-Always sprint: you run just by pushing the stick and only walk while you hold a weapon up or shoot.
+Always sprint: you run just by pushing the stick and only walk while you aim a gun, raise a grenade or shoot.
 
 [sprint_arm_sensitivity]
 How much you must swing your arms to sprint. Higher: less swinging needed.

@@ -817,39 +817,14 @@ end
 --   * Held with both hands: nobody puts a weapon away with both hands on it.
 --   * A long gun pointing where the player looks (barrel within 35 deg of the view): aimed. A weapon taken to the
 --     back points up / back. Not for pistols: putting one away at the hip, the player looks down at it.
-local function bothHands(pawn, w)
-    local n = 0
-    for _, side in ipairs({ "LeftController", "RightController" }) do
-        local o = U.get(U.get(pawn, side), "AttachedObject")
-        if U.valid(o) then
-            if U.same(o, w) then
-                n = n + 1
-            else
-                for _, fn in ipairs({ "GetParentActor", "GetAttachParentActor" }) do
-                    local ok, p = U.call(o, fn)
-                    if ok and U.same(p, w) then n = n + 1; break end
-                end
-            end
-        end
-    end
-    return n >= 2
-end
-
 local function aimed(pawn, t)
     if t.kind ~= "long" then return false end
-    local arrow = U.get(t.w, "MuzzleDirectionArrow")
-    if not U.valid(arrow) then arrow = U.get(t.w, "MuzzleLocation") end
-    local okA, a = U.call(arrow, "GetForwardVector")
-    local okC, c = U.call(U.get(pawn, "VRReplicatedCamera"), "GetForwardVector")
-    if not okA or not a or not okC or not c then return false end
-    local va, vc = U.vec(a), U.vec(c)
-    local la, lc = U.vlen(va), U.vlen(vc)
-    if la < 0.01 or lc < 0.01 then return false end
-    return (va.X * vc.X + va.Y * vc.Y + va.Z * vc.Z) / (la * lc) >= AIM_COS
+    local cos = H.aimCos(pawn, t.w)
+    return cos ~= nil and cos >= AIM_COS
 end
 
 local function handling(pawn, t)
-    if bothHands(pawn, t.w) then return "both hands" end
+    if H.bothHands(pawn, t.w) then return "both hands" end
     if aimed(pawn, t) then return "aimed" end
     return nil
 end

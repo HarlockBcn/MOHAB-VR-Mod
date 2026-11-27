@@ -2,7 +2,7 @@
 --  * "arms" mode: sprint while moving with the stick AND swinging the arms like running (no stick click).
 --  * "both": stick click works as usual, arm swinging also sprints.
 --  * "always": sprinting whenever the stick is pushed (no click, no arm swing); walking speed only while a hand
---    holding a gun, a grenade or another explosive is raised, or fires a gun. How far the stick is pushed still sets the speed (half way = close to walking).
+--    aims a gun (or raises a grenade or another explosive to throw it), or fires a gun. How far the stick is pushed still sets the speed (half way = close to walking).
 --  * arm-swing sprint is progressive: walking speed -> game sprint speed x multiplier, by arm swing speed.
 --  * the stick-click and "always" sprints are progressive too: they start at walking speed and reach the top speed over
 --    RAMP_TIME; stopping, sliding, crouching or shooting starts them over.
@@ -15,6 +15,7 @@ local U = require("util")
 local C = require("config")
 local Crouch = require("crouch")
 local Slide = require("slide")
+local H = require("holsters")
 
 local M = {}
 
@@ -191,9 +192,10 @@ local function isFiring(pawn, gunsOnly)
 end
 local lastFireCancelLog = -100
 
--- "Always" and stick-click sprints: is a gun (or a grenade / explosive to throw) raised? The hand that counts is the one holding the gun by its main grip (the off hand holds
+-- "Always" and stick-click sprints: is a gun aimed (or a grenade / explosive raised to throw)? The hand that counts is the one holding the gun by its main grip (the off hand holds
 -- the front grip, another actor), so a rifle carried across the chest while running is not "raised". Compared with the
--- eyes, so it works for any height: raised from RAISE_ON cm below the eyes up, lowered from RAISE_OFF down. It has to
+-- eyes, so it works for any height: raised from RAISE_ON cm below the eyes up, lowered from RAISE_OFF down (guns also
+-- need to point where the player looks: see updateRaised). It has to
 -- stay that way for a moment, so hands that swing up while running or move while reloading don't change the pace.
 local RAISE_ON, RAISE_OFF = 35, 42
 local RAISE_DELAY, LOWER_DELAY = 0.12, 0.25     -- s
@@ -236,30 +238,66 @@ local function countsWhenRaised(obj)
     return false
 end
 
+-- Guns count only when aimed, so taking a rifle over the shoulder to a back holster (hand by the head, barrel up or
+-- back) does not slow the player down, nor does carrying it across the chest or at low ready:
+--   * the hand is at the height above (aiming is done at eye level),
+--   * the barrel points where the player looks: within AIM_ON deg (AIM_ON_2H with both hands on the gun, the two-handed
+--     hold makes the intention clear), until it is more than AIM_OFF / AIM_OFF_2H deg off,
+--   * the muzzle is at least MUZZLE_AHEAD cm in front of the eyes.
+-- Grenades and explosives keep the height alone: raising one is getting ready to throw (they never go to the back).
+-- A gun without a muzzle component falls back to the height alone.
+local COS = function(deg) return math.cos(math.rad(deg)) end
+local AIM_ON, AIM_OFF = COS(35), COS(45)
+local AIM_ON_2H, AIM_OFF_2H = COS(45), COS(55)
+local MUZZLE_AHEAD = 20                         -- cm
+
 local function updateRaised(pawn, now)
-    local okC, cam = U.call(U.get(pawn, "VRReplicatedCamera"), "K2_GetComponentLocation")
-    local best = nil        -- cm below the eyes of the highest hand holding a gun or explosive
-    if okC and cam then
+    local camC = U.get(pawn, "VRReplicatedCamera")
+    local okC, cam = U.call(camC, "K2_GetComponentLocation")
+    local okF, fwd = U.call(camC, "GetForwardVector")
+    local anyHeld = false
+    local want, why = false, nil
+    if okC and cam and okF and fwd then
+        cam, fwd = U.vec(cam), U.vnorm(U.vec(fwd))
+        local flat = U.vnorm({ X = fwd.X, Y = fwd.Y, Z = 0 })
         for _, side in ipairs({ "Left", "Right" }) do
-            if countsWhenRaised(U.get(U.get(pawn, side .. "Controller"), "AttachedObject")) then
+            local obj = U.get(U.get(pawn, side .. "Controller"), "AttachedObject")
+            if countsWhenRaised(obj) then
+                anyHeld = true
                 local ok, l = U.call(U.get(pawn, side .. "MotionController"), "K2_GetComponentLocation")
                 if ok and l then
                     local below = cam.Z - l.Z
-                    if not best or below < best then best = below end
+                    local high = below <= (raised and RAISE_OFF or RAISE_ON)
+                    local m = high and isGun(obj) and H.muzzle(obj) or nil
+                    if m then
+                        local two = H.bothHands(pawn, obj)
+                        local cos = U.vdot(m.dir, fwd)
+                        local ahead = U.vdot(U.vsub(m.pos, cam), flat)
+                        local need = two and (raised and AIM_OFF_2H or AIM_ON_2H) or (raised and AIM_OFF or AIM_ON)
+                        if cos >= need and ahead >= MUZZLE_AHEAD then
+                            want = true
+                            why = string.format("aimed%s, %.0f deg off the view, muzzle %.0f cm ahead, hand %.0f cm below the eyes",
+                                two and " with both hands" or "", math.deg(math.acos(U.clamp(cos, -1, 1))), ahead, below)
+                        elseif not want then
+                            why = string.format("not aimed: %.0f deg off the view, muzzle %.0f cm ahead",
+                                math.deg(math.acos(U.clamp(cos, -1, 1))), ahead)
+                        end
+                    elseif high then
+                        want = true
+                        why = string.format("%s %.0f cm below the eyes", isGun(obj) and "gun (no muzzle)" or "explosive", below)
+                    end
                 end
             end
         end
     end
-    local want = best ~= nil and best <= (raised and RAISE_OFF or RAISE_ON)
     if want == raised then
         raisedSince = nil
     else
         if not raisedSince or now < raisedSince then raisedSince = now end
         -- Let go / thrown: nothing to aim any more, no need to wait.
-        if best == nil or now - raisedSince >= (want and RAISE_DELAY or LOWER_DELAY) then
+        if not anyHeld or now - raisedSince >= (want and RAISE_DELAY or LOWER_DELAY) then
             raised, raisedSince = want, nil
-            U.dlog("sprint: weapon %s (%s cm below the eyes)", want and "raised" or "lowered",
-                best and string.format("%.0f", best) or "let go,")
+            U.dlog("sprint: weapon %s (%s)", want and "raised" or "lowered", anyHeld and (why or "hand low") or "let go")
         end
     end
     return raised

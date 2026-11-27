@@ -97,7 +97,7 @@ local advancedTabs = {
           helps = { stick = "Stick click: click the movement stick to sprint (original game)",
                     arms = "Arm swing: swing your arms like a runner; faster swing, faster run",
                     both = "Stick + arms: click the stick or swing your arms to sprint",
-                    always = "Always sprint: you only walk while you hold a weapon up or shoot" },
+                    always = "Always sprint: you only walk while you aim, raise a grenade or shoot" },
           help = "How you sprint: stick click, arm swing, both, or always" },
         { key = "sprint_arm_sensitivity", label = "Arm swing sensitivity", kind = "num", min = 0.3, max = 2.0, step = 0.1, digits = 1,
           help = "Higher: less arm swinging needed to sprint" },
