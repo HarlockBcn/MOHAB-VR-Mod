@@ -233,6 +233,7 @@ ui.tab_features = FEATURES
 ui.tab_settings = MOD SETTINGS
 ui.tab_about = ABOUT
 ui.language_tip = Language of the launcher and of the in-game menu. Automatic: the launcher follows Windows and the in-game menu follows the game.
+ui.language_changed = Language: {0}.
 ui.tray_open = Open MOHAB Plus
 ui.tray_exit = Exit
 ui.tray_hint_title = MOHAB Plus keeps running in the tray

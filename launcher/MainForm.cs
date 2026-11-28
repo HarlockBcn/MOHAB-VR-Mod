@@ -153,13 +153,6 @@ internal sealed class MainForm : Form
             if (_available != null) ShowReleaseNotes(_available);
             else await CheckForUpdatesAsync(manual: true);
         };
-        _languageBox.SelectedIndexChanged += (_, _) =>
-        {
-            if (_buildingUi || _languageBox.SelectedIndex < 0) return;
-            string code = _languageCodes[_languageBox.SelectedIndex];
-            if (code != _config.Values[ModConfig.LanguageKey]) BeginInvoke(() => SwitchLanguage(code));
-        };
-
         BuildUpdateBar();
     }
 
@@ -167,12 +160,26 @@ internal sealed class MainForm : Form
     private ContextMenuStrip? _trayMenu;
     private bool _buildingUi;
     private int _page;   // page shown (kept across language changes)
-    private readonly ComboBox _languageBox = new()
-    {
-        DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, Width = Theme.S(170),
-        BackColor = Theme.Surface2, ForeColor = Theme.Text, Font = Theme.Small,
-    };
+    // Language picker: a new one in every BuildUi (it goes away with the old banner). Reusing one control moved it, still
+    // focused from the click that changed the language, into the new window, and choosing again could do nothing.
+    private ComboBox _languageBox = new();
     private readonly List<string> _languageCodes = new();
+
+    private ComboBox NewLanguageBox()
+    {
+        var box = new ComboBox
+        {
+            DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, Width = Theme.S(170),
+            BackColor = Theme.Surface2, ForeColor = Theme.Text, Font = Theme.Small,
+        };
+        box.SelectedIndexChanged += (_, _) =>
+        {
+            if (_buildingUi || box != _languageBox || box.SelectedIndex < 0) return;
+            string code = _languageCodes[box.SelectedIndex];
+            if (code != _config.Values[ModConfig.LanguageKey]) BeginInvoke(() => SwitchLanguage(code));
+        };
+        return box;
+    }
 
     /// <summary>Builds (or rebuilds, after a language change) every text-bearing part of the window. The long-lived
     /// controls (game folder, activity log, option grid, update bar...) keep their state.</summary>
@@ -182,7 +189,7 @@ internal sealed class MainForm : Form
         SuspendLayout();
         HideInfo();
         foreach (var c in new Control[] { _gameDir, _autoWatch, _watchStatus, _log, _optionGrid, _basicButton, _advancedButton,
-                                          _defaultsButton, _updateStatus, _languageBox, _updateBar })
+                                          _defaultsButton, _updateStatus, _updateBar })
             c.Parent?.Controls.Remove(c);
         foreach (var old in new[] { _content, _nav, _banner, _footer })
             if (old != null) { Controls.Remove(old); old.Dispose(); }
@@ -233,7 +240,7 @@ internal sealed class MainForm : Form
 
         // Language picker: "Automatic (<Windows language>)" and every language with a file, each in its own name.
         _languageCodes.Clear();
-        _languageBox.Items.Clear();
+        _languageBox = NewLanguageBox();
         var langs = Lang.Available();
         string winCode = Lang.Resolve("auto");
         string winName = langs.FirstOrDefault(l => l.Code == winCode).Name ?? "English";
@@ -298,7 +305,7 @@ internal sealed class MainForm : Form
         SaveSingleValue(ModConfig.LanguageKey, code);
         Lang.SetLanguage(Lang.Resolve(code));
         BuildUi();
-        ActiveControl = _languageBox;
+        Append(Lang.T("ui.language_changed", _languageBox.Text));
     }
 
     /// <summary>Writes one value to config.ini, leaving the other values on disk as they are.</summary>
