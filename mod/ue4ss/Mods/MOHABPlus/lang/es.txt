@@ -181,21 +181,20 @@ opt.menu_hold_time = Tiempo para abrir el menú (s)
 opt.debug_log = Registro detallado en UE4SS.log
 
 # ===== Categorías (menú del juego y launcher) =====
-section.syringes = Jeringuillas
-section.grabbing = Agarrar
-section.haptics = Vibración
-section.crouch = Agacharse
-section.jump_experimental = Salto (experimental)
-section.fall_damage = Daño por caída
-section.sprint = Correr
-section.slide = Deslizarse
-section.cutscenes = Cinemáticas
-section.menu = Menú
-section.debug = Depuración
 section.movement = Movimiento
 section.jump = Salto
+section.fall_damage = Daño por caída
 section.weapons = Armas
-section.comfort = Comodidad
+section.grenades = Granadas
+section.grab_and_drop = Agarrar y soltar
+section.holsters = Fundas
+section.syringes = Jeringuillas
+section.haptics = Vibración
+section.cutscenes = Cinemáticas
+section.inventory = Inventario
+section.other = Otros
+section.menu = Menú
+section.debug = Depuración
 
 # ===== Valores =====
 value.on = SÍ

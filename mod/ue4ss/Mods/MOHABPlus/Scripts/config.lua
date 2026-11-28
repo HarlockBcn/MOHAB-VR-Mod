@@ -72,14 +72,15 @@ M.defaults = {
 
 -- Order + sections used when writing the file (keep in sync with the launcher).
 M.order = {
-    { "Syringes", { "syringe_require_trigger", "syringe_trigger_threshold", "syringe_small_holstered", "syringe_holster_scale" } },
-    { "Grabbing", { "grab_aim", "auto_holster", "holster_store_distance", "flick_drop", "flick_drop_speed", "holster_nearest", "grenade_row", "grenade_row_scale", "body_grab_distance", "holster_grab_distance", "weapon_grip_reach", "grenade_physics", "grenade_throw_strength", "teeth_pin_distance", "cocking", "holster_below_eyes" } },
-    { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons", "haptics_no_ammo", "haptics_holster_zone" } },
-    { "Crouch", { "crouch_stick", "crouch_stick_threshold", "crouch_speed" } },
-    { "Jump (experimental)", { "jump_enabled", "jump_stick_threshold", "jump_height", "jump_sound", "jump_guard", "land_crouch", "land_crouch_height" } },
+    { "Movement", { "crouch_stick", "crouch_stick_threshold", "crouch_speed", "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier", "sprint_turn_slowdown", "stairs_steady_speed", "slide_enabled", "slide_strength", "slide_sound" } },
+    { "Jump", { "jump_enabled", "jump_stick_threshold", "jump_height", "jump_sound", "jump_guard", "land_crouch", "land_crouch_height" } },
     { "Fall damage", { "fall_damage_custom", "fall_safe_height", "fall_fatal_height", "fall_damage_progressive", "fall_damage_scale" } },
-    { "Sprint", { "sprint_mode", "sprint_arm_sensitivity", "sprint_speed_multiplier", "sprint_turn_slowdown", "stairs_steady_speed" } },
-    { "Slide", { "slide_enabled", "slide_strength", "slide_sound" } },
+    { "Weapons", { "cocking", "weapon_grip_reach" } },
+    { "Grenades", { "grenade_row", "grenade_row_scale", "grenade_physics", "grenade_throw_strength", "teeth_pin_distance" } },
+    { "Grab and drop", { "grab_aim", "body_grab_distance", "flick_drop", "flick_drop_speed" } },
+    { "Holsters", { "auto_holster", "holster_store_distance", "holster_nearest", "holster_grab_distance", "holster_below_eyes" } },
+    { "Syringes", { "syringe_require_trigger", "syringe_trigger_threshold", "syringe_small_holstered", "syringe_holster_scale" } },
+    { "Haptics", { "haptics_damage", "haptics_intensity", "haptics_duration", "haptics_directional", "haptics_weapons", "haptics_no_ammo", "haptics_holster_zone" } },
     { "Cutscenes", { "skip_cutscenes", "skip_hold_time", "skip_speed" } },
     { "Menu", { "language", "menu_view", "menu_hold_time" } },
     { "Debug", { "debug_log" } },

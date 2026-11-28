@@ -181,21 +181,20 @@ opt.menu_hold_time = Menu hold time to open (s)
 opt.debug_log = Verbose logging to UE4SS.log
 
 # ===== Categories (in-game menu and launcher) =====
-section.syringes = Syringes
-section.grabbing = Grabbing
-section.haptics = Haptics
-section.crouch = Crouch
-section.jump_experimental = Jump (experimental)
-section.fall_damage = Fall damage
-section.sprint = Sprint
-section.slide = Slide
-section.cutscenes = Cutscenes
-section.menu = Menu
-section.debug = Debug
 section.movement = Movement
 section.jump = Jump
+section.fall_damage = Fall damage
 section.weapons = Weapons
-section.comfort = Comfort
+section.grenades = Grenades
+section.grab_and_drop = Grab & drop
+section.holsters = Holsters
+section.syringes = Syringes
+section.haptics = Haptics
+section.cutscenes = Cutscenes
+section.inventory = Inventory
+section.other = Other
+section.menu = Menu
+section.debug = Debug
 
 # ===== Values =====
 value.on = ON

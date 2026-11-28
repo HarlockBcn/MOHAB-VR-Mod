@@ -29,39 +29,6 @@ local function fmtNum(v, digits) return string.format("%." .. (digits or 2) .. "
 -- Option structure. Names, help lines and choice names are in lang/<code>.txt ("opt.KEY", "opt.KEY.help",
 -- "opt.KEY.choice.VALUE", "opt.KEY.choice.VALUE.help"); category names are "section.*" (see lang.lua).
 local advancedTabs = {
-    { name = "Syringes", items = {
-        { key = "syringe_require_trigger", kind = "bool" },
-        { key = "syringe_trigger_threshold", kind = "num", min = 0.1, max = 1.0, step = 0.05 },
-        { key = "syringe_small_holstered", kind = "bool" },
-        { key = "syringe_holster_scale", kind = "num", min = 0.25, max = 1.0, step = 0.05 },
-    } },
-    { name = "Grabbing", items = {
-        { key = "auto_holster", kind = "bool" },
-        { key = "holster_store_distance", kind = "num", min = 10, max = 50, step = 1, digits = 0, suffix = " cm" },
-        { key = "flick_drop", kind = "bool" },
-        { key = "flick_drop_speed", kind = "num", min = 100, max = 500, step = 10, digits = 0, suffix = " cm/s" },
-        { key = "holster_nearest", kind = "bool" },
-        { key = "grenade_row", kind = "bool" },
-        { key = "grenade_row_scale", kind = "num", min = 0.4, max = 1.0, step = 0.05 },
-        { key = "body_grab_distance", kind = "num", min = 5, max = 30, step = 1, digits = 0, suffix = " cm" },
-        { key = "holster_grab_distance", kind = "num", min = 5, max = 30, step = 1, digits = 0, suffix = " cm" },
-        { key = "grab_aim", kind = "bool" },
-        { key = "weapon_grip_reach", kind = "num", min = 5, max = 40, step = 1, digits = 0, suffix = " cm" },
-        { key = "grenade_physics", kind = "bool" },
-        { key = "grenade_throw_strength", kind = "num", min = 0.5, max = 2.0, step = 0.1 },
-        { key = "teeth_pin_distance", kind = "num", min = 0, max = 15, step = 1, digits = 0, suffix = " cm" },
-        { key = "cocking", kind = "choice", choices = { "manual", "auto" } },
-        { key = "holster_below_eyes", kind = "bool" },
-    } },
-    { name = "Haptics", items = {
-        { key = "haptics_damage", kind = "bool" },
-        { key = "haptics_intensity", kind = "num", min = 0.1, max = 1.0, step = 0.1, digits = 1 },
-        { key = "haptics_duration", kind = "num", min = 0.05, max = 1.0, step = 0.05, suffix = " s" },
-        { key = "haptics_directional", kind = "bool" },
-        { key = "haptics_weapons", kind = "bool" },
-        { key = "haptics_no_ammo", kind = "bool" },
-        { key = "haptics_holster_zone", kind = "bool" },
-    } },
     { name = "Movement", items = {
         { key = "crouch_stick", kind = "bool" },
         { key = "crouch_stick_threshold", kind = "num", min = 0.3, max = 0.95, step = 0.05 },
@@ -91,18 +58,58 @@ local advancedTabs = {
         { key = "fall_damage_progressive", kind = "bool" },
         { key = "fall_damage_scale", kind = "num", min = 0.0, max = 2.0, step = 0.1, digits = 1, suffix = "x" },
     } },
+    { name = "Weapons", items = {
+        { key = "cocking", kind = "choice", choices = { "manual", "auto" } },
+        { key = "weapon_grip_reach", kind = "num", min = 5, max = 40, step = 1, digits = 0, suffix = " cm" },
+    } },
+    { name = "Grenades", items = {
+        { key = "grenade_row", kind = "bool" },
+        { key = "grenade_row_scale", kind = "num", min = 0.4, max = 1.0, step = 0.05 },
+        { key = "grenade_physics", kind = "bool" },
+        { key = "grenade_throw_strength", kind = "num", min = 0.5, max = 2.0, step = 0.1 },
+        { key = "teeth_pin_distance", kind = "num", min = 0, max = 15, step = 1, digits = 0, suffix = " cm" },
+    } },
+    { name = "Grab and drop", items = {
+        { key = "grab_aim", kind = "bool" },
+        { key = "body_grab_distance", kind = "num", min = 5, max = 30, step = 1, digits = 0, suffix = " cm" },
+        { key = "flick_drop", kind = "bool" },
+        { key = "flick_drop_speed", kind = "num", min = 100, max = 500, step = 10, digits = 0, suffix = " cm/s" },
+    } },
+    { name = "Holsters", items = {
+        { key = "auto_holster", kind = "bool" },
+        { key = "holster_store_distance", kind = "num", min = 10, max = 50, step = 1, digits = 0, suffix = " cm" },
+        { key = "holster_nearest", kind = "bool" },
+        { key = "holster_grab_distance", kind = "num", min = 5, max = 30, step = 1, digits = 0, suffix = " cm" },
+        { key = "holster_below_eyes", kind = "bool" },
+    } },
+    { name = "Syringes", items = {
+        { key = "syringe_require_trigger", kind = "bool" },
+        { key = "syringe_trigger_threshold", kind = "num", min = 0.1, max = 1.0, step = 0.05 },
+        { key = "syringe_small_holstered", kind = "bool" },
+        { key = "syringe_holster_scale", kind = "num", min = 0.25, max = 1.0, step = 0.05 },
+    } },
+    { name = "Haptics", items = {
+        { key = "haptics_damage", kind = "bool" },
+        { key = "haptics_intensity", kind = "num", min = 0.1, max = 1.0, step = 0.1, digits = 1 },
+        { key = "haptics_duration", kind = "num", min = 0.05, max = 1.0, step = 0.05, suffix = " s" },
+        { key = "haptics_directional", kind = "bool" },
+        { key = "haptics_weapons", kind = "bool" },
+        { key = "haptics_no_ammo", kind = "bool" },
+        { key = "haptics_holster_zone", kind = "bool" },
+    } },
     { name = "Cutscenes", items = {
         { key = "skip_cutscenes", kind = "bool" },
         { key = "skip_speed", kind = "num", min = 2, max = 15, step = 1, digits = 0, suffix = "x" },
     } },
 }
 
--- Basic view: the main options (what is on and how you play), grouped in three categories. The items are the ones of
+-- Basic view: the main options (what is on and how you play), grouped in four categories. The items are the ones of
 -- the advanced view, so ranges and texts are shared. Keep in sync with ModConfig.BasicLayout (launcher).
 local basicLayout = {
-    { name = "Movement", keys = { "sprint_mode", "crouch_stick", "slide_enabled", "jump_enabled" } },
-    { name = "Weapons", keys = { "cocking", "auto_holster", "grenade_row", "grenade_physics", "syringe_require_trigger" } },
-    { name = "Comfort", keys = { "haptics_intensity", "haptics_holster_zone", "fall_damage_custom", "skip_cutscenes" } },
+    { name = "Movement", keys = { "sprint_mode", "crouch_stick", "slide_enabled", "jump_enabled", "fall_damage_custom" } },
+    { name = "Weapons", keys = { "cocking", "grenade_physics" } },
+    { name = "Inventory", keys = { "auto_holster", "grenade_row", "grab_aim", "syringe_require_trigger", "haptics_holster_zone" } },
+    { name = "Other", keys = { "haptics_intensity", "skip_cutscenes" } },
 }
 local basicTabs = {}
 do
@@ -127,8 +134,8 @@ local function label(it) return L.t("opt." .. it.key) end
 local function tabName(t) return L.section(t.name) end
 
 -- Rows of both columns: enough for the longest category and for the left column (master switch, view switch, gap,
--- categories).
-local ROWS = #advancedTabs + 3
+-- categories). At least 14, so the longest option description (12 lines + value lines) fits.
+local ROWS = math.max(#advancedTabs + 3, 14)
 for _, t in ipairs(advancedTabs) do ROWS = math.max(ROWS, #t.items) end
 
 -- Detailed description of an option: wrapped to the width of the right column, at most ROWS lines.
