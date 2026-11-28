@@ -2,6 +2,37 @@
 
 All notable changes to MOHAB Plus. Versions follow MAJOR.MINOR.PATCH.
 
+## v1.4.0 - 2026-11-28
+
+**Important when updating:** this version resets every setting to its new defaults the first time you start it, so you start with the values the mod is now tuned for. If you had changed anything, set it again in the launcher or the in-game menu. Reinstalling v1.4.0 later keeps your settings.
+
+### New
+- **Manual holsters**: turn "Automatic holsters" off and a weapon you let go of drops to the floor. Let go of it at a free holster to put it away. Long vibrations tell you when a holster is taken, and taps follow what your hand and the holster hold.
+- **Automatic holsters, improved** (default): a weapon you let go of flies to the free holster nearest to your hand. Flick your hand as you let go to drop it instead. Holstered weapons come before weapons on the floor when your hand is near both.
+- **All your grenades on the chest**: every grenade you carry sits in a row on your chest, and you can take any of them.
+- **Realistic grenade throws**: grenades fly with your hand's speed and spin and bounce according to their weight, instead of the game's doubled speed and sticky floors. The throw strength can be adjusted.
+- **Grab what the guide points at**: an empty hand takes the object its guide points at, not a different object highlighted in blue.
+- **Always sprint** (new default sprint mode): you run just by pushing the stick, and drop to walking pace while aiming, raising a weapon or grenade, or shooting. Sprinting now builds up to full speed, and holstering no longer slows you down.
+- **Steady speed on stairs**: stairs and slopes no longer speed you up.
+- **Separate stick thresholds** for crouching and jumping.
+- **Spanish translation** of the launcher, the in-game menu and the feature list, with a language picker in the launcher. The in-game menu follows the game's language by default.
+- **Basic and advanced views**: the menu and the launcher show the main options by default, and every option in the advanced view, with a detailed description of each one. Options are grouped in the same categories in the launcher and in the game.
+- **Edit mode** in the in-game menu.
+- **Out of ammo vibration**: now three spaced taps.
+
+### Changes
+- New defaults: always sprint mode, sprint speed x1.3 (was x1.4), crouch and jump at 70% of the stick (crouching was 95%), holstered weapons taken from 20 cm (was 25 cm).
+
+### Fixes
+- After respawning you face the checkpoint's direction, standing, and your view no longer turns by itself.
+- Taking the pin of the grenade in your hand no longer grabs a farther object instead.
+- Picked-up guns keep their magazine out, and no magazine appears on your hip after picking up ammo.
+- Weapons dropped by the off hand fall gently, and the off hand keeps a gun it takes while the weapon hand's goes back to its holster.
+- No more stray "Text" lines in the in-game menu.
+- The launcher's language picker now applies a second change.
+
+**Updating:** if you have an earlier version, the launcher offers this update by itself (click "Update to v1.4.0" at the top). Your settings are reset to the new defaults once, as explained above.
+
 ## v1.3.0 - 2026-11-24
 
 ### New
