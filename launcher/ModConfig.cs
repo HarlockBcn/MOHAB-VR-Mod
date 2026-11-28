@@ -35,7 +35,7 @@ internal sealed class ModConfig
         new("flick_drop_speed", OptionKind.Float, "250", 100, 500, 10, Section: "Grabbing"),
         new("holster_nearest", OptionKind.Bool, "true", Section: "Grabbing"),
         new("grenade_row", OptionKind.Bool, "true", Section: "Grabbing"),
-        new("grenade_row_scale", OptionKind.Float, "0.75", 0.4, 1.0, 0.05, Section: "Grabbing"),
+        new("grenade_row_scale", OptionKind.Float, "0.6", 0.4, 1.0, 0.05, Section: "Grabbing"),
         new("body_grab_distance", OptionKind.Float, "10", 5, 30, 1, Section: "Grabbing"),
         new("holster_grab_distance", OptionKind.Float, "20", 5, 30, 1, Section: "Grabbing"),
         new("weapon_grip_reach", OptionKind.Float, "10", 5, 40, 1, Section: "Grabbing"),

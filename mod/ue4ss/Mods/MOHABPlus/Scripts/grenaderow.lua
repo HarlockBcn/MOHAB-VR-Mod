@@ -13,6 +13,10 @@
 -- Grenades thrown while another real one waits on the chest: the game clears the slot and spawns a new one, leaving the
 -- other without a slot; those are destroyed (they are only a picture of the ammo count).
 --
+-- The row lies along the line between both chest holsters; the other one holds the mission objects, so while it is used
+-- the third grenade is drawn under the middle one (placeOf). A grenade let go of with 3 on the chest falls
+-- (manualholster.lua): the game's flight back would destroy it.
+--
 -- The ring or cap (a child actor) of a grenade on the chest cannot be taken: the game turns it on again when the grenade
 -- is grabbed. It is drawn with the mesh.
 --
@@ -40,6 +44,8 @@ local MAX_CARRIED = 3
 
 local SPACING = 9                    -- cm between two grenades
 local FILL_ORDER = { 2, 1, 3 }       -- positions: 1 outwards, 2 the game's chest point, 3 towards the middle of the chest
+local BELOW = 10                     -- cm: the third grenade under the middle one while the other chest holster is used
+local WEAPON_CLASS = "/Game/R6/Core/Weapons/BP_WeaponBase.BP_WeaponBase_C"
 local GAME_MAX = 2                   -- what the game may count while a hand is about to take one from the floor
 local FLOOR_RANGE = 230              -- cm from the hand (its grab capsule reaches up to 2 m ahead)
 local HOVER_SCALE = 1.3              -- x, the one the hand would take
@@ -65,6 +71,8 @@ local retryAt = 0                    -- os.clock(): no spawning before (after a 
 local failed = {}                    -- one log line per kind of failure
 local spawnedMeshes = {}             -- address -> { a, name }  every mesh actor made here (to find leftovers)
 local lastStrayScan = -100
+local crowded = false                -- the other chest holster holds something (mission objects): see placeOf
+local crowdedBy = nil                -- name of what it holds (one log line each time it changes)
 
 local function failOnce(key, fmt, ...)
     if failed[key] then return end
@@ -480,6 +488,43 @@ local function setScale(v, m, s)
     U.call(v.actor, "SetActorScale3D", { X = m.scale.X * s, Y = m.scale.Y * s, Z = m.scale.Z * s })
 end
 
+-- Where position i is drawn: cm along the line between both chest points (towards the other one) from the game's
+-- chest point, and cm below it. The inner end of the row (position 3) is next to the other chest holster, where the
+-- game puts the mission objects (and registers a gun held without a holster): while that holster holds something
+-- the third grenade goes under the middle one instead, so neither the meshes nor the grabs overlap.
+local function placeOf(i)
+    if crowded and i == 3 then return 0, BELOW end
+    return (i - 2) * SPACING, 0
+end
+
+local function misplaced(v, i)
+    local along, below = placeOf(i)
+    return v.along ~= along or v.below ~= below
+end
+
+-- Does the other chest holster hold something that is drawn there? (A gun in a hand is only registered there.)
+local function updateCrowded(pawn, hc, slot)
+    local other = slot == CHEST_LEFT and CHEST_RIGHT or CHEST_LEFT
+    local o = H.occupant(hc, other)
+    local inHand = false
+    if o and H.isA(o, WEAPON_CLASS) then
+        inHand = U.get(o, "IsGripped") == true or U.get(o, "HoldingWeaponWithOffhand") == true
+        for _, side in ipairs({ "LeftController", "RightController" }) do
+            if U.same(U.get(U.get(pawn, side), "AttachedObject"), o) then inHand = true end
+        end
+    end
+    crowded = o ~= nil and not inHand
+    local by = crowded and H.fname(o) or nil
+    if by ~= crowdedBy then
+        crowdedBy = by
+        if by then
+            U.log("grenade row: chest holster %d holds %s (%s): third grenade under the middle one", other, by, H.className(o))
+        else
+            U.log("grenade row: chest holster %d free: third grenade at the inner end of the row", other)
+        end
+    end
+end
+
 local function makeVisual(pawn, slot, i, t)
     destroyVisual(i)
     local m = meshes[t]
@@ -494,11 +539,13 @@ local function makeVisual(pawn, slot, i, t)
     local here = actorLoc(a)
     U.call(a, "K2_AddActorLocalOffset", m.loc, false, {}, true)
     U.call(a, "K2_AddActorLocalRotation", m.rot, false, {}, true)
+    local along, below = placeOf(i)
     if other and here then
         local dir = U.vnorm(U.vsub(other, here))
-        U.call(a, "K2_AddActorWorldOffset", U.vmul(dir, (i - 2) * SPACING), false, {}, true)
+        U.call(a, "K2_AddActorWorldOffset", U.vmul(dir, along), false, {}, true)
     end
-    visuals[i] = { actor = a, comp = comp, type = t }
+    if below ~= 0 then U.call(a, "K2_AddActorWorldOffset", { X = 0, Y = 0, Z = -below }, false, {}, true) end
+    visuals[i] = { actor = a, comp = comp, type = t, along = along, below = below }
     if not m.pin or not U.valid(m.pin.mesh) then return end
     local pa, pc = spawnVisual(pawn)
     if not pa then return end
@@ -623,18 +670,36 @@ M.MAX_CARRIED = MAX_CARRIED
 -- Is that hand at one of the grenades?
 function M.isAt(side) return M.active and hover[side] ~= nil end
 
--- World positions of the row: the grenades drawn now, and the empty places next to them when two places are known
--- (the row is straight, SPACING apart). manualholster.lua also measures the game's chest point (the middle place).
+-- World positions of the row: the grenades drawn now, and the empty places when two grenades drawn at different points
+-- along the row are known (placeOf). manualholster.lua also measures the game's chest point (the middle place).
 function M.rowPoints()
     if not M.active then return {} end
-    local p = {}
+    local p, drawn = {}, {}
     for i = 1, MAX_CARRIED do
         local v = visuals[i]
-        if v and row[i] and U.valid(v.actor) then p[i] = actorLoc(v.actor) end
+        if v and row[i] and U.valid(v.actor) then
+            p[i] = actorLoc(v.actor)
+            if p[i] then drawn[#drawn + 1] = v end
+        end
     end
-    if p[2] and p[1] and not p[3] then p[3] = U.vsub(U.vmul(p[2], 2), p[1]) end
-    if p[2] and p[3] and not p[1] then p[1] = U.vsub(U.vmul(p[2], 2), p[3]) end
-    if p[1] and p[3] and not p[2] then p[2] = U.vmul(U.vadd(p[1], p[3]), 0.5) end
+    local a, b = nil, nil
+    for _, x in ipairs(drawn) do
+        for _, y in ipairs(drawn) do
+            if not a and x.along ~= y.along then a, b = x, y end
+        end
+    end
+    if a then
+        local pa = U.vadd(actorLoc(a.actor) or { X = 0, Y = 0, Z = 0 }, { X = 0, Y = 0, Z = a.below })
+        local pb = U.vadd(actorLoc(b.actor) or { X = 0, Y = 0, Z = 0 }, { X = 0, Y = 0, Z = b.below })
+        local dir = U.vmul(U.vsub(pb, pa), 1 / (b.along - a.along))     -- per cm along the row
+        local base = U.vsub(pa, U.vmul(dir, a.along))
+        for i = 1, MAX_CARRIED do
+            if not p[i] then
+                local along, below = placeOf(i)
+                p[i] = U.vadd(U.vadd(base, U.vmul(dir, along)), { X = 0, Y = 0, Z = -below })
+            end
+        end
+    end
     local list = {}
     for i = 1, MAX_CARRIED do if p[i] then list[#list + 1] = p[i] end end
     return list
@@ -653,7 +718,7 @@ local function disable(pawn, hc)
         if t and H.occupant(hc, slot) == nil then ensureReal(pawn, hc, slot, t) end
         showReal(hc, slot)
     end
-    hiddenProxy = nil
+    hiddenProxy, crowded, crowdedBy = nil, false, nil
     row, hover, holding, pressed, quiet = {}, {}, {}, {}, {}
 end
 
@@ -661,6 +726,7 @@ function M.reset()
     for i = 1, MAX_CARRIED do destroyVisual(i) end
     row, visuals, meshes, classOf, known, hover, holding, pressed, quiet = {}, {}, {}, {}, {}, {}, {}, {}, {}
     hiddenProxy, hiddenPins, nearFloor, bag, proxyHidden = nil, {}, {}, {}, {}
+    crowded, crowdedBy = false, nil
     for _, s in pairs(spawnedMeshes) do
         if U.valid(s.a) and H.fname(s.a) == s.name then U.call(s.a, "K2_DestroyActor") end
     end
@@ -742,10 +808,12 @@ function M.tick(pawn, now)
     if real and typeOf(real) and not isHeld(real) then hideReal(hc, slot) end
 
     -- Meshes
+    updateCrowded(pawn, hc, slot)
     local scale = C.get("grenade_row_scale")
     for i = 1, MAX_CARRIED do
         local t, v = row[i], visuals[i]
-        if v and (not U.valid(v.actor) or v.type ~= t or (meshes[t] and meshes[t].pin and not U.valid(v.pin))) then destroyVisual(i); v = nil end
+        if v and (not U.valid(v.actor) or v.type ~= t or misplaced(v, i)
+            or (meshes[t] and meshes[t].pin and not U.valid(v.pin))) then destroyVisual(i); v = nil end
         if t and not v and meshes[t] and U.valid(meshes[t].mesh) then makeVisual(pawn, slot, i, t) end
     end
 

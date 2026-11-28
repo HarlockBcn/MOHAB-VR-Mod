@@ -699,6 +699,14 @@ local function autoReleased(pawn, hc, t)
     if not U.same(U.get(w, "WeaponOwner"), pawn) then return end                  -- the game has taken it (swap...)
     local ctrl = U.get(pawn, t.side .. "Controller")
     local grip = U.axis("OculusTouch_" .. t.side .. "_Grip_Axis")
+    -- A grenade beyond what the chest takes (3 there already, grenaderow.lua): the game's flight back would end with
+    -- the grenade destroyed (its slot holds another one). It falls instead, also when the game let go of it.
+    if t.kind == "grenade" and Row.active and Row.onChest() >= Row.MAX_CARRIED then
+        local moved = drop(pawn, hc, t)
+        U.log("manual holster (off): %s dropped by the %s hand, chest full (%d grenades there; grip %.2f; speed %.0f%s)",
+            t.name, t.side, Row.onChest(), grip, t.dropSpeed or -1, moved and ", hand behind a wall" or "")
+        return
+    end
     local forced = grip > FORCED_GRIP or U.get(ctrl, "ForceDrop") == true
     if forced then
         U.log("manual holster (off): %s left to the game (released by the game, %s hand, %s; grip %.2f)", t.name, t.side,
@@ -1010,7 +1018,8 @@ end
 
 function M.tick(pawn, now)
     local on = C.get("auto_holster") == false   -- manual holsters
-    local auto = not on and (C.get("flick_drop") == true or C.get("holster_nearest") == true)
+    -- (grenade_row: a grenade released with the chest full falls, see autoReleased)
+    local auto = not on and (C.get("flick_drop") == true or C.get("holster_nearest") == true or C.get("grenade_row") == true)
     if not on then
         if wasOn then disable() end
         wasOn = false
