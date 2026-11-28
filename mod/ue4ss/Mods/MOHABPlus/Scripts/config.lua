@@ -92,6 +92,11 @@ for k, v in pairs(M.defaults) do M.values[k] = v end
 local path = nil
 local lastText = nil
 
+-- Version of the settings, written as "config_version=N" (keep in sync with ModConfig.ConfigVersion in the launcher).
+-- A config.ini with an older (or no) version is reset to this release's defaults when it is read, and rewritten.
+-- Raise it only in a release whose defaults every player must get, even over their own changes.
+local ConfigVersion = 2
+
 local function parseValue(key, s)
     local def = M.defaults[key]
     if type(def) == "boolean" then
@@ -159,15 +164,24 @@ function M.reload()
     f:close()
     if text == lastText then return true end
     lastText = text
+    local read, version = {}, 0
     for line in text:gmatch("[^\r\n]+") do
         local k, v = line:match("^%s*([%w_]+)%s*=%s*(.-)%s*$")
-        if k and M.defaults[k] ~= nil then M.values[k] = parseValue(k, v) end
+        if k == "config_version" then version = tonumber(v) or 0
+        elseif k and M.defaults[k] ~= nil then read[k] = parseValue(k, v) end
     end
+    if version < ConfigVersion then
+        -- Settings of an older release: this release's defaults instead (same rule as the launcher).
+        for k, v in pairs(M.defaults) do M.values[k] = v end
+        M.save()
+        return true
+    end
+    for k, v in pairs(read) do M.values[k] = v end
     return true
 end
 
 function M.save()
-    local lines = { "# MOHAB Plus configuration. Edited by the launcher and by the in-game menu." }
+    local lines = { "# MOHAB Plus configuration. Edited by the launcher and by the in-game menu.", "config_version=" .. ConfigVersion }
     for _, sec in ipairs(M.order) do
         lines[#lines + 1] = ""
         lines[#lines + 1] = "# --- " .. sec[1] .. " ---"

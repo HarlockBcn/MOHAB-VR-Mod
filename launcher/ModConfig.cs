@@ -171,9 +171,19 @@ internal sealed class ModConfig
         foreach (var o in Options) Values[o.Key] = o.Default;
     }
 
+    /// <summary>
+    /// Version of the settings written as "config_version=N" (keep in sync with ConfigVersion in Scripts/config.lua).
+    /// A config.ini with an older (or no) version is reset to this release's defaults when it is read, and rewritten.
+    /// Raise it only in a release whose defaults every player must get, even over their own changes.
+    /// </summary>
+    public const int ConfigVersion = 2;
+    private const string VersionKey = "config_version";
+
     public void Load()
     {
         if (!File.Exists(Path)) return;
+        var read = new Dictionary<string, string>();
+        int version = 0;
         foreach (var raw in File.ReadAllLines(Path))
         {
             var line = raw.Trim();
@@ -181,14 +191,24 @@ internal sealed class ModConfig
             int eq = line.IndexOf('=');
             if (eq <= 0) continue;
             string k = line[..eq].Trim(), v = line[(eq + 1)..].Trim();
-            if (Values.ContainsKey(k)) Values[k] = v;
+            if (k == VersionKey) int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out version);
+            else if (Values.ContainsKey(k)) read[k] = v;
         }
+        if (version < ConfigVersion)
+        {
+            // Settings of an older release: this release's defaults instead.
+            foreach (var o in Options) Values[o.Key] = o.Default;
+            try { Save(); } catch { /* read-only folder: the defaults are still used */ }
+            return;
+        }
+        foreach (var kv in read) Values[kv.Key] = kv.Value;
     }
 
     public void Save()
     {
         var sb = new StringBuilder();
         sb.AppendLine("# MOHAB Plus configuration. Edited by the launcher and by the in-game menu.");
+        sb.AppendLine($"{VersionKey}={ConfigVersion}");
         string? section = null;
         foreach (var o in Options)
         {
